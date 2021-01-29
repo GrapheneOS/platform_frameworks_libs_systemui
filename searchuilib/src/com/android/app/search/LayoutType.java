@@ -49,11 +49,19 @@ public class LayoutType {
         "icon_texts_button";
 
 
+    public static final String THUMBNAIL = "thumbnail";
     // TODO: add diagram
     public static final String ICON_SLICE = "slice";
 
     // TODO: add diagram
     public static final String TEXT_HEADER = "header";
+
+
+    // Widget bitmap preview
+    public static final String WIDGET_PREVIEW = "widget_preview";
+
+    // Live widget search result
+    public static final String WIDGET_LIVE = "widget_live";
 
     // TODO: replace the plugin item types with these string constants
 }
