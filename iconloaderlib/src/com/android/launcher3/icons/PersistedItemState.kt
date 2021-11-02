@@ -34,7 +34,7 @@ class PersistedItemState private constructor(private val values: Array<String>) 
         return values.contentEquals(other.values)
     }
 
-    fun withLocaleAndSdk(locale: String, sdk: Int) = copy(locale = locale, sdk = sdk.toString())
+    fun withLocaleAndSdk(locale: String, sdk: String) = copy(locale = locale, sdk = sdk)
 
     fun withTheme(theme: String, isCircle: Boolean) =
         copy(theme = theme, isCircle = isCircle.toString())
