@@ -34,14 +34,11 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.InsetDrawable;
-import android.os.Process;
-import android.os.UserHandle;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
 
 import com.android.launcher3.icons.BitmapInfo.Extender;
-import com.android.launcher3.icons.cache.BaseIconCache;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -63,7 +60,6 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
     // The foreground/monochrome icon for the app
     private final Drawable mMonochromeIcon;
     private final AdaptiveIconDrawable mBgWrapper;
-    private final Rect mBadgeBounds;
 
     protected ThemedIconDrawable(ThemedConstantState constantState) {
         super(constantState.mBitmap, constantState.colorFg, constantState.mIsDisabled);
@@ -73,9 +69,6 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
 
         mMonochromeIcon = bitmapInfo.mThemeData.loadMonochromeDrawable(colorFg);
         mBgWrapper = new AdaptiveIconDrawable(new ColorDrawable(colorBg), null);
-        mBadgeBounds = bitmapInfo.mUserBadge == null ? null :
-                new Rect(0, 0, bitmapInfo.mUserBadge.getWidth(), bitmapInfo.mUserBadge.getHeight());
-
     }
 
     @Override
@@ -94,9 +87,6 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         canvas.drawPath(mBgWrapper.getIconMask(), mPaint);
         mMonochromeIcon.draw(canvas);
         canvas.restoreToCount(count);
-        if (mBadgeBounds != null) {
-            canvas.drawBitmap(bitmapInfo.mUserBadge, mBadgeBounds, getBounds(), mPaint);
-        }
     }
 
     @Override
@@ -132,23 +122,25 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
 
         final ThemeData mThemeData;
         final float mNormalizationScale;
-        final Bitmap mUserBadge;
 
         public ThemedBitmapInfo(Bitmap icon, int color, ThemeData themeData,
-                float normalizationScale, Bitmap userBadge) {
+                float normalizationScale) {
             super(icon, color);
             mThemeData = themeData;
             mNormalizationScale = normalizationScale;
-            mUserBadge = userBadge;
         }
 
         @Override
-        public FastBitmapDrawable newThemedIcon(Context context) {
-            int[] colors = getColors(context);
-            FastBitmapDrawable drawable = new ThemedConstantState(this, colors[0], colors[1], false)
-                    .newDrawable();
-            drawable.mDisabledAlpha = GraphicsUtils.getFloat(context, R.attr.disabledIconAlpha, 1f);
-            return drawable;
+        public FastBitmapDrawable newIcon(Context context,
+                @DrawableCreationFlags  int creationFlags) {
+            if ((creationFlags & FLAG_THEMED) != 0) {
+                int[] colors = getColors(context);
+                FastBitmapDrawable drawable =
+                        new ThemedConstantState(this, colors[0], colors[1], false).newDrawable();
+                applyFlags(context, drawable, creationFlags);
+                return drawable;
+            }
+            return super.newIcon(context, creationFlags);
         }
 
         @Nullable
@@ -175,8 +167,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
             }
         }
 
-        static ThemedBitmapInfo decode(byte[] data, int color,
-                BitmapFactory.Options decodeOptions, UserHandle user, BaseIconCache iconCache,
+        static ThemedBitmapInfo decode(byte[] data, int color, BitmapFactory.Options decodeOptions,
                 Context context) {
             try (DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data))) {
                 dis.readByte(); // type
@@ -189,17 +180,9 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
                     return null;
                 }
 
-                Bitmap userBadgeBitmap = null;
-                if (!Process.myUserHandle().equals(user)) {
-                    try (BaseIconFactory iconFactory = iconCache.getIconFactory()) {
-                        userBadgeBitmap = iconFactory.getUserBadgeBitmap(user);
-                    }
-                }
-
                 ThemeData themeData = new ThemeData(context.getResources(), resId);
                 Bitmap icon = BitmapFactory.decodeStream(dis, null, decodeOptions);
-                return new ThemedBitmapInfo(icon, color, themeData, normalizationScale,
-                        userBadgeBitmap);
+                return new ThemedBitmapInfo(icon, color, themeData, normalizationScale);
             } catch (IOException e) {
                 return null;
             }
@@ -257,10 +240,8 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
 
         @Override
         public BitmapInfo getExtendedInfo(Bitmap bitmap, int color, BaseIconFactory iconFactory,
-                float normalizationScale, UserHandle user) {
-            Bitmap userBadge = Process.myUserHandle().equals(user)
-                    ? null : iconFactory.getUserBadgeBitmap(user);
-            return new ThemedBitmapInfo(bitmap, color, mThemeData, normalizationScale, userBadge);
+                float normalizationScale) {
+            return new ThemedBitmapInfo(bitmap, color, mThemeData, normalizationScale);
         }
 
         @Override

@@ -123,7 +123,7 @@ public class IconProvider {
      * Loads the icon for the provided LauncherActivityInfo
      */
     public Drawable getIcon(LauncherActivityInfo info, int iconDpi) {
-        return getIconWithOverrides(info.getApplicationInfo().packageName, info.getUser(), iconDpi,
+        return getIconWithOverrides(info.getApplicationInfo().packageName, iconDpi,
                 () -> info.getIcon(iconDpi));
     }
 
@@ -138,12 +138,11 @@ public class IconProvider {
      * Loads the icon for the provided activity info
      */
     public Drawable getIcon(ActivityInfo info, int iconDpi) {
-        return getIconWithOverrides(info.applicationInfo.packageName,
-                UserHandle.getUserHandleForUid(info.applicationInfo.uid),
-                iconDpi, () -> loadActivityInfoIcon(info, iconDpi));
+        return getIconWithOverrides(info.applicationInfo.packageName, iconDpi,
+                () -> loadActivityInfoIcon(info, iconDpi));
     }
 
-    private Drawable getIconWithOverrides(String packageName, UserHandle user, int iconDpi,
+    private Drawable getIconWithOverrides(String packageName, int iconDpi,
             Supplier<Drawable> fallback) {
         Drawable icon = null;
 
@@ -151,9 +150,7 @@ public class IconProvider {
         if (mCalendar != null && mCalendar.getPackageName().equals(packageName)) {
             icon = loadCalendarDrawable(iconDpi);
             iconType = ICON_TYPE_CALENDAR;
-        } else if (mClock != null
-                && mClock.getPackageName().equals(packageName)
-                && Process.myUserHandle().equals(user)) {
+        } else if (mClock != null && mClock.getPackageName().equals(packageName)) {
             icon = loadClockDrawable(iconDpi);
             iconType = ICON_TYPE_CLOCK;
         }
