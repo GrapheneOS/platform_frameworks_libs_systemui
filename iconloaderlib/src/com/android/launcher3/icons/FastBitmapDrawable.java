@@ -87,14 +87,9 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
     }
 
     protected FastBitmapDrawable(Bitmap b, int iconColor) {
-        this(b, iconColor, false);
-    }
-
-    protected FastBitmapDrawable(Bitmap b, int iconColor, boolean isDisabled) {
         mBitmap = b;
         mIconColor = iconColor;
         setFilterBitmap(true);
-        setIsDisabled(isDisabled);
     }
 
     @Override
@@ -290,9 +285,18 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
         invalidateSelf();
     }
 
+    protected FastBitmapConstantState newConstantState() {
+        return new FastBitmapConstantState(mBitmap, mIconColor);
+    }
+
     @Override
-    public ConstantState getConstantState() {
-        return new FastBitmapConstantState(mBitmap, mIconColor, mIsDisabled);
+    public final ConstantState getConstantState() {
+        FastBitmapConstantState cs = newConstantState();
+        cs.mIsDisabled = mIsDisabled;
+        if (mBadge != null) {
+            cs.mBadgeConstantState = mBadge.getConstantState();
+        }
+        return cs;
     }
 
     public static ColorFilter getDisabledColorFilter() {
@@ -349,17 +353,29 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
     protected static class FastBitmapConstantState extends ConstantState {
         protected final Bitmap mBitmap;
         protected final int mIconColor;
-        protected final boolean mIsDisabled;
 
-        public FastBitmapConstantState(Bitmap bitmap, int color, boolean isDisabled) {
+        // These are initialized later so that subclasses don't need to
+        // pass everything in constructor
+        protected boolean mIsDisabled;
+        private ConstantState mBadgeConstantState;
+
+        public FastBitmapConstantState(Bitmap bitmap, int color) {
             mBitmap = bitmap;
             mIconColor = color;
-            mIsDisabled = isDisabled;
+        }
+
+        protected FastBitmapDrawable createDrawable() {
+            return new FastBitmapDrawable(mBitmap, mIconColor);
         }
 
         @Override
-        public FastBitmapDrawable newDrawable() {
-            return new FastBitmapDrawable(mBitmap, mIconColor, mIsDisabled);
+        public final FastBitmapDrawable newDrawable() {
+            FastBitmapDrawable drawable = createDrawable();
+            drawable.setIsDisabled(mIsDisabled);
+            if (mBadgeConstantState != null) {
+                drawable.setBadge(mBadgeConstantState.newDrawable());
+            }
+            return drawable;
         }
 
         @Override

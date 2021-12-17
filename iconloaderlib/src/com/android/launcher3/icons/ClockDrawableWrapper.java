@@ -419,24 +419,22 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
         }
 
         @Override
-        public ConstantState getConstantState() {
-            return new ClockConstantState(mInfo, isDisabled());
+        public FastBitmapConstantState newConstantState() {
+            return new ClockConstantState(mInfo);
         }
 
         private static class ClockConstantState extends FastBitmapConstantState {
 
             private final ClockBitmapInfo mInfo;
 
-            ClockConstantState(ClockBitmapInfo info, boolean isDisabled) {
-                super(info.icon, info.color, isDisabled);
+            ClockConstantState(ClockBitmapInfo info) {
+                super(info.icon, info.color);
                 mInfo = info;
             }
 
             @Override
-            public FastBitmapDrawable newDrawable() {
-                ClockIconDrawable drawable = new ClockIconDrawable(mInfo);
-                drawable.setIsDisabled(mIsDisabled);
-                return drawable;
+            public FastBitmapDrawable createDrawable() {
+                return new ClockIconDrawable(mInfo);
             }
         }
     }
