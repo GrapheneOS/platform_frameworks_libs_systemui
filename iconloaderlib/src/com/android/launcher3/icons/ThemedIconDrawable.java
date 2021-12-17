@@ -62,7 +62,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
     private final AdaptiveIconDrawable mBgWrapper;
 
     protected ThemedIconDrawable(ThemedConstantState constantState) {
-        super(constantState.mBitmap, constantState.colorFg, constantState.mIsDisabled);
+        super(constantState.mBitmap, constantState.colorFg);
         bitmapInfo = constantState.bitmapInfo;
         colorBg = constantState.colorBg;
         colorFg = constantState.colorFg;
@@ -95,8 +95,8 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
     }
 
     @Override
-    public ConstantState getConstantState() {
-        return new ThemedConstantState(bitmapInfo, colorBg, colorFg, mIsDisabled);
+    public FastBitmapConstantState newConstantState() {
+        return new ThemedConstantState(bitmapInfo, colorBg, colorFg);
     }
 
     static class ThemedConstantState extends FastBitmapConstantState {
@@ -105,15 +105,15 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         final int colorFg, colorBg;
 
         public ThemedConstantState(ThemedBitmapInfo bitmapInfo,
-                int colorBg, int colorFg, boolean isDisabled) {
-            super(bitmapInfo.icon, bitmapInfo.color, isDisabled);
+                int colorBg, int colorFg) {
+            super(bitmapInfo.icon, bitmapInfo.color);
             this.bitmapInfo = bitmapInfo;
             this.colorBg = colorBg;
             this.colorFg = colorFg;
         }
 
         @Override
-        public FastBitmapDrawable newDrawable() {
+        public FastBitmapDrawable createDrawable() {
             return new ThemedIconDrawable(this);
         }
     }
@@ -136,7 +136,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
             if ((creationFlags & FLAG_THEMED) != 0) {
                 int[] colors = getColors(context);
                 FastBitmapDrawable drawable =
-                        new ThemedConstantState(this, colors[0], colors[1], false).newDrawable();
+                        new ThemedConstantState(this, colors[0], colors[1]).newDrawable();
                 applyFlags(context, drawable, creationFlags);
                 return drawable;
             }
