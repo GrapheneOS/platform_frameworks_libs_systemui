@@ -15,9 +15,14 @@
  */
 package com.android.launcher3.icons.cache;
 
+import static android.graphics.BitmapFactory.decodeByteArray;
+
 import static com.android.launcher3.icons.BaseIconFactory.getFullResDefaultActivityIcon;
 import static com.android.launcher3.icons.BitmapInfo.LOW_RES_ICON;
+import static com.android.launcher3.icons.GraphicsUtils.flattenBitmap;
 import static com.android.launcher3.icons.GraphicsUtils.setColorAlphaBound;
+
+import static java.util.Objects.requireNonNull;
 
 import android.content.ComponentName;
 import android.content.ContentValues;
@@ -32,6 +37,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Handler;
@@ -53,6 +60,7 @@ import com.android.launcher3.icons.BitmapInfo;
 import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.util.SQLiteCacheHelper;
 
+import java.nio.ByteBuffer;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collections;
@@ -518,11 +526,30 @@ public abstract class BaseIconCache {
         }
 
         if (!lowRes) {
+            byte[] data = c.getBlob(IconDB.INDEX_ICON);
+            if (data == null) {
+                return false;
+            }
             try {
-                entry.bitmap = BitmapInfo.fromByteArray(c.getBlob(IconDB.INDEX_ICON),
-                        entry.bitmap.color, mContext);
+                BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
+                decodeOptions.inPreferredConfig = Config.HARDWARE;
+                entry.bitmap = BitmapInfo.of(
+                        requireNonNull(decodeByteArray(data, 0, data.length, decodeOptions)),
+                        entry.bitmap.color);
             } catch (Exception e) {
                 return false;
+            }
+
+            // Decode mono bitmap
+            data = c.getBlob(IconDB.INDEX_MONO_ICON);
+            Bitmap icon = entry.bitmap.icon;
+            if (data != null && data.length == icon.getHeight() * icon.getWidth()) {
+                Bitmap monoBitmap = Bitmap.createBitmap(
+                        icon.getWidth(), icon.getHeight(), Config.ALPHA_8);
+                monoBitmap.copyPixelsFromBuffer(ByteBuffer.wrap(data));
+                try (BaseIconFactory factory = getIconFactory()) {
+                    entry.bitmap.setMonoIcon(monoBitmap, factory);
+                }
             }
         }
         entry.bitmap.flags = c.getInt(IconDB.INDEX_FLAGS);
@@ -542,7 +569,7 @@ public abstract class BaseIconCache {
      * Cache class to store the actual entries on disk
      */
     public static final class IconDB extends SQLiteCacheHelper {
-        private static final int RELEASE_VERSION = 33;
+        private static final int RELEASE_VERSION = 34;
 
         public static final String TABLE_NAME = "icons";
         public static final String COLUMN_ROWID = "rowid";
@@ -552,6 +579,7 @@ public abstract class BaseIconCache {
         public static final String COLUMN_VERSION = "version";
         public static final String COLUMN_ICON = "icon";
         public static final String COLUMN_ICON_COLOR = "icon_color";
+        public static final String COLUMN_MONO_ICON = "mono_icon";
         public static final String COLUMN_FLAGS = "flags";
         public static final String COLUMN_LABEL = "label";
         public static final String COLUMN_SYSTEM_STATE = "system_state";
@@ -563,15 +591,17 @@ public abstract class BaseIconCache {
                 COLUMN_ICON_COLOR,
                 COLUMN_FLAGS};
         public static final String[] COLUMNS_HIGH_RES = Arrays.copyOf(COLUMNS_LOW_RES,
-                COLUMNS_LOW_RES.length + 1, String[].class);
+                COLUMNS_LOW_RES.length + 2, String[].class);
         static {
             COLUMNS_HIGH_RES[COLUMNS_LOW_RES.length] = COLUMN_ICON;
+            COLUMNS_HIGH_RES[COLUMNS_LOW_RES.length + 1] = COLUMN_MONO_ICON;
         }
         private static final int INDEX_TITLE = Arrays.asList(COLUMNS_LOW_RES).indexOf(COLUMN_LABEL);
         private static final int INDEX_COLOR = Arrays.asList(COLUMNS_LOW_RES)
                 .indexOf(COLUMN_ICON_COLOR);
         private static final int INDEX_FLAGS = Arrays.asList(COLUMNS_LOW_RES).indexOf(COLUMN_FLAGS);
         private static final int INDEX_ICON = COLUMNS_LOW_RES.length;
+        private static final int INDEX_MONO_ICON = INDEX_ICON + 1;
 
         public IconDB(Context context, String dbFileName, int iconPixelSize) {
             super(context, dbFileName, (RELEASE_VERSION << 16) + iconPixelSize, TABLE_NAME);
@@ -585,6 +615,7 @@ public abstract class BaseIconCache {
                     + COLUMN_LAST_UPDATED + " INTEGER NOT NULL DEFAULT 0, "
                     + COLUMN_VERSION + " INTEGER NOT NULL DEFAULT 0, "
                     + COLUMN_ICON + " BLOB, "
+                    + COLUMN_MONO_ICON + " BLOB, "
                     + COLUMN_ICON_COLOR + " INTEGER NOT NULL DEFAULT 0, "
                     + COLUMN_FLAGS + " INTEGER NOT NULL DEFAULT 0, "
                     + COLUMN_LABEL + " TEXT, "
@@ -598,7 +629,24 @@ public abstract class BaseIconCache {
     private ContentValues newContentValues(BitmapInfo bitmapInfo, String label,
             String packageName, @Nullable String keywords) {
         ContentValues values = new ContentValues();
-        values.put(IconDB.COLUMN_ICON, bitmapInfo.toByteArray());
+        if (bitmapInfo.canPersist()) {
+            values.put(IconDB.COLUMN_ICON, flattenBitmap(bitmapInfo.icon));
+
+            // Persist mono bitmap as alpha channel
+            Bitmap mono = bitmapInfo.getMono();
+            if (mono != null && mono.getHeight() == bitmapInfo.icon.getHeight()
+                    && mono.getWidth() == bitmapInfo.icon.getWidth()
+                    && mono.getConfig() == Config.ALPHA_8) {
+                byte[] pixels = new byte[mono.getWidth() * mono.getHeight()];
+                mono.copyPixelsToBuffer(ByteBuffer.wrap(pixels));
+                values.put(IconDB.COLUMN_MONO_ICON, pixels);
+            } else {
+                values.put(IconDB.COLUMN_MONO_ICON, (byte[]) null);
+            }
+        } else {
+            values.put(IconDB.COLUMN_ICON, (byte[]) null);
+            values.put(IconDB.COLUMN_MONO_ICON, (byte[]) null);
+        }
         values.put(IconDB.COLUMN_ICON_COLOR, bitmapInfo.color);
         values.put(IconDB.COLUMN_FLAGS, bitmapInfo.flags);
 
