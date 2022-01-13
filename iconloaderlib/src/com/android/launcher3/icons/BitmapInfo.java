@@ -15,27 +15,17 @@
  */
 package com.android.launcher3.icons;
 
-import static com.android.launcher3.icons.GraphicsUtils.getExpectedBitmapSize;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Process;
 import android.os.UserHandle;
-import android.util.Log;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import com.android.launcher3.icons.ThemedIconDrawable.ThemedBitmapInfo;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 public class BitmapInfo {
 
@@ -60,11 +50,12 @@ public class BitmapInfo {
 
     public static final String TAG = "BitmapInfo";
 
-    protected static final byte TYPE_DEFAULT = 1;
-    protected static final byte TYPE_THEMED = 2;
-
     public final Bitmap icon;
     public final int color;
+
+    @Nullable
+    protected Bitmap mMono;
+    protected Bitmap mWhiteShadowLayer;
 
     public @BitmapInfoFlags int flags;
     private BitmapInfo badgeInfo;
@@ -75,17 +66,26 @@ public class BitmapInfo {
     }
 
     public BitmapInfo withBadgeInfo(BitmapInfo badgeInfo) {
-        BitmapInfo result = new BitmapInfo(icon, color);
-        result.flags = flags;
+        BitmapInfo result = clone();
         result.badgeInfo = badgeInfo;
         return result;
     }
 
+    protected BitmapInfo copyInternalsTo(BitmapInfo target) {
+        target.mMono = mMono;
+        target.mWhiteShadowLayer = mWhiteShadowLayer;
+        target.flags = flags;
+        return target;
+    }
+
     @Override
     public BitmapInfo clone() {
-        BitmapInfo result = new BitmapInfo(icon, color);
-        result.flags = flags;
-        return result;
+        return copyInternalsTo(new BitmapInfo(icon, color));
+    }
+
+    public void setMonoIcon(Bitmap mono, BaseIconFactory iconFactory) {
+        mMono = mono;
+        mWhiteShadowLayer = iconFactory.getWhiteShadowLayer();
     }
 
     /**
@@ -112,24 +112,14 @@ public class BitmapInfo {
     }
 
     /**
-     * Returns a serialized version of BitmapInfo
+     * BitmapInfo can be stored on disk or other persistent storage
      */
-    @Nullable
-    public byte[] toByteArray() {
-        if (isNullOrLowRes()) {
-            return null;
-        }
-        ByteArrayOutputStream out = new ByteArrayOutputStream(getExpectedBitmapSize(icon) + 1);
-        try {
-            out.write(TYPE_DEFAULT);
-            icon.compress(Bitmap.CompressFormat.PNG, 100, out);
-            out.flush();
-            out.close();
-            return out.toByteArray();
-        } catch (IOException e) {
-            Log.w(TAG, "Could not write bitmap");
-            return null;
-        }
+    public boolean canPersist() {
+        return !isNullOrLowRes();
+    }
+
+    public Bitmap getMono() {
+        return mMono;
     }
 
     /**
@@ -143,9 +133,14 @@ public class BitmapInfo {
      * Creates a drawable for the provided BitmapInfo
      */
     public FastBitmapDrawable newIcon(Context context, @DrawableCreationFlags int creationFlags) {
-        FastBitmapDrawable drawable = isLowRes()
-                ? new PlaceHolderIconDrawable(this, context)
-                : new FastBitmapDrawable(this);
+        FastBitmapDrawable drawable;
+        if (isLowRes()) {
+            drawable = new PlaceHolderIconDrawable(this, context);
+        } else  if ((creationFlags & FLAG_THEMED) != 0 && mMono != null) {
+            drawable = ThemedIconDrawable.newDrawable(this, context);
+        } else {
+            drawable = new FastBitmapDrawable(this);
+        }
         applyFlags(context, drawable, creationFlags);
         return drawable;
     }
@@ -161,32 +156,6 @@ public class BitmapInfo {
             } else if ((flags & FLAG_WORK) != 0) {
                 drawable.setBadge(context.getDrawable(R.drawable.ic_work_app_badge));
             }
-        }
-    }
-
-    /**
-     * Returns a BitmapInfo previously serialized using {@link #toByteArray()};
-     */
-    @NonNull
-    public static BitmapInfo fromByteArray(byte[] data, int color, Context context) {
-        if (data == null) {
-            throw new NullPointerException();
-        }
-        BitmapFactory.Options decodeOptions;
-        if (BitmapRenderer.USE_HARDWARE_BITMAP && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            decodeOptions = new BitmapFactory.Options();
-            decodeOptions.inPreferredConfig = Bitmap.Config.HARDWARE;
-        } else {
-            decodeOptions = null;
-        }
-        if (data[0] == TYPE_DEFAULT) {
-            return BitmapInfo.of(
-                    BitmapFactory.decodeByteArray(data, 1, data.length - 1, decodeOptions),
-                    color);
-        } else if (data[0] == TYPE_THEMED) {
-            return ThemedBitmapInfo.decode(data, color, decodeOptions, context);
-        } else {
-            throw new IllegalArgumentException("Unknown type " + data[0]);
         }
     }
 
@@ -213,10 +182,5 @@ public class BitmapInfo {
          * Called to draw the UI independent of any runtime configurations like time or theme
          */
         void drawForPersistence(Canvas canvas);
-
-        /**
-         * Returns a new icon with theme applied
-         */
-        Drawable getThemedDrawable(Context context);
     }
 }
