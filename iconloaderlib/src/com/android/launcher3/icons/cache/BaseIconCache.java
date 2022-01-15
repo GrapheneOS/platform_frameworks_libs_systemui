@@ -273,7 +273,6 @@ public abstract class BaseIconCache {
         CharSequence entryTitle = cachingLogic.getLabel(object);
         if (entryTitle == null) {
             Log.d(TAG, "No label returned from caching logic instance: " + cachingLogic);
-            return;
         }
         entry.title = entryTitle;
 
