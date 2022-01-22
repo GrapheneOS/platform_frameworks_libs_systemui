@@ -274,7 +274,7 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
             mBadge.setCallback(this);
         }
         updateBadgeBounds(getBounds());
-        invalidateSelf();
+        updateFilter();
     }
 
     /**
@@ -282,6 +282,9 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
      */
     protected void updateFilter() {
         mPaint.setColorFilter(mIsDisabled ? getDisabledColorFilter(mDisabledAlpha) : mColorFilter);
+        if (mBadge != null) {
+            mBadge.setColorFilter(getColorFilter());
+        }
         invalidateSelf();
     }
 
