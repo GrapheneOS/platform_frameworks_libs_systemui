@@ -19,13 +19,12 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
-import android.os.Process;
-import android.os.UserHandle;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.android.launcher3.util.FlagOp;
 
 public class BitmapInfo {
 
@@ -71,10 +70,23 @@ public class BitmapInfo {
         return result;
     }
 
+    /**
+     * Returns a bitmapInfo with the flagOP applied
+     */
+    public BitmapInfo withFlags(@NonNull FlagOp op) {
+        if (op == FlagOp.NO_OP) {
+            return this;
+        }
+        BitmapInfo result = clone();
+        result.flags = op.apply(result.flags);
+        return result;
+    }
+
     protected BitmapInfo copyInternalsTo(BitmapInfo target) {
         target.mMono = mMono;
         target.mWhiteShadowLayer = mWhiteShadowLayer;
         target.flags = flags;
+        target.badgeInfo = badgeInfo;
         return target;
     }
 
@@ -86,18 +98,6 @@ public class BitmapInfo {
     public void setMonoIcon(Bitmap mono, BaseIconFactory iconFactory) {
         mMono = mono;
         mWhiteShadowLayer = iconFactory.getWhiteShadowLayer();
-    }
-
-    /**
-     * Ensures that the BitmapInfo represents the provided user
-     */
-    public BitmapInfo withUser(UserHandle userHandle) {
-        if (userHandle == null || Process.myUserHandle().equals(userHandle)) {
-            flags &= ~FLAG_WORK;
-        } else {
-            flags |= FLAG_WORK;
-        }
-        return this;
     }
 
     /**
