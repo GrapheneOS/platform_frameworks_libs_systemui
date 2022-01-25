@@ -5,6 +5,7 @@ import static android.graphics.Paint.FILTER_BITMAP_FLAG;
 import static android.graphics.drawable.AdaptiveIconDrawable.getExtraInsetFraction;
 
 import static com.android.launcher3.icons.BitmapInfo.FLAG_INSTANT;
+import static com.android.launcher3.icons.BitmapInfo.FLAG_WORK;
 import static com.android.launcher3.icons.ShadowGenerator.BLUR_FACTOR;
 
 import android.annotation.TargetApi;
@@ -27,11 +28,13 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.InsetDrawable;
 import android.os.Build;
 import android.os.UserHandle;
+import android.util.SparseBooleanArray;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.android.launcher3.icons.BitmapInfo.Extender;
+import com.android.launcher3.util.FlagOp;
 
 /**
  * This class will be moved to androidx library. There shouldn't be any dependency outside
@@ -44,6 +47,7 @@ public class BaseIconFactory implements AutoCloseable {
     private static final float ICON_BADGE_SCALE = 0.444f;
 
     private final Rect mOldBounds = new Rect();
+    private final SparseBooleanArray mIsUserBadged = new SparseBooleanArray();
     protected final Context mContext;
     private final Canvas mCanvas;
     private final PackageManager mPm;
@@ -206,13 +210,33 @@ public class BaseIconFactory implements AutoCloseable {
                         this);
             }
         }
+        info = info.withFlags(getBitmapFlagOp(options));
+        return info;
+    }
+
+    public FlagOp getBitmapFlagOp(@Nullable IconOptions options) {
+        FlagOp op = FlagOp.NO_OP;
         if (options != null) {
             if (options.mIsInstantApp) {
-                info.flags |= FLAG_INSTANT;
+                op = op.addFlag(FLAG_INSTANT);
             }
-            info.withUser(options.mUserHandle);
+
+            if (options.mUserHandle != null) {
+                int key = options.mUserHandle.hashCode();
+                boolean isBadged;
+                int index;
+                if ((index = mIsUserBadged.indexOfKey(key)) >= 0) {
+                    isBadged = mIsUserBadged.valueAt(index);
+                } else {
+                    // Check packageManager if the provided user needs a badge
+                    NoopDrawable d = new NoopDrawable();
+                    isBadged = (d != mPm.getUserBadgedIcon(d, options.mUserHandle));
+                    mIsUserBadged.put(key, isBadged);
+                }
+                op = op.setFlag(FLAG_WORK, isBadged);
+            }
         }
-        return info;
+        return op;
     }
 
     /** package private */
@@ -390,7 +414,6 @@ public class BaseIconFactory implements AutoCloseable {
         boolean mIsInstantApp;
         UserHandle mUserHandle;
 
-
         /**
          * Set to false if non-adaptive icons should not be treated
          */
@@ -435,6 +458,18 @@ public class BaseIconFactory implements AutoCloseable {
         @Override
         public int getIntrinsicWidth() {
             return getBitmap().getWidth();
+        }
+    }
+
+    private static class NoopDrawable extends ColorDrawable {
+        @Override
+        public int getIntrinsicHeight() {
+            return 1;
+        }
+
+        @Override
+        public int getIntrinsicWidth() {
+            return 1;
         }
     }
 }

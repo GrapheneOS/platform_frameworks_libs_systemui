@@ -49,6 +49,7 @@ import android.os.Trace;
 import android.os.UserHandle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.util.SparseArray;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -58,6 +59,7 @@ import com.android.launcher3.icons.BaseIconFactory;
 import com.android.launcher3.icons.BaseIconFactory.IconOptions;
 import com.android.launcher3.icons.BitmapInfo;
 import com.android.launcher3.util.ComponentKey;
+import com.android.launcher3.util.FlagOp;
 import com.android.launcher3.util.SQLiteCacheHelper;
 
 import java.nio.ByteBuffer;
@@ -100,6 +102,7 @@ public abstract class BaseIconCache {
     protected String mSystemState = "";
 
     private BitmapInfo mDefaultIcon;
+    private final SparseArray<FlagOp> mUserFlagOpMap = new SparseArray<>();
 
     private final String mDbFileName;
     private final Looper mBgLooper;
@@ -157,6 +160,7 @@ public abstract class BaseIconCache {
     private synchronized void updateIconParamsBg(int iconDpi, int iconPixelSize) {
         mIconDpi = iconDpi;
         mDefaultIcon = null;
+        mUserFlagOpMap.clear();
         mIconDb.clear();
         mIconDb.close();
         mIconDb = new IconDB(mContext, mDbFileName, iconPixelSize);
@@ -304,7 +308,21 @@ public abstract class BaseIconCache {
                 mDefaultIcon = li.makeDefaultIcon();
             }
         }
-        return mDefaultIcon.clone().withUser(user);
+        return mDefaultIcon.withFlags(getUserFlagOpLocked(user));
+    }
+
+    private FlagOp getUserFlagOpLocked(UserHandle user) {
+        int key = user.hashCode();
+        int index;
+        if ((index = mUserFlagOpMap.indexOfKey(key)) >= 0) {
+            return mUserFlagOpMap.valueAt(index);
+        } else {
+            try (BaseIconFactory li = getIconFactory()) {
+                FlagOp op = li.getBitmapFlagOp(new IconOptions().setUser(user));
+                mUserFlagOpMap.put(key, op);
+                return op;
+            }
+        }
     }
 
     public boolean isDefaultIcon(BitmapInfo icon, UserHandle user) {
@@ -346,8 +364,8 @@ public abstract class BaseIconCache {
             T object = null;
             boolean providerFetchedOnce = false;
             boolean cacheEntryUpdated = cursor == null
-                    ? getEntryFromDB(cacheKey, entry, useLowResIcon)
-                    : updateTitleAndIcon(cacheKey, entry, cursor, useLowResIcon);
+                    ? getEntryFromDBLocked(cacheKey, entry, useLowResIcon)
+                    : updateTitleAndIconLocked(cacheKey, entry, cursor, useLowResIcon);
             if (!cacheEntryUpdated) {
                 object = infoProvider.get();
                 providerFetchedOnce = true;
@@ -442,7 +460,7 @@ public abstract class BaseIconCache {
             boolean entryUpdated = true;
 
             // Check the DB first.
-            if (!getEntryFromDB(cacheKey, entry, useLowResIcon)) {
+            if (!getEntryFromDBLocked(cacheKey, entry, useLowResIcon)) {
                 try {
                     int flags = Process.myUserHandle().equals(user) ? 0 :
                             PackageManager.GET_UNINSTALLED_PACKAGES;
@@ -486,7 +504,8 @@ public abstract class BaseIconCache {
         return entry;
     }
 
-    protected boolean getEntryFromDB(ComponentKey cacheKey, CacheEntry entry, boolean lowRes) {
+    protected boolean getEntryFromDBLocked(
+            ComponentKey cacheKey, CacheEntry entry, boolean lowRes) {
         Cursor c = null;
         Trace.beginSection("loadIconIndividually");
         try {
@@ -497,7 +516,7 @@ public abstract class BaseIconCache {
                             cacheKey.componentName.flattenToString(),
                             Long.toString(getSerialNumberForUser(cacheKey.user))});
             if (c.moveToNext()) {
-                return updateTitleAndIcon(cacheKey, entry, c, lowRes);
+                return updateTitleAndIconLocked(cacheKey, entry, c, lowRes);
             }
         } catch (SQLiteException e) {
             Log.d(TAG, "Error reading icon cache", e);
@@ -510,7 +529,7 @@ public abstract class BaseIconCache {
         return false;
     }
 
-    private boolean updateTitleAndIcon(
+    private boolean updateTitleAndIconLocked(
             ComponentKey cacheKey, CacheEntry entry, Cursor c, boolean lowRes) {
         // Set the alpha to be 255, so that we never have a wrong color
         entry.bitmap = BitmapInfo.of(LOW_RES_ICON,
@@ -552,7 +571,7 @@ public abstract class BaseIconCache {
             }
         }
         entry.bitmap.flags = c.getInt(IconDB.INDEX_FLAGS);
-        entry.bitmap.withUser(cacheKey.user);
+        entry.bitmap = entry.bitmap.withFlags(getUserFlagOpLocked(cacheKey.user));
         return entry.bitmap != null;
     }
 
