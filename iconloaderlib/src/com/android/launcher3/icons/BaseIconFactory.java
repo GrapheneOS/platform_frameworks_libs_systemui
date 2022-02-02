@@ -249,7 +249,7 @@ public class BaseIconFactory implements AutoCloseable {
     }
 
     /** package private */
-    Bitmap createScaledBitmapWithShadow(Drawable d) {
+    public Bitmap createScaledBitmapWithShadow(Drawable d) {
         float scale = getNormalizer().getScale(d, null, null, null);
         Bitmap bitmap = createIconBitmap(d, scale);
         mCanvas.setBitmap(bitmap);
