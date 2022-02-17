@@ -370,26 +370,14 @@ public abstract class BaseIconCache {
                 object = infoProvider.get();
                 providerFetchedOnce = true;
 
-                if (object != null) {
-                    entry.bitmap = cachingLogic.loadIcon(mContext, object);
-                } else {
-                    if (usePackageIcon) {
-                        CacheEntry packageEntry = getEntryForPackageLocked(
-                                componentName.getPackageName(), user, false);
-                        if (packageEntry != null) {
-                            if (DEBUG) Log.d(TAG, "using package default icon for " +
-                                    componentName.toShortString());
-                            entry.bitmap = packageEntry.bitmap;
-                            entry.title = packageEntry.title;
-                            entry.contentDescription = packageEntry.contentDescription;
-                        }
-                    }
-                    if (entry.bitmap == null) {
-                        if (DEBUG) Log.d(TAG, "using default icon for " +
-                                componentName.toShortString());
-                        entry.bitmap = getDefaultIcon(user);
-                    }
-                }
+                loadFallbackIcon(
+                        object,
+                        entry,
+                        cachingLogic,
+                        usePackageIcon,
+                        /* usePackageTitle= */ true,
+                        componentName,
+                        user);
             }
 
             if (TextUtils.isEmpty(entry.title)) {
@@ -398,13 +386,54 @@ public abstract class BaseIconCache {
                     providerFetchedOnce = true;
                 }
                 if (object != null) {
-                    entry.title = cachingLogic.getLabel(object);
-                    entry.contentDescription = mPackageManager.getUserBadgedLabel(
-                            cachingLogic.getDescription(object, entry.title), user);
+                    loadFallbackTitle(object, entry, cachingLogic, user);
                 }
             }
         }
         return entry;
+    }
+
+    /**
+     * Fallback method for loading an icon bitmap.
+     */
+    protected <T> void loadFallbackIcon(
+            T object, CacheEntry entry, @NonNull CachingLogic<T> cachingLogic,
+            boolean usePackageIcon, boolean usePackageTitle, @NonNull ComponentName componentName,
+            @NonNull UserHandle user) {
+        if (object != null) {
+            entry.bitmap = cachingLogic.loadIcon(mContext, object);
+        } else {
+            if (usePackageIcon) {
+                CacheEntry packageEntry = getEntryForPackageLocked(
+                        componentName.getPackageName(), user, false);
+                if (packageEntry != null) {
+                    if (DEBUG) Log.d(TAG, "using package default icon for " +
+                            componentName.toShortString());
+                    entry.bitmap = packageEntry.bitmap;
+                    entry.contentDescription = packageEntry.contentDescription;
+
+                    if (usePackageTitle) {
+                        entry.title = packageEntry.title;
+                    }
+                }
+            }
+            if (entry.bitmap == null) {
+                if (DEBUG) Log.d(TAG, "using default icon for " +
+                        componentName.toShortString());
+                entry.bitmap = getDefaultIcon(user);
+            }
+        }
+    }
+
+    /**
+     * Fallback method for loading an app title.
+     */
+    protected <T> void loadFallbackTitle(
+            T object, CacheEntry entry, @NonNull CachingLogic<T> cachingLogic,
+            @NonNull UserHandle user) {
+        entry.title = cachingLogic.getLabel(object);
+        entry.contentDescription = mPackageManager.getUserBadgedLabel(
+                cachingLogic.getDescription(object, entry.title), user);
     }
 
     public synchronized void clear() {
