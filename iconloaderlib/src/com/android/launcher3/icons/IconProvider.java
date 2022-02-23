@@ -77,10 +77,6 @@ public class IconProvider {
     private final ComponentName mClock;
 
     public IconProvider(Context context) {
-        this(context, false);
-    }
-
-    public IconProvider(Context context, boolean supportsIconTheme) {
         mContext = context;
         mCalendar = parseComponentOrNull(context, R.string.calendar_component_name);
         mClock = parseComponentOrNull(context, R.string.clock_component_name);
@@ -194,6 +190,7 @@ public class IconProvider {
                                         new ThemeData(td.mResources, monoId).loadPaddedDrawable());
                     }
                 }
+                return drawable;
             }
         } catch (PackageManager.NameNotFoundException e) {
             if (DEBUG) {
