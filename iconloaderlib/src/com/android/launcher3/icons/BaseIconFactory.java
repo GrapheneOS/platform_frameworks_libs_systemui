@@ -204,7 +204,7 @@ public class BaseIconFactory implements AutoCloseable {
             Drawable mono = ((AdaptiveIconDrawable) icon).getMonochrome();
             if (mono != null) {
                 // Convert mono drawable to bitmap
-                Drawable paddedMono = new InsetDrawable(mono, -getExtraInsetFraction());
+                Drawable paddedMono = new ClippedMonoDrawable(mono);
                 info.setMonoIcon(
                         createIconBitmap(paddedMono, scale[0], mIconBitmapSize, Config.ALPHA_8),
                         this);
@@ -470,6 +470,25 @@ public class BaseIconFactory implements AutoCloseable {
         @Override
         public int getIntrinsicWidth() {
             return 1;
+        }
+    }
+
+    private static class ClippedMonoDrawable extends InsetDrawable {
+
+        private final AdaptiveIconDrawable mCrop;
+
+        public ClippedMonoDrawable(Drawable base) {
+            super(base, -getExtraInsetFraction());
+            mCrop = new AdaptiveIconDrawable(new ColorDrawable(Color.BLACK), null);
+        }
+
+        @Override
+        public void draw(Canvas canvas) {
+            mCrop.setBounds(getBounds());
+            int saveCount = canvas.save();
+            canvas.clipPath(mCrop.getIconMask());
+            super.draw(canvas);
+            canvas.restoreToCount(saveCount);
         }
     }
 }
