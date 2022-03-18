@@ -594,6 +594,11 @@ public abstract class BaseIconCache {
                 Bitmap monoBitmap = Bitmap.createBitmap(
                         icon.getWidth(), icon.getHeight(), Config.ALPHA_8);
                 monoBitmap.copyPixelsFromBuffer(ByteBuffer.wrap(data));
+                Bitmap hwMonoBitmap = monoBitmap.copy(Config.HARDWARE, false /*isMutable*/);
+                if (hwMonoBitmap != null) {
+                    monoBitmap.recycle();
+                    monoBitmap = hwMonoBitmap;
+                }
                 try (BaseIconFactory factory = getIconFactory()) {
                     entry.bitmap.setMonoIcon(monoBitmap, factory);
                 }
