@@ -74,6 +74,10 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         return new ThemedConstantState(bitmapInfo, colorBg, colorFg);
     }
 
+    public void changeBackgroundColor(int colorBg){
+        mBgPaint.setColorFilter(new BlendModeColorFilter(colorBg, BlendMode.SRC_IN));
+    }
+
     static class ThemedConstantState extends FastBitmapConstantState {
 
         final BitmapInfo bitmapInfo;
