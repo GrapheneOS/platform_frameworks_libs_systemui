@@ -112,4 +112,9 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         }
         return colors;
     }
+
+    @Override
+    public int getIconColor() {
+        return colorFg;
+    }
 }
