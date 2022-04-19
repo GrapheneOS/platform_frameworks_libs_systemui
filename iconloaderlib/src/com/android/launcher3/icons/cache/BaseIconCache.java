@@ -311,7 +311,7 @@ public abstract class BaseIconCache {
         return mDefaultIcon.withFlags(getUserFlagOpLocked(user));
     }
 
-    private FlagOp getUserFlagOpLocked(UserHandle user) {
+    protected FlagOp getUserFlagOpLocked(UserHandle user) {
         int key = user.hashCode();
         int index;
         if ((index = mUserFlagOpMap.indexOfKey(key)) >= 0) {
