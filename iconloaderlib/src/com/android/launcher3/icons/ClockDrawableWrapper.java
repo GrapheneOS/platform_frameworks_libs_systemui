@@ -60,6 +60,7 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
 
     private static final boolean DISABLE_SECONDS = true;
     private static final int NO_COLOR = -1;
+    private static final int FULLY_OPAQUE = 255;
 
     // Time after which the clock icon should check for an update. The actual invalidate
     // will only happen in case of any change.
@@ -370,6 +371,7 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
 
         private final Bitmap mBG;
         private final Paint mBgPaint = new Paint(Paint.FILTER_BITMAP_FLAG | Paint.ANTI_ALIAS_FLAG);
+        private final ColorFilter mBgFilter;
         private final int mThemedFgColor;
 
         private final AdaptiveIconDrawable mFullDrawable;
@@ -382,6 +384,7 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
             mAnimInfo = cs.mAnimInfo;
 
             mBG = cs.mBG;
+            mBgFilter = cs.mBgFilter;
             mBgPaint.setColorFilter(cs.mBgFilter);
             mThemedFgColor = cs.mThemedFgColor;
 
@@ -427,7 +430,11 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
         @Override
         protected void updateFilter() {
             super.updateFilter();
-            mFullDrawable.setColorFilter(mPaint.getColorFilter());
+            int alpha = mIsDisabled ? (int) (mDisabledAlpha * FULLY_OPAQUE) : FULLY_OPAQUE;
+            mBgPaint.setAlpha(alpha);
+            mFG.setAlpha(alpha);
+            mBgPaint.setColorFilter(mIsDisabled ? getDisabledColorFilter() : mBgFilter);
+            mFG.setColorFilter(mIsDisabled ? getDisabledColorFilter() : null);
         }
 
         @Override
