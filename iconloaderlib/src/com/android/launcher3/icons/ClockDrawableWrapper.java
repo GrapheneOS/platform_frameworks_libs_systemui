@@ -423,6 +423,18 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
         }
 
         @Override
+        public boolean setState(int[] stateSet) {
+            // If the user has just pressed the clock icon, and the clock app is launching,
+            // we don't want to change the time shown. Doing so can result in jank.
+            for (int state: stateSet) {
+                if (state == android.R.attr.state_pressed) {
+                    return false;
+                }
+            }
+            return super.setState(stateSet);
+        }
+
+        @Override
         public boolean isThemed() {
             return mBgPaint.getColorFilter() != null;
         }
