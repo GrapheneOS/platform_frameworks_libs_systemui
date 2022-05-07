@@ -73,4 +73,7 @@ public class LayoutType {
 
     // layout representing quick calculations
     public static final String CALCULATOR = "calculator";
+
+    // layout for the section header
+    public static final String SECTION_HEADER = "section_header";
 }
