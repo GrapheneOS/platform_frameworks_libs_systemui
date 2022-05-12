@@ -48,6 +48,7 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
 
     private static final float DISABLED_DESATURATION = 1f;
     private static final float DISABLED_BRIGHTNESS = 0.5f;
+    protected static final int FULLY_OPAQUE = 255;
 
     public static final int CLICK_FEEDBACK_DURATION = 200;
 
@@ -327,6 +328,14 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
         mat[18] = disabledAlpha;
         tempFilterMatrix.preConcat(tempBrightnessMatrix);
         return new ColorMatrixColorFilter(tempFilterMatrix);
+    }
+
+    protected static final int getDisabledColor(int color) {
+        int component = (Color.red(color) + Color.green(color) + Color.blue(color)) / 3;
+        float scale = 1 - DISABLED_BRIGHTNESS;
+        int brightnessI = (int) (255 * DISABLED_BRIGHTNESS);
+        component = Math.min(Math.round(scale * component + brightnessI), FULLY_OPAQUE);
+        return Color.rgb(component, component, component);
     }
 
     /**
