@@ -24,6 +24,7 @@ import android.graphics.Bitmap;
 import android.graphics.BlendMode;
 import android.graphics.BlendModeColorFilter;
 import android.graphics.Canvas;
+import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
@@ -45,6 +46,8 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
     private final Bitmap mBgBitmap;
     private final Paint mBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
 
+    private final ColorFilter mBgFilter, mMonoFilter;
+
     protected ThemedIconDrawable(ThemedConstantState constantState) {
         super(constantState.mBitmap, constantState.colorFg);
         bitmapInfo = constantState.bitmapInfo;
@@ -52,16 +55,31 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         colorFg = constantState.colorFg;
 
         mMonoIcon = bitmapInfo.mMono;
-        mMonoPaint.setColorFilter(new BlendModeColorFilter(colorFg, BlendMode.SRC_IN));
+        mMonoFilter = new BlendModeColorFilter(colorFg, BlendMode.SRC_IN);
+        mMonoPaint.setColorFilter(mMonoFilter);
 
         mBgBitmap = bitmapInfo.mWhiteShadowLayer;
-        mBgPaint.setColorFilter(new BlendModeColorFilter(colorBg, BlendMode.SRC_IN));
+        mBgFilter = new BlendModeColorFilter(colorBg, BlendMode.SRC_IN);
+        mBgPaint.setColorFilter(mBgFilter);
     }
 
     @Override
     protected void drawInternal(Canvas canvas, Rect bounds) {
         canvas.drawBitmap(mBgBitmap, null, bounds, mBgPaint);
         canvas.drawBitmap(mMonoIcon, null, bounds, mMonoPaint);
+    }
+
+    @Override
+    protected void updateFilter() {
+        super.updateFilter();
+        int alpha = mIsDisabled ? (int) (mDisabledAlpha * FULLY_OPAQUE) : FULLY_OPAQUE;
+        mBgPaint.setAlpha(alpha);
+        mBgPaint.setColorFilter(mIsDisabled ? new BlendModeColorFilter(
+                getDisabledColor(colorBg), BlendMode.SRC_IN) : mBgFilter);
+
+        mMonoPaint.setAlpha(alpha);
+        mMonoPaint.setColorFilter(mIsDisabled ? new BlendModeColorFilter(
+                getDisabledColor(colorFg), BlendMode.SRC_IN) : mMonoFilter);
     }
 
     @Override
