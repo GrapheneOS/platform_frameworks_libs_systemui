@@ -389,6 +389,10 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
 
             mFullDrawable = (AdaptiveIconDrawable) mAnimInfo.baseDrawableState.newDrawable();
             mFG = (LayerDrawable) mFullDrawable.getForeground();
+
+            // Time needs to be applied here since drawInternal is NOT guaranteed to be called
+            // before this foreground drawable is shown on the screen.
+            mAnimInfo.applyTime(mTime, mFG);
             mCanvasScale = 1 - 2 * mBoundsOffset;
         }
 
@@ -419,18 +423,6 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
             canvas.restoreToCount(saveCount);
 
             reschedule();
-        }
-
-        @Override
-        public boolean setState(int[] stateSet) {
-            // If the user has just pressed the clock icon, and the clock app is launching,
-            // we don't want to change the time shown. Doing so can result in jank.
-            for (int state: stateSet) {
-                if (state == android.R.attr.state_pressed) {
-                    return false;
-                }
-            }
-            return super.setState(stateSet);
         }
 
         @Override
