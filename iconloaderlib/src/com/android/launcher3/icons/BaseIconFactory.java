@@ -1,5 +1,6 @@
 package com.android.launcher3.icons;
 
+import static android.graphics.Paint.ANTI_ALIAS_FLAG;
 import static android.graphics.Paint.DITHER_FLAG;
 import static android.graphics.Paint.FILTER_BITMAP_FLAG;
 import static android.graphics.drawable.AdaptiveIconDrawable.getExtraInsetFraction;
@@ -69,8 +70,6 @@ public class BaseIconFactory implements AutoCloseable {
     private Drawable mWrapperIcon;
     private int mWrapperBackgroundColor = DEFAULT_WRAPPER_BACKGROUND;
 
-    private final Paint mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-    private static final float PLACEHOLDER_TEXT_SIZE = 20f;
     private static int PLACEHOLDER_BACKGROUND_COLOR = Color.rgb(245, 245, 245);
 
     protected BaseIconFactory(Context context, int fillResIconDpi, int iconBitmapSize,
@@ -85,10 +84,6 @@ public class BaseIconFactory implements AutoCloseable {
 
         mCanvas = new Canvas();
         mCanvas.setDrawFilter(new PaintFlagsDrawFilter(DITHER_FLAG, FILTER_BITMAP_FLAG));
-        mTextPaint.setTextAlign(Paint.Align.CENTER);
-        mTextPaint.setColor(PLACEHOLDER_BACKGROUND_COLOR);
-        mTextPaint.setTextSize(context.getResources().getDisplayMetrics().density *
-                PLACEHOLDER_TEXT_SIZE);
         clear();
     }
 
@@ -138,16 +133,11 @@ public class BaseIconFactory implements AutoCloseable {
      * @return
      */
     public BitmapInfo createIconBitmap(String placeholder, int color) {
-        Bitmap placeholderBitmap = Bitmap.createBitmap(mIconBitmapSize, mIconBitmapSize,
-                Bitmap.Config.ARGB_8888);
-        mTextPaint.setColor(color);
-        Canvas canvas = new Canvas(placeholderBitmap);
-        canvas.drawText(placeholder, mIconBitmapSize / 2, mIconBitmapSize * 5 / 8, mTextPaint);
         AdaptiveIconDrawable drawable = new AdaptiveIconDrawable(
                 new ColorDrawable(PLACEHOLDER_BACKGROUND_COLOR),
-                new BitmapDrawable(mContext.getResources(), placeholderBitmap));
+                new CenterTextDrawable(placeholder, color));
         Bitmap icon = createIconBitmap(drawable, IconNormalizer.ICON_VISIBLE_AREA_FACTOR);
-        return BitmapInfo.of(icon, extractColor(icon));
+        return BitmapInfo.of(icon, color);
     }
 
     public BitmapInfo createIconBitmap(Bitmap icon) {
@@ -489,6 +479,29 @@ public class BaseIconFactory implements AutoCloseable {
             canvas.clipPath(mCrop.getIconMask());
             super.draw(canvas);
             canvas.restoreToCount(saveCount);
+        }
+    }
+
+    private static class CenterTextDrawable extends ColorDrawable {
+
+        private final Rect mTextBounds = new Rect();
+        private final Paint mTextPaint = new Paint(ANTI_ALIAS_FLAG | FILTER_BITMAP_FLAG);
+        private final String mText;
+
+        CenterTextDrawable(String text, int color) {
+            mText = text;
+            mTextPaint.setColor(color);
+        }
+
+        @Override
+        public void draw(Canvas canvas) {
+            Rect bounds = getBounds();
+            mTextPaint.setTextSize(bounds.height() / 3f);
+            mTextPaint.getTextBounds(mText, 0, mText.length(), mTextBounds);
+            canvas.drawText(mText,
+                    bounds.exactCenterX() - mTextBounds.exactCenterX(),
+                    bounds.exactCenterY() - mTextBounds.exactCenterY(),
+                    mTextPaint);
         }
     }
 }
