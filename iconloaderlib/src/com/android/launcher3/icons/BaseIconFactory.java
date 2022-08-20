@@ -37,6 +37,8 @@ import androidx.annotation.Nullable;
 import com.android.launcher3.icons.BitmapInfo.Extender;
 import com.android.launcher3.util.FlagOp;
 
+import java.util.Objects;
+
 /**
  * This class will be moved to androidx library. There shouldn't be any dependency outside
  * this package.
@@ -51,12 +53,24 @@ public class BaseIconFactory implements AutoCloseable {
 
     private static final float ICON_BADGE_SCALE = 0.444f;
 
+    @NonNull
     private final Rect mOldBounds = new Rect();
+
+    @NonNull
     private final SparseBooleanArray mIsUserBadged = new SparseBooleanArray();
+
+    @NonNull
     protected final Context mContext;
+
+    @NonNull
     private final Canvas mCanvas;
+
+    @NonNull
     private final PackageManager mPm;
+
+    @NonNull
     private final ColorExtractor mColorExtractor;
+
     private boolean mDisableColorExtractor;
 
     protected final int mFillResIconDpi;
@@ -64,8 +78,12 @@ public class BaseIconFactory implements AutoCloseable {
 
     protected boolean mMonoIconEnabled;
 
+    @Nullable
     private IconNormalizer mNormalizer;
+
+    @Nullable
     private ShadowGenerator mShadowGenerator;
+
     private final boolean mShapeDetection;
 
     // Shadow bitmap used as background for theme icons
@@ -100,6 +118,7 @@ public class BaseIconFactory implements AutoCloseable {
         mDisableColorExtractor = false;
     }
 
+    @NonNull
     public ShadowGenerator getShadowGenerator() {
         if (mShadowGenerator == null) {
             mShadowGenerator = new ShadowGenerator(mIconBitmapSize);
@@ -107,6 +126,7 @@ public class BaseIconFactory implements AutoCloseable {
         return mShadowGenerator;
     }
 
+    @NonNull
     public IconNormalizer getNormalizer() {
         if (mNormalizer == null) {
             mNormalizer = new IconNormalizer(mContext, mIconBitmapSize, mShapeDetection);
@@ -155,6 +175,7 @@ public class BaseIconFactory implements AutoCloseable {
     /**
      * Creates an icon from the bitmap cropped to the current device icon shape
      */
+    @NonNull
     public BitmapInfo createShapedIconBitmap(Bitmap icon, IconOptions options) {
         Drawable d = new FixedSizeBitmapDrawable(icon);
         float inset = getExtraInsetFraction();
@@ -164,6 +185,7 @@ public class BaseIconFactory implements AutoCloseable {
         return createBadgedIconBitmap(d, options);
     }
 
+    @NonNull
     public BitmapInfo createBadgedIconBitmap(@NonNull Drawable icon) {
         return createBadgedIconBitmap(icon, null);
     }
@@ -176,6 +198,7 @@ public class BaseIconFactory implements AutoCloseable {
      * @return a bitmap suitable for disaplaying as an icon at various system UIs.
      */
     @TargetApi(Build.VERSION_CODES.TIRAMISU)
+    @NonNull
     public BitmapInfo createBadgedIconBitmap(@NonNull Drawable icon,
             @Nullable IconOptions options) {
         boolean shrinkNonAdaptiveIcons = options == null || options.mShrinkNonAdaptiveIcons;
@@ -202,6 +225,7 @@ public class BaseIconFactory implements AutoCloseable {
         return info;
     }
 
+    @NonNull
     public FlagOp getBitmapFlagOp(@Nullable IconOptions options) {
         FlagOp op = FlagOp.NO_OP;
         if (options != null) {
@@ -228,6 +252,7 @@ public class BaseIconFactory implements AutoCloseable {
     }
 
     /** package private */
+    @NonNull
     Bitmap getWhiteShadowLayer() {
         if (mWhiteShadowLayer == null) {
             mWhiteShadowLayer = createScaledBitmapWithShadow(
@@ -236,15 +261,16 @@ public class BaseIconFactory implements AutoCloseable {
         return mWhiteShadowLayer;
     }
 
-    /** package private */
-    public Bitmap createScaledBitmapWithShadow(Drawable d) {
+    @NonNull
+    public Bitmap createScaledBitmapWithShadow(@NonNull final Drawable d) {
         float scale = getNormalizer().getScale(d, null, null, null);
         Bitmap bitmap = createIconBitmap(d, scale);
         return BitmapRenderer.createHardwareBitmap(bitmap.getWidth(), bitmap.getHeight(),
                 canvas -> getShadowGenerator().recreateIcon(bitmap, canvas));
     }
 
-    public Bitmap createScaledBitmapWithoutShadow(Drawable icon) {
+    @NonNull
+    public Bitmap createScaledBitmapWithoutShadow(@Nullable Drawable icon) {
         RectF iconBounds = new RectF();
         float[] scale = new float[1];
         icon = normalizeAndWrapToAdaptiveIcon(icon, true, iconBounds, scale);
@@ -255,7 +281,7 @@ public class BaseIconFactory implements AutoCloseable {
     /**
      * Sets the background color used for wrapped adaptive icon
      */
-    public void setWrapperBackgroundColor(int color) {
+    public void setWrapperBackgroundColor(final int color) {
         mWrapperBackgroundColor = (Color.alpha(color) < 255) ? DEFAULT_WRAPPER_BACKGROUND : color;
     }
 
@@ -266,8 +292,10 @@ public class BaseIconFactory implements AutoCloseable {
         mDisableColorExtractor = true;
     }
 
-    protected Drawable normalizeAndWrapToAdaptiveIcon(@NonNull Drawable icon,
-            boolean shrinkNonAdaptiveIcons, RectF outIconBounds, float[] outScale) {
+    @Nullable
+    protected Drawable normalizeAndWrapToAdaptiveIcon(@Nullable Drawable icon,
+            final boolean shrinkNonAdaptiveIcons, @Nullable final RectF outIconBounds,
+            @NonNull final float[] outScale) {
         if (icon == null) {
             return null;
         }
@@ -298,12 +326,14 @@ public class BaseIconFactory implements AutoCloseable {
         return icon;
     }
 
-    protected Bitmap createIconBitmap(Drawable icon, float scale) {
+    @NonNull
+    protected Bitmap createIconBitmap(@Nullable final Drawable icon, final float scale) {
         return createIconBitmap(icon, scale, BITMAP_GENERATION_MODE_DEFAULT);
     }
 
-    protected Bitmap createIconBitmap(@NonNull Drawable icon, float scale,
-            int bitmapGenerationMode) {
+    @NonNull
+    protected Bitmap createIconBitmap(@Nullable final Drawable icon, final float scale,
+            final int bitmapGenerationMode) {
         final int size = mIconBitmapSize;
 
         final Bitmap bitmap;
@@ -381,36 +411,42 @@ public class BaseIconFactory implements AutoCloseable {
         clear();
     }
 
+    @NonNull
     public BitmapInfo makeDefaultIcon() {
         return createBadgedIconBitmap(getFullResDefaultActivityIcon(mFillResIconDpi));
     }
 
-    public static Drawable getFullResDefaultActivityIcon(int iconDpi) {
-        return Resources.getSystem().getDrawableForDensity(
-                android.R.drawable.sym_def_app_icon, iconDpi);
+    @NonNull
+    public static Drawable getFullResDefaultActivityIcon(final int iconDpi) {
+        return Objects.requireNonNull(Resources.getSystem().getDrawableForDensity(
+                android.R.drawable.sym_def_app_icon, iconDpi));
     }
 
-    private int extractColor(Bitmap bitmap) {
+    private int extractColor(@NonNull final Bitmap bitmap) {
         return mDisableColorExtractor ? 0 : mColorExtractor.findDominantColorByHue(bitmap);
     }
 
     /**
      * Returns the correct badge size given an icon size
      */
-    public static int getBadgeSizeForIconSize(int iconSize) {
+    public static int getBadgeSizeForIconSize(final int iconSize) {
         return (int) (ICON_BADGE_SCALE * iconSize);
     }
 
     public static class IconOptions {
 
         boolean mShrinkNonAdaptiveIcons = true;
+
         boolean mIsInstantApp;
+
+        @Nullable
         UserHandle mUserHandle;
 
         /**
          * Set to false if non-adaptive icons should not be treated
          */
-        public IconOptions setShrinkNonAdaptiveIcons(boolean shrink) {
+        @NonNull
+        public IconOptions setShrinkNonAdaptiveIcons(final boolean shrink) {
             mShrinkNonAdaptiveIcons = shrink;
             return this;
         }
@@ -418,7 +454,8 @@ public class BaseIconFactory implements AutoCloseable {
         /**
          * User for this icon, in case of badging
          */
-        public IconOptions setUser(UserHandle user) {
+        @NonNull
+        public IconOptions setUser(@Nullable final UserHandle user) {
             mUserHandle = user;
             return this;
         }
@@ -426,7 +463,8 @@ public class BaseIconFactory implements AutoCloseable {
         /**
          * If this icon represents an instant app
          */
-        public IconOptions setInstantApp(boolean instantApp) {
+        @NonNull
+        public IconOptions setInstantApp(final boolean instantApp) {
             mIsInstantApp = instantApp;
             return this;
         }
@@ -439,7 +477,7 @@ public class BaseIconFactory implements AutoCloseable {
      */
     private static class FixedSizeBitmapDrawable extends BitmapDrawable {
 
-        public FixedSizeBitmapDrawable(Bitmap bitmap) {
+        public FixedSizeBitmapDrawable(@Nullable final Bitmap bitmap) {
             super(null, bitmap);
         }
 
@@ -468,9 +506,10 @@ public class BaseIconFactory implements AutoCloseable {
 
     private static class ClippedMonoDrawable extends InsetDrawable {
 
+        @NonNull
         private final AdaptiveIconDrawable mCrop;
 
-        public ClippedMonoDrawable(Drawable base) {
+        public ClippedMonoDrawable(@Nullable final Drawable base) {
             super(base, -getExtraInsetFraction());
             mCrop = new AdaptiveIconDrawable(new ColorDrawable(Color.BLACK), null);
         }
@@ -487,11 +526,16 @@ public class BaseIconFactory implements AutoCloseable {
 
     private static class CenterTextDrawable extends ColorDrawable {
 
+        @NonNull
         private final Rect mTextBounds = new Rect();
+
+        @NonNull
         private final Paint mTextPaint = new Paint(ANTI_ALIAS_FLAG | FILTER_BITMAP_FLAG);
+
+        @NonNull
         private final String mText;
 
-        CenterTextDrawable(String text, int color) {
+        CenterTextDrawable(@NonNull final String text, final int color) {
             mText = text;
             mTextPaint.setColor(color);
         }
