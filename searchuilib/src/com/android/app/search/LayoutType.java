@@ -50,6 +50,10 @@ public class LayoutType {
     // This layout contains a series of thumbnails (currently up to 3 per row)
     public static final String THUMBNAIL_CONTAINER = "thumbnail_container";
 
+    // This layout creates a container for people grouping
+    // Only available above version code 2
+    public static final String BIG_ICON_MEDIUM_HEIGHT_ROW = "big_icon_medium_row";
+
     // This layout creates square thumbnail image (currently 3 column)
     public static final String THUMBNAIL = "thumbnail";
 
