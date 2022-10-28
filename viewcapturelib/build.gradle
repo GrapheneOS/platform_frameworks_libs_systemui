@@ -1,0 +1,51 @@
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+    id 'com.google.protobuf'
+}
+
+final String PROTOS_DIR = "${ANDROID_TOP}/frameworks/libs/systemui/viewcapturelib/src/com/android/app/viewcapture/proto"
+
+android {
+    compileSdk TARGET_SDK.toInteger()
+    buildToolsVersion = BUILD_TOOLS_VERSION
+
+    defaultConfig {
+        minSdkVersion TARGET_SDK.toInteger()
+        targetSdkVersion TARGET_SDK.toInteger()
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = ['src']
+            manifest.srcFile 'AndroidManifest.xml'
+            proto.srcDirs = ["${PROTOS_DIR}"]
+        }
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation "androidx.core:core:1.9.0"
+    implementation PROTOBUF_DEPENDENCY
+}
+
+protobuf {
+    // Configure the protoc executable
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.0.0${PROTO_ARCH_SUFFIX}"
+        generateProtoTasks {
+            all().each { task ->
+                task.builtins {
+                    remove java
+                    javanano {
+                        option "enum_style=c"
+                    }
+                }
+            }
+        }
+    }
+}
