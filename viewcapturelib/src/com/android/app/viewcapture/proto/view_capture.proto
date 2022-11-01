@@ -27,7 +27,7 @@ message ExportedData {
 }
 
 message FrameData {
-  optional int64 timestamp = 1;
+  optional int64 timestamp = 1; // choreographer timestamp in nanoseconds
   optional ViewNode node = 2;
 }
 

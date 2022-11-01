@@ -23,7 +23,6 @@ import android.content.res.Resources;
 import android.media.permission.SafeCloseable;
 import android.os.HandlerThread;
 import android.os.Looper;
-import android.os.SystemClock;
 import android.os.Trace;
 import android.text.TextUtils;
 import android.util.Base64;
@@ -31,6 +30,7 @@ import android.util.Base64OutputStream;
 import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
+import android.view.Choreographer;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -216,13 +216,19 @@ public class ViewCapture {
 
         private int mFrameIndexBg = -1;
         private boolean mIsFirstFrame = true;
-        private final long[] mFrameTimesBg = new long[MEMORY_SIZE];
+        private final long[] mFrameTimesNanosBg = new long[MEMORY_SIZE];
         private final ViewPropertyRef[] mNodesBg = new ViewPropertyRef[MEMORY_SIZE];
 
         private boolean mDestroyed = false;
         private final Consumer<ViewRef> mCaptureCallback = this::captureViewPropertiesBg;
+        private Choreographer mChoreographer;
 
         WindowListener(View view, String name) {
+            try {
+                mChoreographer = MAIN_EXECUTOR.submit(Choreographer::getInstance).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
             mRoot = view;
             this.name = name;
         }
@@ -234,7 +240,7 @@ public class ViewCapture {
             ViewRef captured = mViewRef.next;
             if (captured != null) {
                 captured.callback = mCaptureCallback;
-                captured.creationTime = SystemClock.uptimeMillis();
+                captured.choreographerTimeNanos = mChoreographer.getFrameTimeNanos();
                 mExecutor.execute(captured);
             }
             mIsFirstFrame = false;
@@ -247,12 +253,12 @@ public class ViewCapture {
          */
         @WorkerThread
         private void captureViewPropertiesBg(ViewRef viewRefStart) {
-            long time = viewRefStart.creationTime;
+            long choreographerTimeNanos = viewRefStart.choreographerTimeNanos;
             mFrameIndexBg++;
             if (mFrameIndexBg >= MEMORY_SIZE) {
                 mFrameIndexBg = 0;
             }
-            mFrameTimesBg[mFrameIndexBg] = time;
+            mFrameTimesNanosBg[mFrameIndexBg] = choreographerTimeNanos;
 
             ViewPropertyRef recycle = mNodesBg[mFrameIndexBg];
 
@@ -364,7 +370,7 @@ public class ViewCapture {
                 mNodesBg[index].toProto(idProvider, classList, node);
                 FrameData frameData = new FrameData();
                 frameData.node = node;
-                frameData.timestamp = mFrameTimesBg[index];
+                frameData.timestamp = mFrameTimesNanosBg[index];
                 exportedData.frameData[size - i - 1] = frameData;
             }
             exportedData.classname = classList.stream().map(Class::getName).toArray(String[]::new);
@@ -494,7 +500,7 @@ public class ViewCapture {
         public ViewRef next;
 
         public Consumer<ViewRef> callback = null;
-        public long creationTime = 0;
+        public long choreographerTimeNanos = 0;
 
         public void transferTo(ViewPropertyRef out) {
             out.childCount = this.childCount;
