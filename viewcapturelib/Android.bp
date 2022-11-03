@@ -46,3 +46,28 @@ android_library {
     ],
 }
 
+android_test {
+    name: "view_capture_tests",
+    manifest: "tests/AndroidManifest.xml",
+    platform_apis: true,
+    min_sdk_version: "26",
+
+    static_libs: [
+        "androidx.core_core",
+        "view_capture",
+        "androidx.test.ext.junit",
+        "androidx.test.rules",
+        "testables",
+        "mockito-target-extended-minus-junit4",
+    ],
+    srcs: [
+        "**/*.java",
+        "**/*.kt"
+    ],
+    libs: [
+        "android.test.runner",
+        "android.test.base",
+        "android.test.mock",
+    ],
+    test_suites: ["device-tests"],
+}

@@ -1,5 +1,5 @@
 plugins {
-    id 'com.android.library'
+    id 'sysuigradleproject.android-library-conventions'
     id 'org.jetbrains.kotlin.android'
     id 'com.google.protobuf'
 }
@@ -13,6 +13,7 @@ android {
     defaultConfig {
         minSdkVersion TARGET_SDK.toInteger()
         targetSdkVersion TARGET_SDK.toInteger()
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     sourceSets {
@@ -20,6 +21,10 @@ android {
             java.srcDirs = ['src']
             manifest.srcFile 'AndroidManifest.xml'
             proto.srcDirs = ["${PROTOS_DIR}"]
+        }
+        androidTest {
+            java.srcDirs = ["tests"]
+            manifest.srcFile "tests/AndroidManifest.xml"
         }
     }
 
@@ -31,6 +36,9 @@ android {
 dependencies {
     implementation "androidx.core:core:1.9.0"
     implementation PROTOBUF_DEPENDENCY
+    androidTestImplementation project(':SharedTestLib')
+    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+    androidTestImplementation "androidx.test:rules:1.4.0"
 }
 
 protobuf {
