@@ -71,21 +71,28 @@ public class ViewCapture {
     private static final int PFLAG_DIRTY_MASK = 0x00200000;
 
     // Number of frames to keep in memory
-    private static final int MEMORY_SIZE = 2000;
+    private final int mMemorySize;
+    private static final int DEFAULT_MEMORY_SIZE = 2000;
     // Initial size of the reference pool. This is at least be 5 * total number of views in
     // Launcher. This allows the first free frames avoid object allocation during view capture.
-    private static final int INIT_POOL_SIZE = 300;
+    private static final int DEFAULT_INIT_POOL_SIZE = 300;
 
     private static ViewCapture INSTANCE;
     public static final LooperExecutor MAIN_EXECUTOR = new LooperExecutor(Looper.getMainLooper());
 
     public static ViewCapture getInstance() {
+        return getInstance(true, DEFAULT_MEMORY_SIZE, DEFAULT_INIT_POOL_SIZE);
+    }
+
+    public static ViewCapture getInstance(boolean offloadToBackgroundThread, int memorySize,
+            int initPoolSize) {
         if (INSTANCE == null) {
             if (Looper.myLooper() == Looper.getMainLooper()) {
-                INSTANCE = new ViewCapture();
+                INSTANCE = new ViewCapture(offloadToBackgroundThread, memorySize, initPoolSize);
             } else {
                 try {
-                    return MAIN_EXECUTOR.submit(ViewCapture::getInstance).get();
+                    return MAIN_EXECUTOR.submit(() ->
+                            getInstance(offloadToBackgroundThread, memorySize, initPoolSize)).get();
                 } catch (InterruptedException | ExecutionException e) {
                     throw new RuntimeException(e);
                 }
@@ -101,10 +108,15 @@ public class ViewCapture {
     // Pool used for capturing view tree on the UI thread.
     private ViewRef mPool = new ViewRef();
 
-    private ViewCapture() {
-        mExecutor = createAndStartNewLooperExecutor("ViewCapture",
-                Process.THREAD_PRIORITY_FOREGROUND);
-        mExecutor.execute(this::initPool);
+    private ViewCapture(boolean offloadToBackgroundThread, int memorySize, int initPoolSize) {
+        mMemorySize = memorySize;
+        if (offloadToBackgroundThread) {
+            mExecutor = createAndStartNewLooperExecutor("ViewCapture",
+                    Process.THREAD_PRIORITY_FOREGROUND);
+        } else {
+            mExecutor = MAIN_EXECUTOR;
+        }
+        mExecutor.execute(() -> initPool(initPoolSize));
     }
 
     private static LooperExecutor createAndStartNewLooperExecutor(String name, int priority) {
@@ -120,11 +132,11 @@ public class ViewCapture {
     }
 
     @WorkerThread
-    private void initPool() {
+    private void initPool(int initPoolSize) {
         ViewRef start = new ViewRef();
         ViewRef current = start;
 
-        for (int i = 0; i < INIT_POOL_SIZE; i++) {
+        for (int i = 0; i < initPoolSize; i++) {
             current.next = new ViewRef();
             current = current.next;
         }
@@ -216,8 +228,8 @@ public class ViewCapture {
 
         private int mFrameIndexBg = -1;
         private boolean mIsFirstFrame = true;
-        private final long[] mFrameTimesNanosBg = new long[MEMORY_SIZE];
-        private final ViewPropertyRef[] mNodesBg = new ViewPropertyRef[MEMORY_SIZE];
+        private final long[] mFrameTimesNanosBg = new long[mMemorySize];
+        private final ViewPropertyRef[] mNodesBg = new ViewPropertyRef[mMemorySize];
 
         private boolean mDestroyed = false;
         private final Consumer<ViewRef> mCaptureCallback = this::captureViewPropertiesBg;
@@ -255,7 +267,7 @@ public class ViewCapture {
         private void captureViewPropertiesBg(ViewRef viewRefStart) {
             long choreographerTimeNanos = viewRefStart.choreographerTimeNanos;
             mFrameIndexBg++;
-            if (mFrameIndexBg >= MEMORY_SIZE) {
+            if (mFrameIndexBg >= mMemorySize) {
                 mFrameIndexBg = 0;
             }
             mFrameTimesNanosBg[mFrameIndexBg] = choreographerTimeNanos;
@@ -324,7 +336,7 @@ public class ViewCapture {
         }
 
         private ViewPropertyRef findInLastFrame(int hashCode) {
-            int lastFrameIndex = (mFrameIndexBg == 0) ? MEMORY_SIZE - 1 : mFrameIndexBg - 1;
+            int lastFrameIndex = (mFrameIndexBg == 0) ? mMemorySize - 1 : mFrameIndexBg - 1;
             ViewPropertyRef viewPropertyRef = mNodesBg[lastFrameIndex];
             while (viewPropertyRef != null && viewPropertyRef.hashCode != hashCode) {
                 viewPropertyRef = viewPropertyRef.next;
@@ -359,13 +371,13 @@ public class ViewCapture {
 
         @WorkerThread
         private ExportedData dumpToProto(ViewIdProvider idProvider) {
-            int size = (mNodesBg[MEMORY_SIZE - 1] == null) ? mFrameIndexBg + 1 : MEMORY_SIZE;
+            int size = (mNodesBg[mMemorySize - 1] == null) ? mFrameIndexBg + 1 : mMemorySize;
             ExportedData exportedData = new ExportedData();
             exportedData.frameData = new FrameData[size];
             ArrayList<Class> classList = new ArrayList<>();
 
             for (int i = size - 1; i >= 0; i--) {
-                int index = (MEMORY_SIZE + mFrameIndexBg - i) % MEMORY_SIZE;
+                int index = (mMemorySize + mFrameIndexBg - i) % mMemorySize;
                 ViewNode node = new ViewNode();
                 mNodesBg[index].toProto(idProvider, classList, node);
                 FrameData frameData = new FrameData();
