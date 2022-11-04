@@ -17,27 +17,34 @@ package {
 }
 
 java_library {
-    name: "view_capture_proto",
-    srcs: ["src/com/android/app/viewcapture/proto/*.proto"],
+    name: "motion_tool_proto",
+    srcs: ["src/com/android/app/motiontool/proto/*.proto"],
     proto: {
         type: "nano",
         local_include_dirs:[
-            "src/com/android/app/viewcapture/proto"
+            "src/com/android/app/motiontool/proto"
+        ],
+        include_dirs: [
+            "frameworks/libs/systemui/viewcapturelib/src/com/android/app/viewcapture/proto"
         ],
     },
-    static_libs: ["libprotobuf-java-nano"],
+    static_libs: [
+        "libprotobuf-java-nano",
+        "view_capture_proto",
+    ],
     java_version: "1.8",
 }
 
 android_library {
-    name: "view_capture",
+    name: "motion_tool_lib",
     manifest: "AndroidManifest.xml",
     platform_apis: true,
     min_sdk_version: "26",
 
     static_libs: [
         "androidx.core_core",
-        "view_capture_proto",
+        "view_capture",
+        "motion_tool_proto",
     ],
 
     srcs: [
@@ -47,7 +54,7 @@ android_library {
 }
 
 android_test {
-    name: "view_capture_tests",
+    name: "motion_tool_lib_tests",
     manifest: "tests/AndroidManifest.xml",
     platform_apis: true,
     min_sdk_version: "26",
@@ -55,10 +62,10 @@ android_test {
     static_libs: [
         "androidx.core_core",
         "view_capture",
+        "motion_tool_proto",
         "androidx.test.ext.junit",
         "androidx.test.rules",
-        "testables",
-        "mockito-target-extended-minus-junit4",
+        "testables"
     ],
     srcs: [
         "**/*.java",
@@ -67,7 +74,7 @@ android_test {
     libs: [
         "android.test.runner",
         "android.test.base",
-        "android.test.mock",
     ],
     test_suites: ["device-tests"],
 }
+
