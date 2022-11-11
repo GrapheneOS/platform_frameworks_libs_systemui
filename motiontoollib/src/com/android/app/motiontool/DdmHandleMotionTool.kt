@@ -44,7 +44,6 @@ class DdmHandleMotionTool private constructor(
         val CHUNK_MOTO = ChunkHandler.type("MOTO")
         private const val SERVER_VERSION = 1
 
-        @Volatile
         private var INSTANCE: DdmHandleMotionTool? = null
 
         @Synchronized
