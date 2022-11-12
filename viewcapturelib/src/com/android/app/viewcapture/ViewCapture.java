@@ -38,6 +38,7 @@ import android.view.Window;
 import android.os.Process;
 
 import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 
 import com.android.app.viewcapture.data.nano.ExportedData;
@@ -84,6 +85,7 @@ public class ViewCapture {
         return getInstance(true, DEFAULT_MEMORY_SIZE, DEFAULT_INIT_POOL_SIZE);
     }
 
+    @VisibleForTesting
     public static ViewCapture getInstance(boolean offloadToBackgroundThread, int memorySize,
             int initPoolSize) {
         if (INSTANCE == null) {

@@ -19,6 +19,7 @@ package com.android.app.motiontool
 import android.util.Log
 import android.view.View
 import android.view.WindowManagerGlobal
+import androidx.annotation.VisibleForTesting
 import com.android.app.motiontool.nano.WindowIdentifier
 import com.android.app.viewcapture.ViewCapture
 import com.android.app.viewcapture.data.nano.ExportedData
@@ -31,7 +32,7 @@ import com.android.app.viewcapture.data.nano.ExportedData
  *
  * To start a trace, use [beginTrace]. The returned handle must be used to terminate tracing and
  * receive the data by calling [endTrace]. While the trace is active, data is buffered, however
- * the buffer size is limited (@see [ViewCapture.MEMORY_SIZE]. Use [pollTrace] periodically to
+ * the buffer size is limited (@see [ViewCapture.mMemorySize]. Use [pollTrace] periodically to
  * ensure no data is dropped. Both, [pollTrace] and [endTrace] only return data captured since the
  * last call to either [beginTrace] or [endTrace].
  *
@@ -48,7 +49,6 @@ class MotionToolManager private constructor(
     companion object {
         private const val TAG = "MotionToolManager"
 
-        @Volatile
         private var INSTANCE: MotionToolManager? = null
 
         @Synchronized
@@ -65,12 +65,14 @@ class MotionToolManager private constructor(
     private var traceIdCounter = 0
     private val traces = mutableMapOf<Int, TraceMetadata>()
 
+    @Synchronized
     fun hasWindow(windowId: WindowIdentifier): Boolean {
         val rootView = getRootView(windowId.rootWindow)
         return rootView != null
     }
 
     /** Starts [ViewCapture] and returns a traceId. */
+    @Synchronized
     fun beginTrace(windowId: String): Int {
         val traceId = ++traceIdCounter
         Log.d(TAG, "Begin Trace for id: $traceId")
@@ -84,6 +86,7 @@ class MotionToolManager private constructor(
      * Ends [ViewCapture] and returns the captured [ExportedData] since the [beginTrace] call or the
      * last [pollTrace] call.
      */
+    @Synchronized
     fun endTrace(traceId: Int): ExportedData {
         Log.d(TAG, "End Trace for id: $traceId")
         val traceMetadata = traces.getOrElse(traceId) { throw UnknownTraceIdException(traceId) }
@@ -97,6 +100,7 @@ class MotionToolManager private constructor(
      * Returns the [ExportedData] captured since the [beginTrace] call or the last [pollTrace] call.
      * This function can only be used after [beginTrace] is called and before [endTrace] is called.
      */
+    @Synchronized
     fun pollTrace(traceId: Int): ExportedData {
         val traceMetadata = traces.getOrElse(traceId) { throw UnknownTraceIdException(traceId) }
         val exportedData = getExportedDataFromViewCapture(traceMetadata)
@@ -104,8 +108,13 @@ class MotionToolManager private constructor(
         return exportedData
     }
 
+    /**
+     * Stops and deletes all active [traces] and resets the [traceIdCounter].
+     */
+    @VisibleForTesting
+    @Synchronized
     fun reset() {
-        for(traceMetadata in traces.values){
+        for (traceMetadata in traces.values) {
             traceMetadata.stopTrace()
         }
         traces.clear()
