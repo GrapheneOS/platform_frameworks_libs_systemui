@@ -36,7 +36,7 @@ public class ResultType {
     public static final int PEOPLE = 1 << 2;
     public static final int ACTION = 1 << 3;
     public static final int SETTING = 1 << 4;
-    public static final int PHOTOS = 1 << 5;
+    public static final int IMAGE = 1 << 5;
     public static final int PLAY = 1 << 8;
     public static final int SUGGEST = 1 << 9;
     public static final int ASSISTANT = 1 << 10;
