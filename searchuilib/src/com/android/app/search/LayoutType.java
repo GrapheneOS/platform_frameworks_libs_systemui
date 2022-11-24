@@ -83,4 +83,8 @@ public class LayoutType {
 
     // layout for the section header
     public static final String SECTION_HEADER = "section_header";
+
+    // layout for a tall card with header and image, and no icon.
+    public static final String TALL_CARD_WITH_IMAGE_NO_ICON = "tall_card_with_image_no_icon";
+
 }
