@@ -31,9 +31,9 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.InsetDrawable;
 import android.os.Build;
 import android.os.UserHandle;
-import android.util.Log;
 import android.util.SparseBooleanArray;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -82,8 +82,6 @@ public class BaseIconFactory implements AutoCloseable {
     @NonNull
     private final ColorExtractor mColorExtractor;
 
-    private boolean mDisableColorExtractor;
-
     protected final int mFillResIconDpi;
     protected final int mIconBitmapSize;
 
@@ -126,7 +124,6 @@ public class BaseIconFactory implements AutoCloseable {
 
     protected void clear() {
         mWrapperBackgroundColor = DEFAULT_WRAPPER_BACKGROUND;
-        mDisableColorExtractor = false;
     }
 
     @NonNull
@@ -180,7 +177,7 @@ public class BaseIconFactory implements AutoCloseable {
             icon = createIconBitmap(new BitmapDrawable(mContext.getResources(), icon), 1f);
         }
 
-        return BitmapInfo.of(icon, extractColor(icon));
+        return BitmapInfo.of(icon, mColorExtractor.findDominantColorByHue(icon));
     }
 
     /**
@@ -217,7 +214,8 @@ public class BaseIconFactory implements AutoCloseable {
         icon = normalizeAndWrapToAdaptiveIcon(icon, shrinkNonAdaptiveIcons, null, scale);
         Bitmap bitmap = createIconBitmap(icon, scale[0], MODE_WITH_SHADOW);
 
-        int color = extractColor(bitmap);
+        int color = (options != null && options.mExtractedColor != null)
+                ? options.mExtractedColor : mColorExtractor.findDominantColorByHue(bitmap);
         BitmapInfo info = BitmapInfo.of(bitmap, color);
 
         if (icon instanceof BitmapInfo.Extender) {
@@ -286,13 +284,6 @@ public class BaseIconFactory implements AutoCloseable {
      */
     public void setWrapperBackgroundColor(final int color) {
         mWrapperBackgroundColor = (Color.alpha(color) < 255) ? DEFAULT_WRAPPER_BACKGROUND : color;
-    }
-
-    /**
-     * Disables the dominant color extraction for all icons loaded.
-     */
-    public void disableColorExtraction() {
-        mDisableColorExtractor = true;
     }
 
     @Nullable
@@ -448,10 +439,6 @@ public class BaseIconFactory implements AutoCloseable {
                 android.R.drawable.sym_def_app_icon, iconDpi));
     }
 
-    private int extractColor(@NonNull final Bitmap bitmap) {
-        return mDisableColorExtractor ? 0 : mColorExtractor.findDominantColorByHue(bitmap);
-    }
-
     /**
      * Returns the correct badge size given an icon size
      */
@@ -465,8 +452,10 @@ public class BaseIconFactory implements AutoCloseable {
 
         boolean mIsInstantApp;
 
-        @Nullable
-        UserHandle mUserHandle;
+        @Nullable UserHandle mUserHandle;
+
+        @ColorInt
+        @Nullable Integer mExtractedColor;
 
         /**
          * Set to false if non-adaptive icons should not be treated
@@ -492,6 +481,15 @@ public class BaseIconFactory implements AutoCloseable {
         @NonNull
         public IconOptions setInstantApp(final boolean instantApp) {
             mIsInstantApp = instantApp;
+            return this;
+        }
+
+        /**
+         * Disables auto color extraction and overrides the color to the provided value
+         */
+        @NonNull
+        public IconOptions setExtractedColor(@ColorInt int color) {
+            mExtractedColor = color;
             return this;
         }
     }
