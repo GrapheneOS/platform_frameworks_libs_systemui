@@ -112,6 +112,11 @@ class MotionToolManagerTest {
 
     }
 
-    private fun getActivityViewRootId() = WindowManagerGlobal.getInstance().viewRootNames.first()
-
+    private fun getActivityViewRootId(): String {
+        var activityViewRootId = ""
+        activityScenarioRule.scenario.onActivity {
+            activityViewRootId = WindowManagerGlobal.getInstance().viewRootNames.first()
+        }
+        return activityViewRootId
+    }
 }
