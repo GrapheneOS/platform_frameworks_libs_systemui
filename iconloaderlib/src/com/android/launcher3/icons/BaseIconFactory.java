@@ -220,18 +220,29 @@ public class BaseIconFactory implements AutoCloseable {
 
         if (icon instanceof BitmapInfo.Extender) {
             info = ((BitmapInfo.Extender) icon).getExtendedInfo(bitmap, color, this, scale[0]);
-        } else if (mMonoIconEnabled && IconProvider.ATLEAST_T
-                && icon instanceof AdaptiveIconDrawable) {
-            Drawable mono = ((AdaptiveIconDrawable) icon).getMonochrome();
+        } else if (IconProvider.ATLEAST_T && mMonoIconEnabled) {
+            Drawable mono = getMonochromeDrawable(icon);
             if (mono != null) {
-                // Convert mono drawable to bitmap
-                Drawable paddedMono = new ClippedMonoDrawable(mono);
-                info.setMonoIcon(
-                        createIconBitmap(paddedMono, scale[0], MODE_ALPHA), this);
+                info.setMonoIcon(createIconBitmap(mono, scale[0], MODE_ALPHA), this);
             }
         }
         info = info.withFlags(getBitmapFlagOp(options));
         return info;
+    }
+
+    /**
+     * Returns a monochromatic version of the given drawable or null, if it is not supported
+     * @param base the original icon
+     */
+    @TargetApi(Build.VERSION_CODES.TIRAMISU)
+    protected Drawable getMonochromeDrawable(Drawable base) {
+        if (base instanceof AdaptiveIconDrawable) {
+            Drawable mono = ((AdaptiveIconDrawable) base).getMonochrome();
+            if (mono != null) {
+                return new ClippedMonoDrawable(mono);
+            }
+        }
+        return null;
     }
 
     @NonNull
@@ -528,7 +539,7 @@ public class BaseIconFactory implements AutoCloseable {
         }
     }
 
-    private static class ClippedMonoDrawable extends InsetDrawable {
+    protected static class ClippedMonoDrawable extends InsetDrawable {
 
         @NonNull
         private final AdaptiveIconDrawable mCrop;
