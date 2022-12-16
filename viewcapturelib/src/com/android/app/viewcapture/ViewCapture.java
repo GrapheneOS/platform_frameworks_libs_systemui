@@ -37,6 +37,7 @@ import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.os.Process;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
@@ -221,6 +222,44 @@ public class ViewCapture {
                 .findFirst();
     }
 
+    /**
+     * Once this window listener is attached to a window's root view, it traverses the entire
+     * view tree on the main thread every time onDraw is called. It then saves the state of the view
+     * tree traversed in a local list of nodes, so that this list of nodes can be processed on a
+     * background thread, and prepared for being dumped into a bugreport.
+     *
+     * Since some of the work needs to be done on the main thread after every draw, this piece of
+     * code needs to be hyper optimized. That is why we are recycling ViewRef and ViewPropertyRef
+     * objects and storing the list of nodes as a flat LinkedList, rather than as a tree. This data
+     * structure allows recycling to happen in O(1) time via pointer assignment. Without this
+     * optimization, a lot of time is wasted creating ViewRef objects, or finding ViewRef objects to
+     * recycle.
+     *
+     * Another optimization is to only traverse view nodes on the main thread that have potentially
+     * changed since the last frame was drawn. This can be determined via a combination of private
+     * flags inside the View class.
+     *
+     * Another optimization is to not store or manipulate any string objects on the main thread.
+     * While this might seem trivial, using Strings in any form causes the ViewCapture to hog the
+     * main thread for up to an additional 6-7ms. It must be avoided at all costs.
+     *
+     * Another optimization is to only store the class names of the Views in the view hierarchy one
+     * time. They are then referenced via a classNameIndex value stored in each ViewPropertyRef.
+     *
+     * TODO: b/262585897: If further memory optimization is required, an effective one would be to
+     * only store the changes between frames, rather than the entire node tree for each frame.
+     * The go/web-hv UX already does this, and has reaped significant memory improves because of it.
+     *
+     * TODO: b/262585897: Another memory optimization could be to store all integer, float, and
+     * boolean information via single integer values via the Chinese remainder theorem, or a similar
+     * algorithm, which enables multiple numerical values to be stored inside 1 number. Doing this
+     * would allow each ViewProperty / ViewRef to slim down its memory footprint significantly.
+     *
+     * One important thing to remember is that bugs related to recycling will usually only appear
+     * after at least 2000 frames have been rendered. If that code is changed, the tester can
+     * use hard-coded logs to verify that recycling is happening, and test view capturing at least
+     * ~8000 frames or so to verify the recycling functionality is working properly.
+     */
     private class WindowListener implements ViewTreeObserver.OnDrawListener {
 
         public final View mRoot;
@@ -247,6 +286,12 @@ public class ViewCapture {
             this.name = name;
         }
 
+        /**
+         * Every time onDraw is called, it does the minimal set of work required on the main thread,
+         * i.e. capturing potentially dirty / invalidated views, and then immediately offloads the
+         * rest of the processing work (extracting the captured view properties) to a background
+         * thread via mExecutor.
+         */
         @Override
         public void onDraw() {
             Trace.beginSection("view_capture");
@@ -337,7 +382,7 @@ public class ViewCapture {
             mNodesBg[mFrameIndexBg] = resultStart;
         }
 
-        private ViewPropertyRef findInLastFrame(int hashCode) {
+        private @Nullable ViewPropertyRef findInLastFrame(int hashCode) {
             int lastFrameIndex = (mFrameIndexBg == 0) ? mMemorySize - 1 : mFrameIndexBg - 1;
             ViewPropertyRef viewPropertyRef = mNodesBg[lastFrameIndex];
             while (viewPropertyRef != null && viewPropertyRef.hashCode != hashCode) {
