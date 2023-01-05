@@ -49,7 +49,7 @@ dependencies {
 protobuf {
     // Configure the protoc executable
     protoc {
-        artifact = "com.google.protobuf:protoc:3.0.0${PROTO_ARCH_SUFFIX}"
+        artifact = "com.google.protobuf:protoc:${protobuf_version}${PROTO_ARCH_SUFFIX}"
         generateProtoTasks {
             all().each { task ->
                 task.builtins {
