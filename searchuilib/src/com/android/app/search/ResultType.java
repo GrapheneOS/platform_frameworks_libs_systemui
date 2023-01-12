@@ -36,7 +36,7 @@ public class ResultType {
     public static final int PEOPLE = 1 << 2;
     public static final int ACTION = 1 << 3;
     public static final int SETTING = 1 << 4;
-    public static final int SCREENSHOT = 1 << 5;
+    public static final int IMAGE = 1 << 5;
     public static final int PLAY = 1 << 8;
     public static final int SUGGEST = 1 << 9;
     public static final int ASSISTANT = 1 << 10;
@@ -47,4 +47,8 @@ public class ResultType {
     public static final int LEGACY_SHORTCUT = 1 << 15;
     public static final int MEMORY = 1 << 16;
     public static final int WEB_SUGGEST = 1 << 17;
+    public static final int NO_FULFILLMENT = 1 << 18;
+    public static final int EDUCARD = 1 << 19;
+    public static final int SYSTEM_POINTER = 1 << 20;
+    public static final int VIDEO = 1 << 21;
 }
