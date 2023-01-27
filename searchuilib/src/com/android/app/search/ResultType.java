@@ -55,8 +55,9 @@ public class ResultType {
     public static final int PUBLIC_DATA_TYPE = APPLICATION | SETTING | PLAY | WEB_SUGGEST;
     public static final int PRIMITIVE_TYPE = APPLICATION | SLICE | SHORTCUT | WIDGETS | ACTION |
             LEGACY_SHORTCUT;
-    public static final int CORPUS_TYPE = SETTING | IMAGE | PLAY | SUGGEST | ASSISTANT | CHROMETAB |
-            NAVVYSITE | TIPS | PEOPLE_TILE | MEMORY | WEB_SUGGEST | VIDEO;
+    public static final int CORPUS_TYPE =
+            PEOPLE | SETTING | IMAGE | PLAY | SUGGEST | ASSISTANT | CHROMETAB | NAVVYSITE | TIPS
+                    | PEOPLE_TILE | MEMORY | WEB_SUGGEST | VIDEO;
     public static final int RANK_TYPE = SYSTEM_POINTER;
     public static final int UI_TYPE = EDUCARD | NO_FULFILLMENT;
 
@@ -82,9 +83,8 @@ public class ResultType {
         return (resultType & PRIMITIVE_TYPE);
     }
 
-
     /**
-     * Returns whether the given result type is not privacy sensitive.
+     * Returns whether the given result type is privacy safe or not.
      */
     public static boolean isPrivacySafe(int resultType) {
         return (resultType & PUBLIC_DATA_TYPE) != 0;
