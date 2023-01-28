@@ -74,9 +74,6 @@ public class LayoutType {
     public static final String TEXT_HEADER = "header";
 
     // horizontal bar to be inserted between fallback search results and low confidence section
-    public static final String DIVIDER = "divider";
-
-    // horizontal bar to be inserted between fallback search results and low confidence section
     public static final String EMPTY_DIVIDER = "empty_divider";
 
     // layout representing quick calculations
