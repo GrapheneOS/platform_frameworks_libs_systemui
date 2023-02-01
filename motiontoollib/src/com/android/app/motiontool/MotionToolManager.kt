@@ -16,7 +16,9 @@
 
 package com.android.app.motiontool
 
+import android.os.Process
 import android.util.Log
+import android.view.Choreographer
 import android.view.View
 import android.view.WindowManagerGlobal
 import androidx.annotation.VisibleForTesting
@@ -41,10 +43,8 @@ import com.android.app.viewcapture.data.nano.ExportedData
  *
  * @see [DdmHandleMotionTool]
  */
-class MotionToolManager private constructor(
-    private val viewCapture: ViewCapture,
-    private val windowManagerGlobal: WindowManagerGlobal
-) {
+class MotionToolManager private constructor(private val windowManagerGlobal: WindowManagerGlobal) {
+    private val viewCapture: ViewCapture = SimpleViewCapture()
 
     companion object {
         private const val TAG = "MotionToolManager"
@@ -52,13 +52,8 @@ class MotionToolManager private constructor(
         private var INSTANCE: MotionToolManager? = null
 
         @Synchronized
-        fun getInstance(
-            viewCapture: ViewCapture,
-            windowManagerGlobal: WindowManagerGlobal
-        ): MotionToolManager {
-            return INSTANCE ?: MotionToolManager(viewCapture, windowManagerGlobal).also {
-                INSTANCE = it
-            }
+        fun getInstance(windowManagerGlobal: WindowManagerGlobal): MotionToolManager {
+            return INSTANCE ?: MotionToolManager(windowManagerGlobal).also { INSTANCE = it }
         }
     }
 
@@ -139,6 +134,10 @@ class MotionToolManager private constructor(
     private fun getRootView(windowId: String): View? {
         return windowManagerGlobal.getRootView(windowId)
     }
+
+    class SimpleViewCapture : ViewCapture(DEFAULT_MEMORY_SIZE, DEFAULT_INIT_POOL_SIZE,
+            MAIN_EXECUTOR.submit { Choreographer.getInstance() }.get(),
+            createAndStartNewLooperExecutor("MTViewCapture", Process.THREAD_PRIORITY_FOREGROUND))
 }
 
 private data class TraceMetadata(

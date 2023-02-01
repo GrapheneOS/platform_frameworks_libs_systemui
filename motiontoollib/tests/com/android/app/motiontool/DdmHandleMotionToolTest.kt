@@ -18,6 +18,7 @@ package com.android.app.motiontool
 
 import android.content.Intent
 import android.testing.AndroidTestingRunner
+import android.view.Choreographer
 import android.view.View
 import android.view.WindowManagerGlobal
 import androidx.test.ext.junit.rules.ActivityScenarioRule
@@ -34,7 +35,6 @@ import com.android.app.motiontool.nano.MotionToolsResponse
 import com.android.app.motiontool.nano.PollTraceRequest
 import com.android.app.motiontool.nano.WindowIdentifier
 import com.android.app.motiontool.util.TestActivity
-import com.android.app.viewcapture.ViewCapture
 import com.google.protobuf.nano.MessageNano
 import junit.framework.Assert
 import junit.framework.Assert.assertEquals
@@ -46,17 +46,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-
 @SmallTest
 @RunWith(AndroidTestingRunner::class)
 class DdmHandleMotionToolTest {
 
-    private val viewCaptureMemorySize = 100
-    private val viewCaptureInitPoolSize = 15
-    private val viewCapture =
-        ViewCapture.getInstance(false, viewCaptureMemorySize, viewCaptureInitPoolSize)
     private val windowManagerGlobal = WindowManagerGlobal.getInstance()
-    private val motionToolManager = MotionToolManager.getInstance(viewCapture, windowManagerGlobal)
+    private val motionToolManager = MotionToolManager.getInstance(windowManagerGlobal)
     private val ddmHandleMotionTool = DdmHandleMotionTool.getInstance(motionToolManager)
     private val CLIENT_VERSION = 1
 
@@ -74,7 +69,6 @@ class DdmHandleMotionToolTest {
     @After
     fun cleanup() {
         ddmHandleMotionTool.unregister()
-        motionToolManager.reset()
     }
 
     @Test
@@ -141,24 +135,21 @@ class DdmHandleMotionToolTest {
 
     @Test
     fun testOneOnDrawCallReturnsOneFrameResponse() {
-        var traceId = 0
-        activityScenarioRule.scenario.onActivity {
+        activityScenarioRule.scenario.onActivity { activity ->
             val beginTraceResponse = performBeginTraceRequest(getActivityViewRootId())
-            traceId = beginTraceResponse.beginTrace.traceId
-            val rootView = it.findViewById<View>(android.R.id.content)
-            rootView.invalidate()
+            val traceId = beginTraceResponse.beginTrace.traceId
+
+            Choreographer.getInstance().postFrameCallback {
+                activity.findViewById<View>(android.R.id.content).viewTreeObserver.dispatchOnDraw()
+
+                val pollTraceResponse = performPollTraceRequest(traceId)
+                assertEquals(1, pollTraceResponse.pollTrace.exportedData.frameData.size)
+
+                // Verify that frameData is only included once and is not returned again
+                val endTraceResponse = performEndTraceRequest(traceId)
+                assertEquals(0, endTraceResponse.endTrace.exportedData.frameData.size)
+            }
         }
-
-        // waits until main looper has no remaining tasks and is idle
-        activityScenarioRule.scenario.onActivity {
-            val pollTraceResponse = performPollTraceRequest(traceId)
-            assertEquals(1, pollTraceResponse.pollTrace.exportedData.frameData.size)
-
-            // Verify that frameData is only included once and is not returned again
-            val endTraceResponse = performEndTraceRequest(traceId)
-            assertEquals(0, endTraceResponse.endTrace.exportedData.frameData.size)
-        }
-
     }
 
     private fun performPollTraceRequest(requestTraceId: Int): MotionToolsResponse {

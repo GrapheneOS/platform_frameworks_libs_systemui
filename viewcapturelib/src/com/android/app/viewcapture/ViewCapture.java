@@ -35,11 +35,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.Window;
-import android.os.Process;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 
 import com.android.app.viewcapture.data.nano.ExportedData;
@@ -54,9 +52,8 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
 import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
@@ -64,7 +61,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * Utility class for capturing view data every frame
  */
-public class ViewCapture {
+public abstract class ViewCapture {
 
     private static final String TAG = "ViewCapture";
 
@@ -74,55 +71,31 @@ public class ViewCapture {
 
     // Number of frames to keep in memory
     private final int mMemorySize;
-    private static final int DEFAULT_MEMORY_SIZE = 2000;
+    protected static final int DEFAULT_MEMORY_SIZE = 2000;
     // Initial size of the reference pool. This is at least be 5 * total number of views in
     // Launcher. This allows the first free frames avoid object allocation during view capture.
-    private static final int DEFAULT_INIT_POOL_SIZE = 300;
+    protected static final int DEFAULT_INIT_POOL_SIZE = 300;
 
-    private static ViewCapture INSTANCE;
     public static final LooperExecutor MAIN_EXECUTOR = new LooperExecutor(Looper.getMainLooper());
-
-    public static ViewCapture getInstance() {
-        return getInstance(true, DEFAULT_MEMORY_SIZE, DEFAULT_INIT_POOL_SIZE);
-    }
-
-    @VisibleForTesting
-    public static ViewCapture getInstance(boolean offloadToBackgroundThread, int memorySize,
-            int initPoolSize) {
-        if (INSTANCE == null) {
-            if (Looper.myLooper() == Looper.getMainLooper()) {
-                INSTANCE = new ViewCapture(offloadToBackgroundThread, memorySize, initPoolSize);
-            } else {
-                try {
-                    return MAIN_EXECUTOR.submit(() ->
-                            getInstance(offloadToBackgroundThread, memorySize, initPoolSize)).get();
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-        return INSTANCE;
-    }
 
     private final List<WindowListener> mListeners = new ArrayList<>();
 
-    private final Executor mExecutor;
+    protected final Executor mBgExecutor;
+    private final Choreographer mChoreographer;
 
     // Pool used for capturing view tree on the UI thread.
     private ViewRef mPool = new ViewRef();
+    private boolean mIsEnabled = true;
 
-    private ViewCapture(boolean offloadToBackgroundThread, int memorySize, int initPoolSize) {
+    protected ViewCapture(int memorySize, int initPoolSize, Choreographer choreographer,
+            Executor bgExecutor) {
         mMemorySize = memorySize;
-        if (offloadToBackgroundThread) {
-            mExecutor = createAndStartNewLooperExecutor("ViewCapture",
-                    Process.THREAD_PRIORITY_FOREGROUND);
-        } else {
-            mExecutor = MAIN_EXECUTOR;
-        }
-        mExecutor.execute(() -> initPool(initPoolSize));
+        mChoreographer = choreographer;
+        mBgExecutor = bgExecutor;
+        mBgExecutor.execute(() -> initPool(initPoolSize));
     }
 
-    private static LooperExecutor createAndStartNewLooperExecutor(String name, int priority) {
+    public static LooperExecutor createAndStartNewLooperExecutor(String name, int priority) {
         HandlerThread thread = new HandlerThread(name, priority);
         thread.start();
         return new LooperExecutor(thread.getLooper());
@@ -158,17 +131,26 @@ public class ViewCapture {
     }
 
     /**
-     * Attaches the ViewCapture to the provided window and returns a handle to detach the listener
+     * Attaches the ViewCapture to the provided window and returns a handle to detach the listener.
+     * Verifies that ViewCapture is enabled before actually attaching an onDrawListener.
      */
     public SafeCloseable startCapture(View view, String name) {
         WindowListener listener = new WindowListener(view, name);
-        mExecutor.execute(() -> MAIN_EXECUTOR.execute(listener::attachToRoot));
+        if (mIsEnabled) MAIN_EXECUTOR.execute(listener::attachToRoot);
         mListeners.add(listener);
         return () -> {
             mListeners.remove(listener);
-            listener.destroy();
+            listener.detachFromRoot();
         };
     }
+
+    @UiThread
+    protected void enableOrDisableWindowListeners(boolean isEnabled) {
+        mIsEnabled = isEnabled;
+        mListeners.forEach(WindowListener::detachFromRoot);
+        if (mIsEnabled) mListeners.forEach(WindowListener::attachToRoot);
+    }
+
 
     /**
      * Dumps all the active view captures
@@ -181,7 +163,7 @@ public class ViewCapture {
                 .map(l -> {
                     FutureTask<ExportedData> task =
                             new FutureTask<ExportedData>(() -> l.dumpToProto(idProvider));
-                    mExecutor.execute(task);
+                    mBgExecutor.execute(task);
                     return Pair.create(l.name, task);
                 })
                 .collect(toList());
@@ -216,7 +198,7 @@ public class ViewCapture {
                 .map(l -> {
                     FutureTask<ExportedData> task =
                             new FutureTask<ExportedData>(() -> l.dumpToProto(idProvider));
-                    mExecutor.execute(task);
+                    mBgExecutor.execute(task);
                     return task;
                 })
                 .findFirst();
@@ -272,16 +254,10 @@ public class ViewCapture {
         private final long[] mFrameTimesNanosBg = new long[mMemorySize];
         private final ViewPropertyRef[] mNodesBg = new ViewPropertyRef[mMemorySize];
 
-        private boolean mDestroyed = false;
+        private boolean mIsActive = true;
         private final Consumer<ViewRef> mCaptureCallback = this::captureViewPropertiesBg;
-        private Choreographer mChoreographer;
 
         WindowListener(View view, String name) {
-            try {
-                mChoreographer = MAIN_EXECUTOR.submit(Choreographer::getInstance).get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
-            }
             mRoot = view;
             this.name = name;
         }
@@ -300,7 +276,7 @@ public class ViewCapture {
             if (captured != null) {
                 captured.callback = mCaptureCallback;
                 captured.choreographerTimeNanos = mChoreographer.getFrameTimeNanos();
-                mExecutor.execute(captured);
+                mBgExecutor.execute(captured);
             }
             mIsFirstFrame = false;
             Trace.endSection();
@@ -392,14 +368,15 @@ public class ViewCapture {
         }
 
         void attachToRoot() {
+            mIsActive = true;
             if (mRoot.isAttachedToWindow()) {
-                mRoot.getViewTreeObserver().addOnDrawListener(this);
+                safelyEnableOnDrawListener();
             } else {
                 mRoot.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
                     @Override
                     public void onViewAttachedToWindow(View v) {
-                        if (!mDestroyed) {
-                            mRoot.getViewTreeObserver().addOnDrawListener(WindowListener.this);
+                        if (mIsActive) {
+                            safelyEnableOnDrawListener();
                         }
                         mRoot.removeOnAttachStateChangeListener(this);
                     }
@@ -411,9 +388,14 @@ public class ViewCapture {
             }
         }
 
-        void destroy() {
+        void detachFromRoot() {
+            mIsActive = false;
             mRoot.getViewTreeObserver().removeOnDrawListener(this);
-            mDestroyed = true;
+        }
+
+        private void safelyEnableOnDrawListener() {
+            mRoot.getViewTreeObserver().removeOnDrawListener(this);
+            mRoot.getViewTreeObserver().addOnDrawListener(this);
         }
 
         @WorkerThread
