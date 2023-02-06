@@ -71,6 +71,17 @@ public class SearchTargetExtras {
     public static final String BUNDLE_EXTRA_TALL_CARD_IMAGE_DESCRIPTION =
             "tall_card_image_description";
     public static final String BUNDLE_EXTRA_BITMAP_URL = "bitmap_url";
+    /**
+     *  Flag to control whether thumbnail(s) should fill the thumbnail container's width or not.
+     *  When this flag is true, when there are less than the maximum number of thumbnails in the
+     *  container, the thumbnails will stretch to fill the container's width.
+     *  When this flag is false, thumbnails will always be cropped to a square ratio even if
+     *  there aren't enough thumbnails to fill the container.
+     *
+     *  Only relevant in {@link LayoutType.THUMBNAIL_CONTAINER} and {@link LayoutType.THUMBNAIL}.
+     */
+    public static final String BUNDLE_EXTRA_SHOULD_FILL_CONTAINER_WIDTH =
+            "should_fill_container_width";
     public static final String BUNDLE_EXTRA_SUGGESTION_ACTION_TEXT = "suggestion_action_text";
     public static final String BUNDLE_EXTRA_SUGGESTION_ACTION_RPC = "suggestion_action_rpc";
     public static final String BUNDLE_EXTRA_SUPPORT_QUERY_BUILDER = "support_query_builder";
