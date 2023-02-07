@@ -2,7 +2,9 @@ package com.android.app.search;
 
 import static com.android.app.search.LayoutType.TALL_CARD_WITH_IMAGE_NO_ICON;
 
+import android.app.blob.BlobHandle;
 import android.app.search.SearchTarget;
+import android.os.Bundle;
 import android.text.TextUtils;
 
 import androidx.annotation.Nullable;
@@ -38,23 +40,39 @@ public class SearchTargetExtras {
     // Indicates the search result app location column
     public static final String BUNDLE_EXTRA_RESULT_APP_GRIDX = "app_gridx";
 
+    // Used for thumbnail loading. Contains handle to retrieve Blobstore asset.
+    public static final String BUNDLE_EXTRA_BLOBSTORE_HANDLE = "blobstore_handle_key";
+
     public static final int GROUPING = 1 << 1;
 
     @Nullable
     public static String getDecoratorId(@Nullable SearchTarget target) {
-        return (target == null || target.getExtras() == null) ? null :
+        return isTargetOrExtrasNull(target) ? null :
                 target.getExtras().getString(BUNDLE_EXTRA_GROUP_ID);
     }
 
     public static int getDecoratorType(@Nullable SearchTarget target) {
         int type = 0;
-        if (target == null || target.getExtras() == null) {
+        if (isTargetOrExtrasNull(target)) {
             return type;
         }
         if (!TextUtils.isEmpty(target.getExtras().getString(BUNDLE_EXTRA_GROUP_ID))) {
             type |= GROUPING;
         }
         return type;
+    }
+
+    /** Whether or not the SearchTarget's Extras contains a blobstore image. */
+    public static boolean isSearchTargetBlobstoreAsset(@Nullable SearchTarget target) {
+        if (isTargetOrExtrasNull(target)) {
+            return false;
+        }
+        return target.getExtras().getParcelable(
+                BUNDLE_EXTRA_BLOBSTORE_HANDLE) instanceof BlobHandle;
+    }
+
+    private static boolean isTargetOrExtrasNull(@Nullable SearchTarget target) {
+        return target == null || target.getExtras() == null;
     }
 
     /** Web data related extras and helper methods */
@@ -101,7 +119,7 @@ public class SearchTargetExtras {
 
     /** Whether the search target is a rich answer web result. */
     public static boolean isRichAnswer(@Nullable SearchTarget target) {
-        return target !=null && isAnswer(target)
+        return target != null && isAnswer(target)
                 && target.getLayoutType().equals(TALL_CARD_WITH_IMAGE_NO_ICON);
     }
 }
