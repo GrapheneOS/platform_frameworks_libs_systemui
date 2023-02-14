@@ -116,8 +116,6 @@ public class SearchTargetExtras {
      */
     public static final String BUNDLE_EXTRA_SHOULD_FILL_CONTAINER_WIDTH =
             "should_fill_container_width";
-    public static final String BUNDLE_EXTRA_SUGGESTION_ACTION_TEXT = "suggestion_action_text";
-    public static final String BUNDLE_EXTRA_SUGGESTION_ACTION_RPC = "suggestion_action_rpc";
     public static final String BUNDLE_EXTRA_SUPPORT_QUERY_BUILDER = "support_query_builder";
     public static final String BUNDLE_EXTRA_SUGGEST_RAW_TEXT = "suggest_raw_text";
     public static final String BUNDLE_EXTRA_SUGGEST_TRUNCATE_START = "suggest_truncate_start";
