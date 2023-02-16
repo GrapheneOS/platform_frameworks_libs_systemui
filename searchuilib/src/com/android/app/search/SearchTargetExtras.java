@@ -19,6 +19,7 @@ package com.android.app.search;
 import static com.android.app.search.LayoutType.TALL_CARD_WITH_IMAGE_NO_ICON;
 
 import android.app.blob.BlobHandle;
+import android.app.search.SearchAction;
 import android.app.search.SearchTarget;
 import android.text.TextUtils;
 
@@ -114,10 +115,19 @@ public class SearchTargetExtras {
      *  When this flag is false, thumbnails will always be cropped to a square ratio even if
      *  there aren't enough thumbnails to fill the container.
      *
-     *  Only relevant in {@link LayoutType.THUMBNAIL_CONTAINER} and {@link LayoutType.THUMBNAIL}.
+     *  Only relevant in {@link LayoutType#THUMBNAIL_CONTAINER} and {@link LayoutType#THUMBNAIL}.
      */
     public static final String BUNDLE_EXTRA_SHOULD_FILL_CONTAINER_WIDTH =
             "should_fill_container_width";
+    /**
+     *  Flag to control whether the SearchTarget's label should be hidden.
+     *  When this flag is true, label will be hidden.
+     *  When this flag is false (or omitted), {@link SearchAction#mTitle} will be shown.
+     */
+    public static final String BUNDLE_EXTRA_HIDE_LABEL =
+            "hide_label";
+    public static final String BUNDLE_EXTRA_SUGGESTION_ACTION_TEXT = "suggestion_action_text";
+    public static final String BUNDLE_EXTRA_SUGGESTION_ACTION_RPC = "suggestion_action_rpc";
     public static final String BUNDLE_EXTRA_SUPPORT_QUERY_BUILDER = "support_query_builder";
     public static final String BUNDLE_EXTRA_SUGGEST_RAW_TEXT = "suggest_raw_text";
     public static final String BUNDLE_EXTRA_SUGGEST_TRUNCATE_START = "suggest_truncate_start";
