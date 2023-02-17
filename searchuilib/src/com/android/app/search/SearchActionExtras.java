@@ -32,10 +32,8 @@ public class SearchActionExtras {
     public static final String BUNDLE_EXTRA_ICON_CACHE_KEY = "icon_cache_key";
     public static final String BUNDLE_EXTRA_SHOULD_START = "should_start";
     public static final String BUNDLE_EXTRA_SHOULD_START_FOR_RESULT = "should_start_for_result";
-    public static final String BUNDLE_EXTRA_SUGGEST_OPEN_DEFAULT_BROWSER =
-            "suggest_open_default_browser";
-    public static final String BUNDLE_EXTRA_TRAMPOLINE_ACTIVITY_ENABLED =
-            "trampoline_activity_enabled";
     public static final String BUNDLE_EXTRA_SUGGESTION_ACTION_TEXT = "suggestion_action_text";
     public static final String BUNDLE_EXTRA_SUGGESTION_ACTION_RPC = "suggestion_action_rpc";
+    public static final String BUNDLE_EXTRA_SKIP_LOGGING_IN_TARGET_HANDLER =
+            "skip_logging_in_target_handler";
 }
