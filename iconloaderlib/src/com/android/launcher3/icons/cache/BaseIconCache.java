@@ -45,6 +45,7 @@ import android.os.Handler;
 import android.os.LocaleList;
 import android.os.Looper;
 import android.os.Process;
+import android.os.SystemClock;
 import android.os.Trace;
 import android.os.UserHandle;
 import android.text.TextUtils;
@@ -79,6 +80,8 @@ public abstract class BaseIconCache {
     private static final boolean DEBUG = false;
 
     private static final int INITIAL_ICON_CACHE_CAPACITY = 50;
+    // A format string which returns the original string as is.
+    private static final String IDENTITY_FORMAT_STRING = "%1$s";
 
     // Empty class name is used for storing package default entry.
     public static final String EMPTY_CLASS_NAME = ".";
@@ -121,6 +124,8 @@ public abstract class BaseIconCache {
 
     @NonNull
     private final SparseArray<FlagOp> mUserFlagOpMap = new SparseArray<>();
+
+    private final SparseArray<String> mUserFormatString = new SparseArray<>();
 
     @Nullable
     private final String mDbFileName;
@@ -268,11 +273,28 @@ public abstract class BaseIconCache {
     private void updateSystemState() {
         mLocaleList = mContext.getResources().getConfiguration().getLocales();
         mSystemState = mLocaleList.toLanguageTags() + "," + Build.VERSION.SDK_INT;
+        mUserFormatString.clear();
     }
 
     @NonNull
     protected String getIconSystemState(@Nullable final String packageName) {
         return mSystemState;
+    }
+
+    public CharSequence getUserBadgedLabel(CharSequence label, UserHandle user) {
+        int key = user.hashCode();
+        int index = mUserFormatString.indexOfKey(key);
+        String format;
+        if (index < 0) {
+            format = mPackageManager.getUserBadgedLabel(IDENTITY_FORMAT_STRING, user).toString();
+            if (TextUtils.equals(IDENTITY_FORMAT_STRING, format)) {
+                format = null;
+            }
+            mUserFormatString.put(key, format);
+        } else {
+            format = mUserFormatString.valueAt(index);
+        }
+        return format == null ? label : String.format(format, label);
     }
 
     /**
@@ -313,7 +335,7 @@ public abstract class BaseIconCache {
         }
         entry.title = entryTitle;
 
-        entry.contentDescription = mPackageManager.getUserBadgedLabel(entry.title, user);
+        entry.contentDescription = getUserBadgedLabel(entry.title, user);
         if (cachingLogic.addToMemCache()) mCache.put(key, entry);
 
         ContentValues values = newContentValues(entry.bitmap, entry.title.toString(),
@@ -468,7 +490,7 @@ public abstract class BaseIconCache {
             @NonNull final T object, @NonNull final CacheEntry entry,
             @NonNull final CachingLogic<T> cachingLogic, @NonNull final UserHandle user) {
         entry.title = cachingLogic.getLabel(object);
-        entry.contentDescription = mPackageManager.getUserBadgedLabel(
+        entry.contentDescription = getUserBadgedLabel(
                 cachingLogic.getDescription(object, entry.title), user);
     }
 
@@ -549,7 +571,7 @@ public abstract class BaseIconCache {
                     li.close();
 
                     entry.title = appInfo.loadLabel(mPackageManager);
-                    entry.contentDescription = mPackageManager.getUserBadgedLabel(entry.title, user);
+                    entry.contentDescription = getUserBadgedLabel(entry.title, user);
                     entry.bitmap = BitmapInfo.of(
                             useLowResIcon ? LOW_RES_ICON : iconInfo.icon, iconInfo.color);
 
@@ -610,8 +632,7 @@ public abstract class BaseIconCache {
             entry.title = "";
             entry.contentDescription = "";
         } else {
-            entry.contentDescription = mPackageManager.getUserBadgedLabel(
-                    entry.title, cacheKey.user);
+            entry.contentDescription = getUserBadgedLabel(entry.title, cacheKey.user);
         }
 
         if (!lowRes) {
