@@ -108,6 +108,11 @@ public class SearchTargetExtras {
     public static final String BUNDLE_EXTRA_TALL_CARD_IMAGE_DESCRIPTION =
             "tall_card_image_description";
     public static final String BUNDLE_EXTRA_BITMAP_URL = "bitmap_url";
+
+    // Used for web suggestions count for both AA+ and QSB entry point.
+    // Returns the number of web suggestions to be shown.
+    public static final String WEB_SUG_COUNT = "web_sug_count";
+
     /**
      *  Flag to control whether thumbnail(s) should fill the thumbnail container's width or not.
      *  When this flag is true, when there are less than the maximum number of thumbnails in the
