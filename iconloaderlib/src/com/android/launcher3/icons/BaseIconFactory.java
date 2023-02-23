@@ -5,6 +5,7 @@ import static android.graphics.Paint.DITHER_FLAG;
 import static android.graphics.Paint.FILTER_BITMAP_FLAG;
 import static android.graphics.drawable.AdaptiveIconDrawable.getExtraInsetFraction;
 
+import static com.android.launcher3.icons.BitmapInfo.FLAG_CLONE;
 import static com.android.launcher3.icons.BitmapInfo.FLAG_INSTANT;
 import static com.android.launcher3.icons.BitmapInfo.FLAG_WORK;
 import static com.android.launcher3.icons.ShadowGenerator.BLUR_FACTOR;
@@ -266,7 +267,10 @@ public class BaseIconFactory implements AutoCloseable {
                     isBadged = (d != mPm.getUserBadgedIcon(d, options.mUserHandle));
                     mIsUserBadged.put(key, isBadged);
                 }
-                op = op.setFlag(FLAG_WORK, isBadged);
+                // Set the clone profile badge flag in case it is present.
+                op = op.setFlag(FLAG_CLONE, isBadged && options.mIsCloneProfile);
+                // Set the Work profile badge for all other cases.
+                op = op.setFlag(FLAG_WORK, isBadged && !options.mIsCloneProfile);
             }
         }
         return op;
@@ -464,6 +468,8 @@ public class BaseIconFactory implements AutoCloseable {
 
         boolean mIsInstantApp;
 
+        boolean mIsCloneProfile;
+
         @BitmapGenerationMode
         int mGenerationMode = MODE_WITH_SHADOW;
 
@@ -515,6 +521,15 @@ public class BaseIconFactory implements AutoCloseable {
          */
         public IconOptions setBitmapGenerationMode(@BitmapGenerationMode int generationMode) {
             mGenerationMode = generationMode;
+            return this;
+        }
+
+        /**
+         * Used to determine the badge type for this icon.
+         */
+        @NonNull
+        public IconOptions setIsCloneProfile(boolean isCloneProfile) {
+            mIsCloneProfile = isCloneProfile;
             return this;
         }
     }
