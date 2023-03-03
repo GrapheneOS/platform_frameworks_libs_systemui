@@ -71,4 +71,16 @@ public class SearchTargetEventHelper {
         return appTargetId + appComponentName.getPackageName() + ":"
                 + appComponentName.getClassName();
     }
+
+    /**
+     * Generate gms play target id similar to AiAi targetId for logging only n-state.
+     * AiAi target id is of format "resultType:userId:packageName:extraInfo"
+     *
+     * @return string playTargetId
+     * Example playTargetId for Candy Crush
+     * PLAY:0:com.king.candycrushsaga:Gms
+     */
+    public static String generatePlayTargetIdForLogging(String appPackage) {
+        return "PLAY" + ":" + Process.myUserHandle().getIdentifier() + ":" + appPackage + ":Gms";
+    }
 }
