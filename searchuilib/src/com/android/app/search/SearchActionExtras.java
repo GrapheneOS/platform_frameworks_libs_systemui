@@ -30,6 +30,7 @@ public class SearchActionExtras {
     public static final String BUNDLE_EXTRA_IS_SEARCH_IN_APP = "is_search_in_app";
     public static final String BUNDLE_EXTRA_BADGE_WITH_COMPONENT_NAME = "badge_with_component_name";
     public static final String BUNDLE_EXTRA_ICON_CACHE_KEY = "icon_cache_key";
+    public static final String BUNDLE_EXTRA_ICON_TOKEN_INTEGER = "icon_integer";
     public static final String BUNDLE_EXTRA_SHOULD_START = "should_start";
     public static final String BUNDLE_EXTRA_SHOULD_START_FOR_RESULT = "should_start_for_result";
     public static final String BUNDLE_EXTRA_SUGGESTION_ACTION_TEXT = "suggestion_action_text";
