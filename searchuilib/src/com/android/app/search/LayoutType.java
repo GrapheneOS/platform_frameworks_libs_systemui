@@ -99,4 +99,12 @@ public class LayoutType {
 
     // Layout for a quick settings tile
     public static final String QS_TILE = "qs_tile";
+
+    // Placeholder for web suggest.
+    public static final String PLACEHOLDER = "placeholder";
+
+    // Placeholder for rich answer cards.
+    // Only available on or above version code 3.
+    public static final String RICHANSWER_PLACEHOLDER = "richanswer_placeholder";
+
 }
