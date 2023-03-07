@@ -17,7 +17,6 @@
 package com.android.app.search;
 
 import android.app.search.Query;
-import android.os.Bundle;
 
 /**
  * Utility class used to define implicit contract between aiai and launcher regarding
@@ -37,4 +36,7 @@ public class QueryExtras {
 
     // This value overrides the timeout that is defined inside {@link SearchContext#getTimeout}
     public static final String EXTRAS_KEY_TIMEOUT_OVERRIDE = "timeout";
+
+    // Used to know which target is deleted.
+    public static final String EXTRAS_BUNDLE_DELETED_TARGET_ID = "deleted_target_id";
 }
