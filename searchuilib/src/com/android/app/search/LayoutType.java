@@ -47,7 +47,14 @@ public class LayoutType {
     public static final String SMALL_ICON_HORIZONTAL_TEXT = "short_icon_row";
     public static final String SMALL_ICON_HORIZONTAL_TEXT_THUMBNAIL = "short_icon_row_thumbnail";
 
-    // This layout contains a series of thumbnails (currently up to 3 per row)
+    // This layout contains a series of icon results (currently up to 4 per row).
+    // The container does not support stretching for its children, and can only contain
+    // {@link #ICON_SINGLE_VERTICAL_TEXT} layout types.
+    public static final String ICON_CONTAINER = "icon_container";
+
+    // This layout contains a series of thumbnails (currently up to 3 per row).
+    // The container supports stretching for its children, and can only contain {@link #THUMBNAIL}
+    // layout types.
     public static final String THUMBNAIL_CONTAINER = "thumbnail_container";
 
     // This layout creates a container for people grouping
