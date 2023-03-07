@@ -22,6 +22,7 @@ import static com.android.app.search.SearchActionExtras.BUNDLE_EXTRA_HIDE_SUBTIT
 import static com.android.app.search.SearchTargetExtras.BUNDLE_EXTRA_CLASS;
 import static com.android.app.search.SearchTargetExtras.BUNDLE_EXTRA_SUBTITLE_OVERRIDE;
 import static com.android.app.search.SearchTargetExtras.BUNDLE_EXTRA_SUPPORT_QUERY_BUILDER;
+import static com.android.app.search.SearchTargetExtras.EXTRAS_RECENT_BLOCK_TARGET;
 
 import android.app.search.SearchAction;
 import android.app.search.SearchTarget;
@@ -49,6 +50,7 @@ public class SearchTargetConverter {
         searchTargetBundle.putBoolean(BUNDLE_EXTRA_HIDE_SUBTITLE, false);
         searchTargetBundle.putString(BUNDLE_EXTRA_SUBTITLE_OVERRIDE, subtitle);
         searchTargetBundle.putBoolean(BUNDLE_EXTRA_HIDE_ICON, false);
+        searchTargetBundle.putBoolean(EXTRAS_RECENT_BLOCK_TARGET, true);
 
         SearchTarget.Builder builder = new SearchTarget.Builder(resultType,
                 SMALL_ICON_HORIZONTAL_TEXT, searchTarget.getId())

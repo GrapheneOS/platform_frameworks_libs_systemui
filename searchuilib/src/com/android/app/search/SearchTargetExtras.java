@@ -32,15 +32,15 @@ import androidx.annotation.Nullable;
 public class SearchTargetExtras {
 
     /** on device data related extras and helper methods */
-    // Used to extra component name
+    // Used to extra component name.
     public static final String BUNDLE_EXTRA_CLASS = "class";
 
-    // Used for UI treatment. Labels whether search target should support quick launch
+    // Used for UI treatment. Labels whether search target should support quick launch.
     public static final String BUNDLE_EXTRA_QUICK_LAUNCH = "quick_launch";
     // Used for UI treatment. Targets grouped with same group id are decorated together.
     public static final String BUNDLE_EXTRA_GROUP_ID = "group_id";
     public static final String BUNDLE_EXTRA_GROUP_DECORATE_TOGETHER = "decorate_together";
-    // Used if slice title should be rendered else where outside of slice (e.g., edit text)
+    // Used if slice title should be rendered else where outside of slice (e.g., edit text).
     public static final String BUNDLE_EXTRA_SLICE_TITLE = "slice_title";
     // Used if slice view should be rendered using full height mode.
     public static final String BUNDLE_EXTRA_USE_FULL_HEIGHT = "use_full_height";
@@ -56,11 +56,14 @@ public class SearchTargetExtras {
     public static final String BUNDLE_EXTRA_RESULT_MATCH_USER_TYPED = "result_match_user_typed";
     // Used for logging. Returns the timestamp when system service received the data.
     public static final String BUNDLE_EXTRA_START_TIMESTAMP = "start_timestamp";
-    // Indicates the search result app location column
+    // Indicates the search result app location column.
     public static final String BUNDLE_EXTRA_RESULT_APP_GRIDX = "app_gridx";
 
     // Used for thumbnail loading. Contains handle to retrieve Blobstore asset.
     public static final String BUNDLE_EXTRA_BLOBSTORE_HANDLE = "blobstore_handle_key";
+
+    // Used to denote this searchTarget is for recent block in 0-state.
+    public static final String EXTRAS_RECENT_BLOCK_TARGET = "recent_block_target";
 
     public static final int GROUPING = 1 << 1;
 
@@ -88,6 +91,14 @@ public class SearchTargetExtras {
         }
         return target.getExtras().getParcelable(
                 BUNDLE_EXTRA_BLOBSTORE_HANDLE) instanceof BlobHandle;
+    }
+
+    /** Check if SearchTarget contains information to tell if this target is from recent block. */
+    public static boolean isSearchTargetRecentItem(@Nullable SearchTarget target) {
+        if (isTargetOrExtrasNull(target)) {
+            return false;
+        }
+        return target.getExtras().getBoolean(EXTRAS_RECENT_BLOCK_TARGET, false);
     }
 
     private static boolean isTargetOrExtrasNull(@Nullable SearchTarget target) {
