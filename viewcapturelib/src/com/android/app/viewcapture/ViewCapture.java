@@ -156,6 +156,9 @@ public abstract class ViewCapture {
      * Dumps all the active view captures
      */
     public void dump(PrintWriter writer, FileDescriptor out, Context context) {
+        if (!mIsEnabled) {
+            return;
+        }
         ViewIdProvider idProvider = new ViewIdProvider(context.getResources());
 
         // Collect all the tasks first so that all the tasks are posted on the executor
