@@ -27,7 +27,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.app.viewcapture.TestActivity.Companion.TEXT_VIEW_COUNT
-import com.android.app.viewcapture.data.nano.ExportedData
+import com.android.app.viewcapture.data.ExportedData
 import junit.framework.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -57,7 +57,7 @@ class ViewCaptureTest {
                 val rootView = activity.findViewById<View>(android.R.id.content)
                 val exportedData = viewCapture.getDumpTask(rootView).get().get()
 
-                assertEquals(1, exportedData.frameData.size)
+                assertEquals(1, exportedData.frameDataList.size)
                 verifyTestActivityViewHierarchy(exportedData)
                 closeable.close()
             }
@@ -75,7 +75,7 @@ class ViewCaptureTest {
                 // since ViewCapture MEMORY_SIZE is [viewCaptureMemorySize], only
                 // [viewCaptureMemorySize] frames are exported, although the view is invalidated
                 // [viewCaptureMemorySize + 5] times
-                assertEquals(memorySize, exportedData.frameData.size)
+                assertEquals(memorySize, exportedData.frameDataList.size)
                 verifyTestActivityViewHierarchy(exportedData)
                 closeable.close()
             }
@@ -97,19 +97,19 @@ class ViewCaptureTest {
     }
 
     private fun verifyTestActivityViewHierarchy(exportedData: ExportedData) {
-        for (frame in exportedData.frameData) {
+        for (frame in exportedData.frameDataList) {
             val testActivityRoot =
                 frame.node // FrameLayout (android.R.id.content)
-                    .children
+                    .childrenList
                     .first() // LinearLayout (set by setContentView())
-            assertEquals(TEXT_VIEW_COUNT, testActivityRoot.children.size)
+            assertEquals(TEXT_VIEW_COUNT, testActivityRoot.childrenList.size)
             assertEquals(
                 LinearLayout::class.qualifiedName,
-                exportedData.classname[testActivityRoot.classnameIndex]
+                exportedData.getClassname(testActivityRoot.classnameIndex)
             )
             assertEquals(
                 TextView::class.qualifiedName,
-                exportedData.classname[testActivityRoot.children.first().classnameIndex]
+                exportedData.getClassname(testActivityRoot.childrenList.first().classnameIndex)
             )
         }
     }
