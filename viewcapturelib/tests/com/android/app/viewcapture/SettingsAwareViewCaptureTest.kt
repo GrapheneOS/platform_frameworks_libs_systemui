@@ -55,7 +55,7 @@ class SettingsAwareViewCaptureTest {
                 rootView.viewTreeObserver.dispatchOnDraw()
 
                 assertEquals(0, viewCapture.getDumpTask(
-                        activity.findViewById(android.R.id.content)).get().get().frameData.size)
+                        activity.findViewById(android.R.id.content)).get().get().frameDataList.size)
                 closeable.close()
             }
         }
@@ -75,7 +75,7 @@ class SettingsAwareViewCaptureTest {
                 rootView.viewTreeObserver.dispatchOnDraw()
 
                 assertEquals(1, viewCapture.getDumpTask(activity.findViewById(
-                        android.R.id.content)).get().get().frameData.size)
+                        android.R.id.content)).get().get().frameDataList.size)
 
                 closeable.close()
             }
