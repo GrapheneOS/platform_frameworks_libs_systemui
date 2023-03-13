@@ -40,11 +40,9 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.WorkerThread;
 
-import com.android.app.viewcapture.data.nano.ExportedData;
-import com.android.app.viewcapture.data.nano.FrameData;
-import com.android.app.viewcapture.data.nano.ViewNode;
-
-import com.google.protobuf.nano.MessageNano;
+import com.android.app.viewcapture.data.ExportedData;
+import com.android.app.viewcapture.data.FrameData;
+import com.android.app.viewcapture.data.ViewNode;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
@@ -181,7 +179,7 @@ public abstract class ViewCapture {
                 ExportedData data = pair.second.get();
                 OutputStream encodedOS = new GZIPOutputStream(new Base64OutputStream(os,
                         Base64.NO_CLOSE | Base64.NO_PADDING | Base64.NO_WRAP));
-                encodedOS.write(MessageNano.toByteArray(data));
+                data.writeTo(encodedOS);
                 encodedOS.close();
                 os.flush();
             } catch (Exception e) {
@@ -404,21 +402,21 @@ public abstract class ViewCapture {
         @WorkerThread
         private ExportedData dumpToProto(ViewIdProvider idProvider) {
             int size = (mNodesBg[mMemorySize - 1] == null) ? mFrameIndexBg + 1 : mMemorySize;
-            ExportedData exportedData = new ExportedData();
-            exportedData.frameData = new FrameData[size];
+            ExportedData.Builder exportedDataBuilder = ExportedData.newBuilder();
             ArrayList<Class> classList = new ArrayList<>();
 
             for (int i = size - 1; i >= 0; i--) {
                 int index = (mMemorySize + mFrameIndexBg - i) % mMemorySize;
-                ViewNode node = new ViewNode();
-                mNodesBg[index].toProto(idProvider, classList, node);
-                FrameData frameData = new FrameData();
-                frameData.node = node;
-                frameData.timestamp = mFrameTimesNanosBg[index];
-                exportedData.frameData[size - i - 1] = frameData;
+                ViewNode.Builder nodeBuilder = ViewNode.newBuilder();
+                mNodesBg[index].toProto(idProvider, classList, nodeBuilder);
+                FrameData.Builder frameDataBuilder = FrameData.newBuilder()
+                        .setNode(nodeBuilder)
+                        .setTimestamp(mFrameTimesNanosBg[index]);
+                exportedDataBuilder.addFrameData(frameDataBuilder);
             }
-            exportedData.classname = classList.stream().map(Class::getName).toArray(String[]::new);
-            return exportedData;
+            return exportedDataBuilder
+                    .addAllClassname(classList.stream().map(Class::getName).collect(toList()))
+                    .build();
         }
 
         private ViewRef captureViewTree(View view, ViewRef start) {
@@ -503,35 +501,35 @@ public abstract class ViewCapture {
          * at the end of the iteration.
          */
         public ViewPropertyRef toProto(ViewIdProvider idProvider, ArrayList<Class> classList,
-                ViewNode viewNode) {
+                ViewNode.Builder viewNode) {
             int classnameIndex = classList.indexOf(clazz);
             if (classnameIndex < 0) {
                 classnameIndex = classList.size();
                 classList.add(clazz);
             }
-            viewNode.classnameIndex = classnameIndex;
-            viewNode.hashcode = hashCode;
-            viewNode.id = idProvider.getName(id);
-            viewNode.left = left;
-            viewNode.top = top;
-            viewNode.width = right - left;
-            viewNode.height = bottom - top;
-            viewNode.translationX = translateX;
-            viewNode.translationY = translateY;
-            viewNode.scaleX = scaleX;
-            viewNode.scaleY = scaleY;
-            viewNode.alpha = alpha;
-            viewNode.visibility = visibility;
-            viewNode.willNotDraw = willNotDraw;
-            viewNode.elevation = elevation;
-            viewNode.clipChildren = clipChildren;
+
+            viewNode.setClassnameIndex(classnameIndex)
+                    .setHashcode(hashCode)
+                    .setId(idProvider.getName(id))
+                    .setLeft(left)
+                    .setTop(top)
+                    .setWidth(right - left)
+                    .setHeight(bottom - top)
+                    .setTranslationX(translateX)
+                    .setTranslationY(translateY)
+                    .setScaleX(scaleX)
+                    .setScaleY(scaleY)
+                    .setAlpha(alpha)
+                    .setVisibility(visibility)
+                    .setWillNotDraw(willNotDraw)
+                    .setElevation(elevation)
+                    .setClipChildren(clipChildren);
 
             ViewPropertyRef result = next;
-            viewNode.children = new ViewNode[childCount];
             for (int i = 0; (i < childCount) && (result != null); i++) {
-                ViewNode childViewNode = new ViewNode();
+                ViewNode.Builder childViewNode = ViewNode.newBuilder();
                 result = result.toProto(idProvider, classList, childViewNode);
-                viewNode.children[i] = childViewNode;
+                viewNode.addChildren(childViewNode);
             }
             return result;
         }
