@@ -20,12 +20,12 @@ java_library {
     name: "view_capture_proto",
     srcs: ["src/com/android/app/viewcapture/proto/*.proto"],
     proto: {
-        type: "nano",
+        type: "lite",
         local_include_dirs:[
             "src/com/android/app/viewcapture/proto"
         ],
     },
-    static_libs: ["libprotobuf-java-nano"],
+    static_libs: ["libprotobuf-java-lite"],
     java_version: "1.8",
 }
 

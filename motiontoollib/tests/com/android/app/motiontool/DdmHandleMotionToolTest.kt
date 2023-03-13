@@ -25,17 +25,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.app.motiontool.DdmHandleMotionTool.Companion.CHUNK_MOTO
-import com.android.app.motiontool.nano.BeginTraceRequest
-import com.android.app.motiontool.nano.EndTraceRequest
-import com.android.app.motiontool.nano.ErrorResponse
-import com.android.app.motiontool.nano.HandshakeRequest
-import com.android.app.motiontool.nano.HandshakeResponse
-import com.android.app.motiontool.nano.MotionToolsRequest
-import com.android.app.motiontool.nano.MotionToolsResponse
-import com.android.app.motiontool.nano.PollTraceRequest
-import com.android.app.motiontool.nano.WindowIdentifier
 import com.android.app.motiontool.util.TestActivity
-import com.google.protobuf.nano.MessageNano
 import junit.framework.Assert
 import junit.framework.Assert.assertEquals
 import org.apache.harmony.dalvik.ddmc.Chunk
@@ -74,45 +64,45 @@ class DdmHandleMotionToolTest {
     @Test
     fun testHandshakeErrorWithInvalidWindowId() {
         val handshakeResponse = performHandshakeRequest("InvalidWindowId")
-        assertEquals(HandshakeResponse.WINDOW_NOT_FOUND, handshakeResponse.handshake.status)
+        assertEquals(HandshakeResponse.Status.WINDOW_NOT_FOUND, handshakeResponse.handshake.status)
     }
 
     @Test
     fun testHandshakeOkWithValidWindowId() {
         val handshakeResponse = performHandshakeRequest(getActivityViewRootId())
-        assertEquals(HandshakeResponse.OK, handshakeResponse.handshake.status)
+        assertEquals(HandshakeResponse.Status.OK, handshakeResponse.handshake.status)
     }
 
     @Test
     fun testBeginFailsWithInvalidWindowId() {
         val errorResponse = performBeginTraceRequest("InvalidWindowId")
-        assertEquals(ErrorResponse.WINDOW_NOT_FOUND, errorResponse.error.code)
+        assertEquals(ErrorResponse.Code.WINDOW_NOT_FOUND, errorResponse.error.code)
     }
 
     @Test
     fun testEndTraceFailsWithoutPrecedingBeginTrace() {
         val errorResponse = performEndTraceRequest(0)
-        assertEquals(ErrorResponse.UNKNOWN_TRACE_ID, errorResponse.error.code)
+        assertEquals(ErrorResponse.Code.UNKNOWN_TRACE_ID, errorResponse.error.code)
     }
 
     @Test
     fun testPollTraceFailsWithoutPrecedingBeginTrace() {
         val errorResponse = performPollTraceRequest(0)
-        assertEquals(ErrorResponse.UNKNOWN_TRACE_ID, errorResponse.error.code)
+        assertEquals(ErrorResponse.Code.UNKNOWN_TRACE_ID, errorResponse.error.code)
     }
 
     @Test
     fun testEndTraceFailsWithInvalidTraceId() {
         val beginTraceResponse = performBeginTraceRequest(getActivityViewRootId())
         val endTraceResponse = performEndTraceRequest(beginTraceResponse.beginTrace.traceId + 1)
-        assertEquals(ErrorResponse.UNKNOWN_TRACE_ID, endTraceResponse.error.code)
+        assertEquals(ErrorResponse.Code.UNKNOWN_TRACE_ID, endTraceResponse.error.code)
     }
 
     @Test
     fun testPollTraceFailsWithInvalidTraceId() {
         val beginTraceResponse = performBeginTraceRequest(getActivityViewRootId())
         val endTraceResponse = performPollTraceRequest(beginTraceResponse.beginTrace.traceId + 1)
-        assertEquals(ErrorResponse.UNKNOWN_TRACE_ID, endTraceResponse.error.code)
+        assertEquals(ErrorResponse.Code.UNKNOWN_TRACE_ID, endTraceResponse.error.code)
     }
 
     @Test
@@ -121,7 +111,7 @@ class DdmHandleMotionToolTest {
         val requestChunk = Chunk(CHUNK_MOTO, requestBytes, 0, requestBytes.size)
         val responseChunk = ddmHandleMotionTool.handleChunk(requestChunk)
         val response = MotionToolsResponse.parseFrom(wrapChunk(responseChunk).array()).error
-        assertEquals(ErrorResponse.INVALID_REQUEST, response.code)
+        assertEquals(ErrorResponse.Code.INVALID_REQUEST, response.code)
     }
 
     @Test
@@ -129,7 +119,7 @@ class DdmHandleMotionToolTest {
         activityScenarioRule.scenario.onActivity {
             val beginTraceResponse = performBeginTraceRequest(getActivityViewRootId())
             val endTraceResponse = performEndTraceRequest(beginTraceResponse.beginTrace.traceId)
-            Assert.assertTrue(endTraceResponse.endTrace.exportedData.frameData.isEmpty())
+            Assert.assertTrue(endTraceResponse.endTrace.exportedData.frameDataList.isEmpty())
         }
     }
 
@@ -143,58 +133,52 @@ class DdmHandleMotionToolTest {
                 activity.findViewById<View>(android.R.id.content).viewTreeObserver.dispatchOnDraw()
 
                 val pollTraceResponse = performPollTraceRequest(traceId)
-                assertEquals(1, pollTraceResponse.pollTrace.exportedData.frameData.size)
+                assertEquals(1, pollTraceResponse.pollTrace.exportedData.frameDataList.size)
 
                 // Verify that frameData is only included once and is not returned again
                 val endTraceResponse = performEndTraceRequest(traceId)
-                assertEquals(0, endTraceResponse.endTrace.exportedData.frameData.size)
+                assertEquals(0, endTraceResponse.endTrace.exportedData.frameDataList.size)
             }
         }
     }
 
     private fun performPollTraceRequest(requestTraceId: Int): MotionToolsResponse {
-        val pollTraceRequest = MotionToolsRequest().apply {
-            pollTrace = PollTraceRequest().apply {
-                traceId = requestTraceId
-            }
-        }
+        val pollTraceRequest = MotionToolsRequest.newBuilder()
+                .setPollTrace(PollTraceRequest.newBuilder()
+                        .setTraceId(requestTraceId))
+                .build()
         return performRequest(pollTraceRequest)
     }
 
     private fun performEndTraceRequest(requestTraceId: Int): MotionToolsResponse {
-        val endTraceRequest = MotionToolsRequest().apply {
-            endTrace = EndTraceRequest().apply {
-                traceId = requestTraceId
-            }
-        }
+        val endTraceRequest = MotionToolsRequest.newBuilder()
+                .setEndTrace(EndTraceRequest.newBuilder()
+                        .setTraceId(requestTraceId))
+                .build()
         return performRequest(endTraceRequest)
     }
 
     private fun performBeginTraceRequest(windowId: String): MotionToolsResponse {
-        val beginTraceRequest = MotionToolsRequest().apply {
-            beginTrace = BeginTraceRequest().apply {
-                window = WindowIdentifier().apply {
-                    rootWindow = windowId
-                }
-            }
-        }
+        val beginTraceRequest = MotionToolsRequest.newBuilder()
+                .setBeginTrace(BeginTraceRequest.newBuilder()
+                        .setWindow(WindowIdentifier.newBuilder()
+                                .setRootWindow(windowId)))
+                .build()
         return performRequest(beginTraceRequest)
     }
 
     private fun performHandshakeRequest(windowId: String): MotionToolsResponse {
-        val handshakeRequest = MotionToolsRequest().apply {
-            handshake = HandshakeRequest().apply {
-                window = WindowIdentifier().apply {
-                    rootWindow = windowId
-                }
-                clientVersion = CLIENT_VERSION
-            }
-        }
+        val handshakeRequest = MotionToolsRequest.newBuilder()
+                .setHandshake(HandshakeRequest.newBuilder()
+                        .setWindow(WindowIdentifier.newBuilder()
+                                .setRootWindow(windowId))
+                        .setClientVersion(CLIENT_VERSION))
+                .build()
         return performRequest(handshakeRequest)
     }
 
     private fun performRequest(motionToolsRequest: MotionToolsRequest): MotionToolsResponse {
-        val requestBytes = MessageNano.toByteArray(motionToolsRequest)
+        val requestBytes = motionToolsRequest.toByteArray()
         val requestChunk = Chunk(CHUNK_MOTO, requestBytes, 0, requestBytes.size)
         val responseChunk = ddmHandleMotionTool.handleChunk(requestChunk)
         return MotionToolsResponse.parseFrom(wrapChunk(responseChunk).array())

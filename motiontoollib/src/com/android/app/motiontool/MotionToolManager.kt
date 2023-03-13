@@ -22,9 +22,8 @@ import android.view.Choreographer
 import android.view.View
 import android.view.WindowManagerGlobal
 import androidx.annotation.VisibleForTesting
-import com.android.app.motiontool.nano.WindowIdentifier
 import com.android.app.viewcapture.ViewCapture
-import com.android.app.viewcapture.data.nano.ExportedData
+import com.android.app.viewcapture.data.ExportedData
 
 /**
  * Singleton to manage motion tracing sessions.
@@ -120,15 +119,19 @@ class MotionToolManager private constructor(private val windowManagerGlobal: Win
         val rootView =
             getRootView(traceMetadata.windowId)
                 ?: throw WindowNotFoundException(traceMetadata.windowId)
-        return viewCapture
+
+        val exportedData = viewCapture
             .getDumpTask(rootView)
             ?.orElse(null)
-            ?.get()
-            ?.apply {
-                frameData = frameData?.filter { it.timestamp > traceMetadata.lastPolledTime }
-                    ?.toTypedArray()
-            }
-            ?: ExportedData()
+            ?.get() ?: return ExportedData.newBuilder().build()
+
+        val filteredFrameData = exportedData.frameDataList
+                ?.filter { it.timestamp > traceMetadata.lastPolledTime }
+
+        return exportedData.toBuilder()
+                .clearFrameData()
+                .addAllFrameData(filteredFrameData)
+                .build()
     }
 
     private fun getRootView(windowId: String): View? {
@@ -146,7 +149,7 @@ private data class TraceMetadata(
     var stopTrace: () -> Unit
 ) {
     fun updateLastPolledTime(exportedData: ExportedData?) {
-        exportedData?.frameData?.maxOfOrNull { it.timestamp }?.let { maxFrameTimestamp ->
+        exportedData?.frameDataList?.maxOfOrNull { it.timestamp }?.let { maxFrameTimestamp ->
             lastPolledTime = maxFrameTimestamp
         }
     }
