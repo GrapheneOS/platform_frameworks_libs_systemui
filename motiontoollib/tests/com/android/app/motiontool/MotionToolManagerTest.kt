@@ -76,7 +76,7 @@ class MotionToolManagerTest {
         activityScenarioRule.scenario.onActivity {
             val traceId = motionToolManager.beginTrace(getActivityViewRootId())
             val result = motionToolManager.endTrace(traceId)
-            assertTrue(result.frameData.isEmpty())
+            assertTrue(result.frameDataList.isEmpty())
         }
     }
 
@@ -88,11 +88,11 @@ class MotionToolManagerTest {
                 activity.findViewById<View>(android.R.id.content).viewTreeObserver.dispatchOnDraw()
 
                 val polledExportedData = motionToolManager.pollTrace(traceId)
-                assertEquals(1, polledExportedData.frameData.size)
+                assertEquals(1, polledExportedData.frameDataList.size)
 
                 // Verify that frameData is only included once and is not returned again
                 val endExportedData = motionToolManager.endTrace(traceId)
-                assertEquals(0, endExportedData.frameData.size)
+                assertEquals(0, endExportedData.frameDataList.size)
             }
         }
     }
