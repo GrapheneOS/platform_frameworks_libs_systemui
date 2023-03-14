@@ -20,7 +20,7 @@ java_library {
     name: "motion_tool_proto",
     srcs: ["src/com/android/app/motiontool/proto/*.proto"],
     proto: {
-        type: "nano",
+        type: "lite",
         local_include_dirs:[
             "src/com/android/app/motiontool/proto"
         ],
@@ -29,7 +29,7 @@ java_library {
         ],
     },
     static_libs: [
-        "libprotobuf-java-nano",
+        "libprotobuf-java-lite",
         "view_capture_proto",
     ],
     java_version: "1.8",
