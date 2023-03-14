@@ -50,6 +50,10 @@ public class LayoutType {
     // This layout contains a series of thumbnails (currently up to 3 per row)
     public static final String THUMBNAIL_CONTAINER = "thumbnail_container";
 
+    // This layout creates a container for people grouping
+    // Only available above version code 2
+    public static final String BIG_ICON_MEDIUM_HEIGHT_ROW = "big_icon_medium_row";
+
     // This layout creates square thumbnail image (currently 3 column)
     public static final String THUMBNAIL = "thumbnail";
 
@@ -65,6 +69,7 @@ public class LayoutType {
     // Layout type used to display people tiles using shortcut info
     public static final String PEOPLE_TILE = "people_tile";
 
+    // Deprecated
     // text based header to group various layouts in low confidence section of the results.
     public static final String TEXT_HEADER = "header";
 
@@ -77,6 +82,14 @@ public class LayoutType {
     // layout representing quick calculations
     public static final String CALCULATOR = "calculator";
 
-    // layout for the section header
+    // From version code 4, if TEXT_HEADER_ROW is used, no need to insert this on-device
+    // section header.
     public static final String SECTION_HEADER = "section_header";
+
+    // layout for a tall card with header and image, and no icon.
+    public static final String TALL_CARD_WITH_IMAGE_NO_ICON = "tall_card_with_image_no_icon";
+
+    // Layout for a text header
+    // Available for SearchUiManager proxy service to use above version code 3
+    public static final String TEXT_HEADER_ROW = "text_header_row";
 }
