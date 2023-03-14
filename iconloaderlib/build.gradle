@@ -1,8 +1,9 @@
 plugins {
-    id 'sysuigradleproject.android-library-conventions'
+    id 'com.android.library'
 }
 
 android {
+    namespace = "com.android.launcher3.icons"
     sourceSets {
         main {
             java.srcDirs = ['src', 'src_full_lib']
@@ -10,8 +11,7 @@ android {
             res.srcDirs = ['res']
         }
     }
-
-    lintOptions {
+    lint {
         abortOnError false
     }
 

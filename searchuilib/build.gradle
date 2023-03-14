@@ -3,13 +3,7 @@ plugins {
 }
 
 android {
-    compileSdk TARGET_SDK.toInteger()
-    buildToolsVersion = BUILD_TOOLS_VERSION
-
-    defaultConfig {
-        minSdkVersion TARGET_SDK.toInteger()
-        targetSdkVersion TARGET_SDK.toInteger()
-    }
+    namespace = "com.android.app.search"
 
     sourceSets {
         main {
@@ -18,17 +12,12 @@ android {
         }
     }
 
-    lintOptions {
-        abortOnError false
-    }
-
     tasks.withType(JavaCompile) {
         options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
     }
 
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+    lint {
+        abortOnError false
     }
 }
 
