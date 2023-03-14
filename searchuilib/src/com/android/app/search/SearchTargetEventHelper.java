@@ -30,6 +30,22 @@ import androidx.annotation.Nullable;
 
 public class SearchTargetEventHelper {
 
+    public static final String PKG_NAME_AGSA = "com.google.android.googlequicksearchbox";
+
+    /**
+     * Generate web target id similar to AiAi targetId for logging search button tap and Launcher
+     * sends raw query to AGA.
+     * AiAi target id is of format "resultType:userId:packageName:extraInfo"
+     *
+     * @return string webTargetId
+     * Example webTargetId for
+     * web suggestion - WEB_SUGGEST:0:com.google.android.googlequicksearchbox:SUGGESTION
+     */
+    public static String generateWebTargetIdForRawQuery() {
+        // For raw query, there is no search target, so we pass null.
+        return generateWebTargetIdForLogging(null);
+    }
+
     /**
      * Generate web target id similar to AiAi targetId for logging both 0-state and n-state.
      * AiAi target id is of format "resultType:userId:packageName:extraInfo"
@@ -39,10 +55,14 @@ public class SearchTargetEventHelper {
      * web suggestion - WEB_SUGGEST:0:com.google.android.googlequicksearchbox:SUGGESTION
      * rich answer - WEB_SUGGEST:0:com.google.android.googlequicksearchbox:RICH_ANSWER
      */
-    public static String generateWebTargetIdForLogging(SearchTarget webTarget) {
+    public static String generateWebTargetIdForLogging(@Nullable SearchTarget webTarget) {
         StringBuilder webTargetId = new StringBuilder(
-                "WEB_SUGGEST" + ":" + Process.myUserHandle().getIdentifier() + ":"
-                        + webTarget.getPackageName());
+                "WEB_SUGGEST" + ":" + Process.myUserHandle().getIdentifier() + ":");
+        if (webTarget == null) {
+            webTargetId.append(PKG_NAME_AGSA + ":SUGGESTION");
+            return webTargetId.toString();
+        }
+        webTargetId.append(webTarget.getPackageName());
         if (isRichAnswer(webTarget)) {
             webTargetId.append(":RICH_ANSWER");
         } else {
