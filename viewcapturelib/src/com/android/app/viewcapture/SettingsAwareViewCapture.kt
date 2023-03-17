@@ -68,8 +68,9 @@ internal constructor(private val context: Context, choreographer: Choreographer,
         @JvmStatic
         fun getInstance(context: Context): ViewCapture = when {
             INSTANCE != null -> INSTANCE!!
-            Looper.myLooper() == Looper.getMainLooper() -> SettingsAwareViewCapture(context,
-                    Choreographer.getInstance(), createAndStartNewLooperExecutor("SAViewCapture",
+            Looper.myLooper() == Looper.getMainLooper() -> SettingsAwareViewCapture(
+                    context.applicationContext, Choreographer.getInstance(),
+                    createAndStartNewLooperExecutor("SAViewCapture",
                     Process.THREAD_PRIORITY_FOREGROUND)).also { INSTANCE = it }
             else -> try {
                 MAIN_EXECUTOR.submit { getInstance(context) }.get()
