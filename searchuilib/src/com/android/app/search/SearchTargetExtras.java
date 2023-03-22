@@ -21,6 +21,7 @@ import static com.android.app.search.LayoutType.TALL_CARD_WITH_IMAGE_NO_ICON;
 import android.app.blob.BlobHandle;
 import android.app.search.SearchAction;
 import android.app.search.SearchTarget;
+import android.os.Bundle;
 import android.text.TextUtils;
 
 import androidx.annotation.Nullable;
@@ -125,6 +126,8 @@ public class SearchTargetExtras {
     public static final String WEB_SUG_COUNT = "web_sug_count";
 
     /**
+     *  Replaced with thumbnail crop type
+     *
      *  Flag to control whether thumbnail(s) should fill the thumbnail container's width or not.
      *  When this flag is true, when there are less than the maximum number of thumbnails in the
      *  container, the thumbnails will stretch to fill the container's width.
@@ -133,8 +136,54 @@ public class SearchTargetExtras {
      *
      *  Only relevant in {@link LayoutType#THUMBNAIL_CONTAINER} and {@link LayoutType#THUMBNAIL}.
      */
+    @Deprecated
     public static final String BUNDLE_EXTRA_SHOULD_FILL_CONTAINER_WIDTH =
             "should_fill_container_width";
+
+    /**
+     * Flag to control thumbnail container's crop mode, controlling the layout
+     *
+     * <ul>
+     *     <li>SQUARE: Thumbnail(s) will be cropped to a square aspect ratio around the center.</li>
+     *     <li>FILL_WIDTH: Thumbnail(s) should collectively fill the thumbnail container's width.
+     *     When there are less than the maximum number of thumbnails in the container, the
+     *     layouts' width will stretch to fit the container, the images will fill the width
+     *     and then the top/bottom cropped to fit.</li>
+     *     <li>FILL_HEIGHT: Thumbnail(s) should fill height and be cropped to fit in the width
+     *     based on {@link BUNDLE_EXTRA_THUMBNAIL_MAX_COUNT} as the column count. When the image
+     *     width is larger than the width / column, both sides will be cropped while maintaining
+     *     the center.
+     *     When there are less thumbnails than the max count, the layout will be constrained to
+     *     equally divide the width of the container. If there are more thumbnails than the max
+     *     count, the excessive thumbnails will be ignored.</li>
+     * </ul>
+     *
+     * Only relevant in {@link LayoutType#THUMBNAIL_CONTAINER} and {@link LayoutType#THUMBNAIL}.
+     */
+    public static final String BUNDLE_EXTRA_THUMBNAIL_CROP_TYPE = "thumbnail_crop_type";
+    public enum ThumbnailCropType {
+        DEFAULT(0), // defaults to SQUARE behavior by {@link LayoutType#THUMBNAIL_CONTAINER}.
+        SQUARE(1),
+        FILL_WIDTH(2),
+        FILL_HEIGHT(3);
+
+        private final int mTypeId;
+
+        ThumbnailCropType(int typeId) {
+            mTypeId = typeId;
+        }
+
+        public int toTypeId() {
+            return mTypeId;
+        }
+    };
+
+    /**
+     * How many grid spaces for the thumbnail container should be reserved.
+     * Only relevant for {@link ThumbnailCropType#FILL_HEIGHT} crop type.
+     */
+    public static final String BUNDLE_EXTRA_THUMBNAIL_MAX_COUNT = "thumbnail_max_count";
+
     /**
      *  Flag to control whether the SearchTarget's label should be hidden.
      *  When this flag is true, label will be hidden.
@@ -163,5 +212,17 @@ public class SearchTargetExtras {
     public static boolean isRichAnswer(@Nullable SearchTarget target) {
         return target != null && isAnswer(target)
                 && target.getLayoutType().equals(TALL_CARD_WITH_IMAGE_NO_ICON);
+    }
+
+    /** Get the crop type thumbnails should use. Returns DEFAULT if not specified. */
+    public static ThumbnailCropType getThumbnailCropType(@Nullable SearchTarget target)
+            throws ArrayIndexOutOfBoundsException {
+        Bundle extras = target == null ? Bundle.EMPTY : target.getExtras();
+        if (extras.isEmpty()) {
+            return ThumbnailCropType.DEFAULT;
+        }
+        ThumbnailCropType cropType = ThumbnailCropType.values()[extras.getInt(
+                BUNDLE_EXTRA_THUMBNAIL_CROP_TYPE)];
+        return cropType != null ? cropType : ThumbnailCropType.DEFAULT;
     }
 }
