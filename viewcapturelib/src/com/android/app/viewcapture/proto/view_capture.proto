@@ -21,7 +21,17 @@ package com.android.app.viewcapture.data;
 option java_multiple_files = true;
 
 message ExportedData {
+  repeated WindowData windowData = 1;
+  optional string package = 2;
+  repeated string classname = 3;
+}
 
+message WindowData {
+  repeated FrameData frameData = 1;
+  optional string title = 2;
+}
+
+message MotionWindowData {
   repeated FrameData frameData = 1;
   repeated string classname = 2;
 }

@@ -17,12 +17,15 @@
 package com.android.app.viewcapture
 
 import android.content.Context
+import android.content.pm.LauncherApps
 import android.database.ContentObserver
 import android.os.Handler
 import android.os.Looper
+import android.os.ParcelFileDescriptor
 import android.os.Process
 import android.provider.Settings
 import android.view.Choreographer
+import android.window.IDumpCallback
 import androidx.annotation.AnyThread
 import androidx.annotation.VisibleForTesting
 import java.util.concurrent.Executor
@@ -36,6 +39,10 @@ class SettingsAwareViewCapture
 @VisibleForTesting
 internal constructor(private val context: Context, choreographer: Choreographer, executor: Executor)
     : ViewCapture(DEFAULT_MEMORY_SIZE, DEFAULT_INIT_POOL_SIZE, choreographer, executor) {
+    /** Dumps all the active view captures to the wm trace directory via LauncherAppService */
+    private val mDumpCallback: IDumpCallback.Stub = object : IDumpCallback.Stub() {
+        override fun onDump(out: ParcelFileDescriptor) = dumpTo(out, context)
+    }
 
     init {
         enableOrDisableWindowListeners()
@@ -56,6 +63,12 @@ internal constructor(private val context: Context, choreographer: Choreographer,
                     0) != 0
             MAIN_EXECUTOR.execute {
                 enableOrDisableWindowListeners(isEnabled)
+            }
+            val launcherApps = context.getSystemService(LauncherApps::class.java)
+            if (isEnabled) {
+                launcherApps?.registerDumpCallback(mDumpCallback)
+            } else {
+                launcherApps?.unRegisterDumpCallback(mDumpCallback)
             }
         }
     }

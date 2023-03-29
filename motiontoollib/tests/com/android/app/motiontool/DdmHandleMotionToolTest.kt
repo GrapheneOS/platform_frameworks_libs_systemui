@@ -119,7 +119,7 @@ class DdmHandleMotionToolTest {
         activityScenarioRule.scenario.onActivity {
             val beginTraceResponse = performBeginTraceRequest(getActivityViewRootId())
             val endTraceResponse = performEndTraceRequest(beginTraceResponse.beginTrace.traceId)
-            Assert.assertTrue(endTraceResponse.endTrace.exportedData.frameDataList.isEmpty())
+            Assert.assertTrue(endTraceResponse.endTrace.data.frameDataList.isEmpty())
         }
     }
 
@@ -133,11 +133,11 @@ class DdmHandleMotionToolTest {
                 activity.findViewById<View>(android.R.id.content).viewTreeObserver.dispatchOnDraw()
 
                 val pollTraceResponse = performPollTraceRequest(traceId)
-                assertEquals(1, pollTraceResponse.pollTrace.exportedData.frameDataList.size)
+                assertEquals(1, pollTraceResponse.pollTrace.data.frameDataList.size)
 
                 // Verify that frameData is only included once and is not returned again
                 val endTraceResponse = performEndTraceRequest(traceId)
-                assertEquals(0, endTraceResponse.endTrace.exportedData.frameDataList.size)
+                assertEquals(0, endTraceResponse.endTrace.data.frameDataList.size)
             }
         }
     }
