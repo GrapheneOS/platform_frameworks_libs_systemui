@@ -197,6 +197,9 @@ public class SearchTargetExtras {
     public static final String BUNDLE_EXTRA_SUGGEST_RAW_TEXT = "suggest_raw_text";
     public static final String BUNDLE_EXTRA_SUGGEST_TRUNCATE_START = "suggest_truncate_start";
 
+    /** Score threshold boosting the target. */
+    public static final String BUNDLE_EXTRA_SCORE_THRESHOLD = "score_threshold";
+
     /** Web data related helper methods */
     public static boolean isEntity(@Nullable SearchTarget target) {
         return target != null && target.getExtras() != null
