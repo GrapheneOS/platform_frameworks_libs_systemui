@@ -15,17 +15,23 @@
   -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.android.app.viewcapture.test">
+    package="com.android.app.viewcapture">
+
     <application
         android:debuggable="true"
         android:theme="@android:style/Theme.NoTitleBar">
 
         <activity
-            android:name="com.android.app.viewcapture.TestActivity"
+            android:name=".TestActivity"
             android:exported="false" />
 
         <uses-library android:name="android.test.runner" />
 
     </application>
+
+    <instrumentation
+        android:name="android.testing.TestableInstrumentation"
+        android:label="Tests for ViewCapture Lib"
+        android:targetPackage="com.android.app.viewcapture" />
 
 </manifest>
