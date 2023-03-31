@@ -15,18 +15,23 @@
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.android.app.motiontool.tests">
+    package="com.android.app.motiontool">
 
     <application
         android:debuggable="true"
         android:theme="@android:style/Theme.NoTitleBar">
 
         <activity
-            android:name="com.android.app.motiontool.util.TestActivity"
+            android:name=".util.TestActivity"
             android:exported="false" />
 
         <uses-library android:name="android.test.runner" />
 
     </application>
+
+    <instrumentation
+        android:name="android.testing.TestableInstrumentation"
+        android:label="Tests for MotionTool Lib"
+        android:targetPackage="com.android.app.motiontool"/>
 
 </manifest>
