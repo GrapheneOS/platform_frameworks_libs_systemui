@@ -41,7 +41,7 @@ public class ResultType {
     public static final int SUGGEST = 1 << 9;
     public static final int ASSISTANT = 1 << 10;
     public static final int CHROMETAB = 1 << 11;
-    public static final int NAVVYSITE = 1 << 12;
+    public static final int SESSION_INFO = 1 << 12;
     public static final int TIPS = 1 << 13;
     public static final int PEOPLE_TILE = 1 << 14;
     public static final int LEGACY_SHORTCUT = 1 << 15;
@@ -56,7 +56,7 @@ public class ResultType {
     public static final int PRIMITIVE_TYPE = APPLICATION | SLICE | SHORTCUT | WIDGETS | ACTION |
             LEGACY_SHORTCUT;
     public static final int CORPUS_TYPE =
-            PEOPLE | SETTING | IMAGE | PLAY | SUGGEST | ASSISTANT | CHROMETAB | NAVVYSITE | TIPS
+            PEOPLE | SETTING | IMAGE | PLAY | SUGGEST | ASSISTANT | CHROMETAB | TIPS
                     | PEOPLE_TILE | MEMORY | WEB_SUGGEST | VIDEO;
     public static final int RANK_TYPE = SYSTEM_POINTER;
     public static final int UI_TYPE = EDUCARD | NO_FULFILLMENT;
