@@ -16,19 +16,15 @@
 
 package com.android.app.viewcapture;
 
-import static java.util.stream.Collectors.toList;
-
 import android.content.Context;
 import android.content.res.Resources;
 import android.media.permission.SafeCloseable;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.ParcelFileDescriptor;
 import android.os.Trace;
 import android.text.TextUtils;
-import android.util.Base64;
-import android.util.Base64OutputStream;
 import android.util.Log;
-import android.util.Pair;
 import android.util.SparseArray;
 import android.view.Choreographer;
 import android.view.View;
@@ -36,25 +32,27 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 
+import androidx.annotation.AnyThread;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.WorkerThread;
 
 import com.android.app.viewcapture.data.ExportedData;
 import com.android.app.viewcapture.data.FrameData;
+import com.android.app.viewcapture.data.MotionWindowData;
 import com.android.app.viewcapture.data.ViewNode;
+import com.android.app.viewcapture.data.WindowData;
 
-import java.io.FileDescriptor;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.FutureTask;
 import java.util.function.Consumer;
-import java.util.zip.GZIPOutputStream;
+import java.util.function.Predicate;
 
 /**
  * Utility class for capturing view data every frame
@@ -149,61 +147,50 @@ public abstract class ViewCapture {
         if (mIsEnabled) mListeners.forEach(WindowListener::attachToRoot);
     }
 
-
-    /**
-     * Dumps all the active view captures
-     */
-    public void dump(PrintWriter writer, FileDescriptor out, Context context) {
+    @AnyThread
+    protected void dumpTo(ParcelFileDescriptor outFd, Context context) {
         if (!mIsEnabled) {
             return;
         }
-        ViewIdProvider idProvider = new ViewIdProvider(context.getResources());
-
-        // Collect all the tasks first so that all the tasks are posted on the executor
-        List<Pair<String, FutureTask<ExportedData>>> tasks = mListeners.stream()
-                .map(l -> {
-                    FutureTask<ExportedData> task =
-                            new FutureTask<ExportedData>(() -> l.dumpToProto(idProvider));
-                    mBgExecutor.execute(task);
-                    return Pair.create(l.name, task);
-                })
-                .collect(toList());
-        tasks.forEach(pair -> {
-            writer.println();
-            writer.println(" ContinuousViewCapture:");
-            writer.println(" window " + pair.first + ":");
-            writer.println("  pkg:" + context.getPackageName());
-            writer.print("  data:");
-            writer.flush();
-            try (OutputStream os = new FileOutputStream(out)) {
-                ExportedData data = pair.second.get();
-                OutputStream encodedOS = new GZIPOutputStream(new Base64OutputStream(os,
-                        Base64.NO_CLOSE | Base64.NO_PADDING | Base64.NO_WRAP));
-                data.writeTo(encodedOS);
-                encodedOS.close();
-                os.flush();
-            } catch (Exception e) {
-                Log.e(TAG, "Error capturing proto", e);
-            }
-            writer.println();
-            writer.println("--end--");
-        });
+        ArrayList<Class> classList = new ArrayList<>();
+        try (OutputStream os = new ParcelFileDescriptor.AutoCloseOutputStream(outFd)) {
+            ExportedData.newBuilder()
+                    .setPackage(context.getPackageName())
+                    .addAllWindowData(getWindowData(context, classList, l -> l.mIsActive).get())
+                    .addAllClassname(toStringList(classList))
+                    .build()
+                    .writeTo(os);
+        } catch (InterruptedException | ExecutionException e) {
+            Log.e(TAG, "failed to get window data", e);
+        } catch (IOException e) {
+            Log.e(TAG, "failed to output data to wm trace", e);
+        }
     }
 
-    public Optional<FutureTask<ExportedData>> getDumpTask(View view) {
-        Context context = view.getContext().getApplicationContext();
-        ViewIdProvider idProvider = new ViewIdProvider(context.getResources());
-
-        return mListeners.stream()
-                .filter(l -> l.mRoot.equals(view))
-                .map(l -> {
-                    FutureTask<ExportedData> task =
-                            new FutureTask<ExportedData>(() -> l.dumpToProto(idProvider));
-                    mBgExecutor.execute(task);
-                    return task;
-                })
-                .findFirst();
+    private static List<String> toStringList(List<Class> classList) {
+        return classList.stream().map(Class::getName).toList();
     }
+
+    public CompletableFuture<Optional<MotionWindowData>> getDumpTask(View view) {
+        ArrayList<Class> classList = new ArrayList<>();
+        return getWindowData(view.getContext().getApplicationContext(), classList,
+                l -> l.mRoot.equals(view)).thenApply(list -> list.stream().findFirst().map(w ->
+                MotionWindowData.newBuilder()
+                        .addAllFrameData(w.getFrameDataList())
+                        .addAllClassname(toStringList(classList))
+                        .build()));
+    }
+
+    @AnyThread
+    private CompletableFuture<List<WindowData>> getWindowData(Context context,
+            ArrayList<Class> outClassList, Predicate<WindowListener> filter) {
+        ViewIdProvider idProvider = new ViewIdProvider(context.getResources());
+        return CompletableFuture.supplyAsync(() ->
+                mListeners.stream().filter(filter).toList(), MAIN_EXECUTOR).thenApplyAsync(it ->
+                        it.stream().map(l -> l.dumpToProto(idProvider, outClassList)).toList(),
+                mBgExecutor);
+    }
+
 
     /**
      * Once this window listener is attached to a window's root view, it traverses the entire
@@ -400,11 +387,9 @@ public abstract class ViewCapture {
         }
 
         @WorkerThread
-        private ExportedData dumpToProto(ViewIdProvider idProvider) {
+        private WindowData dumpToProto(ViewIdProvider idProvider, ArrayList<Class> classList) {
+            WindowData.Builder builder = WindowData.newBuilder().setTitle(name);
             int size = (mNodesBg[mMemorySize - 1] == null) ? mFrameIndexBg + 1 : mMemorySize;
-            ExportedData.Builder exportedDataBuilder = ExportedData.newBuilder();
-            ArrayList<Class> classList = new ArrayList<>();
-
             for (int i = size - 1; i >= 0; i--) {
                 int index = (mMemorySize + mFrameIndexBg - i) % mMemorySize;
                 ViewNode.Builder nodeBuilder = ViewNode.newBuilder();
@@ -412,11 +397,9 @@ public abstract class ViewCapture {
                 FrameData.Builder frameDataBuilder = FrameData.newBuilder()
                         .setNode(nodeBuilder)
                         .setTimestamp(mFrameTimesNanosBg[index]);
-                exportedDataBuilder.addFrameData(frameDataBuilder);
+                builder.addFrameData(frameDataBuilder);
             }
-            return exportedDataBuilder
-                    .addAllClassname(classList.stream().map(Class::getName).collect(toList()))
-                    .build();
+            return builder.build();
         }
 
         private ViewRef captureViewTree(View view, ViewRef start) {
