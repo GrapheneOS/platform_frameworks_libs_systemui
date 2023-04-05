@@ -29,4 +29,9 @@
 
     </application>
 
+    <instrumentation
+        android:name="android.testing.TestableInstrumentation"
+        android:label="Tests for MotionTool Lib"
+        android:targetPackage="com.android.app.motiontool.tests"/>
+
 </manifest>
