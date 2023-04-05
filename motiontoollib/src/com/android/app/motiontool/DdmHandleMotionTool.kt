@@ -107,7 +107,7 @@ class DdmHandleMotionTool private constructor(
         MotionToolsResponse.newBuilder().apply {
             tryCatchingMotionToolManagerExceptions {
                 setPollTrace(PollTraceResponse.newBuilder()
-                        .setExportedData(motionToolManager.pollTrace(pollTraceRequest.traceId)))
+                        .setData(motionToolManager.pollTrace(pollTraceRequest.traceId)))
             }
         }.build()
 
@@ -115,7 +115,7 @@ class DdmHandleMotionTool private constructor(
         MotionToolsResponse.newBuilder().apply {
             tryCatchingMotionToolManagerExceptions {
                 setEndTrace(EndTraceResponse.newBuilder()
-                        .setExportedData(motionToolManager.endTrace(endTraceRequest.traceId)))
+                        .setData(motionToolManager.endTrace(endTraceRequest.traceId)))
             }
         }.build()
 
