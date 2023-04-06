@@ -8,6 +8,7 @@ final String PROTOS_DIR = "${ANDROID_TOP}/frameworks/libs/systemui/motiontoollib
 
 android {
     namespace = "com.android.app.motiontool"
+    testNamespace = "com.android.app.motiontool.tests"
     defaultConfig {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
