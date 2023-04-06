@@ -8,6 +8,7 @@ final String PROTOS_DIR = "${ANDROID_TOP}/frameworks/libs/systemui/viewcaptureli
 
 android {
     namespace = "com.android.app.viewcapture"
+    testNamespace = "com.android.app.viewcapture.test"
     defaultConfig {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
