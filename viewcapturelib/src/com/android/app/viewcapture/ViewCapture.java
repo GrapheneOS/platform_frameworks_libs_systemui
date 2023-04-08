@@ -500,6 +500,8 @@ public abstract class ViewCapture {
                     .setHeight(bottom - top)
                     .setTranslationX(translateX)
                     .setTranslationY(translateY)
+                    .setScrollX(scrollX)
+                    .setScrollY(scrollY)
                     .setScaleX(scaleX)
                     .setScaleY(scaleY)
                     .setAlpha(alpha)
