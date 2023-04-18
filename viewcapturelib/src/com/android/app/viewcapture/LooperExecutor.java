@@ -28,7 +28,7 @@ import java.util.concurrent.RunnableFuture;
 /**
  * Implementation of {@link Executor} which executes on a provided looper.
  */
-class LooperExecutor implements Executor {
+public class LooperExecutor implements Executor {
 
     private final Handler mHandler;
 

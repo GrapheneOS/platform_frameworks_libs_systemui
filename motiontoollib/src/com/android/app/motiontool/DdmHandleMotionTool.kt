@@ -17,9 +17,7 @@
 package com.android.app.motiontool
 
 import android.ddm.DdmHandle
-import com.android.app.motiontool.nano.*
-import com.google.protobuf.nano.InvalidProtocolBufferNanoException
-import com.google.protobuf.nano.MessageNano
+import com.google.protobuf.InvalidProtocolBufferException
 import org.apache.harmony.dalvik.ddmc.Chunk
 import org.apache.harmony.dalvik.ddmc.ChunkHandler
 import org.apache.harmony.dalvik.ddmc.DdmServer
@@ -67,19 +65,18 @@ class DdmHandleMotionTool private constructor(
         val protoRequest =
             try {
                 MotionToolsRequest.parseFrom(requestDataBuffer.array())
-            } catch (e: InvalidProtocolBufferNanoException) {
-                val parseErrorResponse =
-                    ErrorResponse().apply {
-                        code = ErrorResponse.INVALID_REQUEST
-                        message = "Invalid request format (Protobuf parse exception)"
-                    }
-                val wrappedResponse = MotionToolsResponse().apply { error = parseErrorResponse }
-                val responseData = MessageNano.toByteArray(wrappedResponse)
+            } catch (e: InvalidProtocolBufferException) {
+                val responseData: ByteArray = MotionToolsResponse.newBuilder()
+                        .setError(ErrorResponse.newBuilder()
+                                .setCode(ErrorResponse.Code.INVALID_REQUEST)
+                                .setMessage("Invalid request format (Protobuf parse exception)"))
+                        .build()
+                        .toByteArray()
                 return Chunk(CHUNK_MOTO, responseData, 0, responseData.size)
             }
 
         val response =
-            when (protoRequest.typeCase) {
+            when (protoRequest.typeCase.number) {
                 MotionToolsRequest.HANDSHAKE_FIELD_NUMBER ->
                     handleHandshakeRequest(protoRequest.handshake)
                 MotionToolsRequest.BEGIN_TRACE_FIELD_NUMBER ->
@@ -89,87 +86,76 @@ class DdmHandleMotionTool private constructor(
                 MotionToolsRequest.END_TRACE_FIELD_NUMBER ->
                     handleEndTraceRequest(protoRequest.endTrace)
                 else ->
-                    MotionToolsResponse().apply {
-                        error =
-                            ErrorResponse().apply {
-                                code = ErrorResponse.INVALID_REQUEST
-                                message = "Unknown request type"
-                            }
-                    }
+                    MotionToolsResponse.newBuilder().setError(ErrorResponse.newBuilder()
+                            .setCode(ErrorResponse.Code.INVALID_REQUEST)
+                            .setMessage("Unknown request type")).build()
             }
 
-        val responseData = MessageNano.toByteArray(response)
+        val responseData = response.toByteArray()
         return Chunk(CHUNK_MOTO, responseData, 0, responseData.size)
     }
 
-    private fun handleBeginTraceRequest(beginTraceRequest: BeginTraceRequest) =
-        MotionToolsResponse().apply {
+    private fun handleBeginTraceRequest(beginTraceRequest: BeginTraceRequest): MotionToolsResponse =
+        MotionToolsResponse.newBuilder().apply {
             tryCatchingMotionToolManagerExceptions {
-                beginTrace =
-                    BeginTraceResponse().apply {
-                        traceId = motionToolManager.beginTrace(beginTraceRequest.window.rootWindow)
-                    }
+                setBeginTrace(BeginTraceResponse.newBuilder().setTraceId(
+                        motionToolManager.beginTrace(beginTraceRequest.window.rootWindow)))
             }
-        }
+        }.build()
 
-    private fun handlePollTraceRequest(pollTraceRequest: PollTraceRequest) =
-        MotionToolsResponse().apply {
+    private fun handlePollTraceRequest(pollTraceRequest: PollTraceRequest): MotionToolsResponse =
+        MotionToolsResponse.newBuilder().apply {
             tryCatchingMotionToolManagerExceptions {
-                pollTrace =
-                    PollTraceResponse().apply {
-                        exportedData = motionToolManager.pollTrace(pollTraceRequest.traceId)
-                    }
+                setPollTrace(PollTraceResponse.newBuilder()
+                        .setExportedData(motionToolManager.pollTrace(pollTraceRequest.traceId)))
             }
-        }
+        }.build()
 
-    private fun handleEndTraceRequest(endTraceRequest: EndTraceRequest) =
-        MotionToolsResponse().apply {
+    private fun handleEndTraceRequest(endTraceRequest: EndTraceRequest): MotionToolsResponse =
+        MotionToolsResponse.newBuilder().apply {
             tryCatchingMotionToolManagerExceptions {
-                endTrace =
-                    EndTraceResponse().apply {
-                        exportedData = motionToolManager.endTrace(endTraceRequest.traceId)
-                    }
+                setEndTrace(EndTraceResponse.newBuilder()
+                        .setExportedData(motionToolManager.endTrace(endTraceRequest.traceId)))
             }
-        }
+        }.build()
 
-    private fun handleHandshakeRequest(handshakeRequest: HandshakeRequest) =
-        MotionToolsResponse().apply {
-            handshake =
-                HandshakeResponse().apply {
-                    serverVersion = SERVER_VERSION
-                    status =
-                        if (motionToolManager.hasWindow(handshakeRequest.window)) {
-                            HandshakeResponse.OK
-                        } else {
-                            HandshakeResponse.WINDOW_NOT_FOUND
-                        }
-                }
-        }
+    private fun handleHandshakeRequest(handshakeRequest: HandshakeRequest): MotionToolsResponse {
+        val status = if (motionToolManager.hasWindow(handshakeRequest.window))
+            HandshakeResponse.Status.OK
+        else
+            HandshakeResponse.Status.WINDOW_NOT_FOUND
+
+        return MotionToolsResponse.newBuilder()
+                .setHandshake(HandshakeResponse.newBuilder()
+                        .setServerVersion(SERVER_VERSION)
+                        .setStatus(status))
+                .build()
+    }
 
     /**
      * Executes the [block] and catches all Exceptions thrown by [MotionToolManager]. In case of an
      * exception being caught, the error response field of the [MotionToolsResponse] is being set
      * with the according [ErrorResponse].
      */
-    private fun MotionToolsResponse.tryCatchingMotionToolManagerExceptions(block: () -> Unit) {
+    private fun MotionToolsResponse.Builder.tryCatchingMotionToolManagerExceptions(block: () -> Unit) {
         try {
             block()
         } catch (e: UnknownTraceIdException) {
-            error = createUnknownTraceIdResponse(e.traceId)
+            setError(createUnknownTraceIdResponse(e.traceId))
         } catch (e: WindowNotFoundException) {
-            error = createWindowNotFoundResponse(e.windowId)
+            setError(createWindowNotFoundResponse(e.windowId))
         }
     }
 
     private fun createUnknownTraceIdResponse(traceId: Int) =
-        ErrorResponse().apply {
-            this.code = ErrorResponse.UNKNOWN_TRACE_ID
+        ErrorResponse.newBuilder().apply {
+            this.code = ErrorResponse.Code.UNKNOWN_TRACE_ID
             this.message = "No running Trace found with traceId $traceId"
         }
 
     private fun createWindowNotFoundResponse(windowId: String) =
-        ErrorResponse().apply {
-            this.code = ErrorResponse.WINDOW_NOT_FOUND
+        ErrorResponse.newBuilder().apply {
+            this.code = ErrorResponse.Code.WINDOW_NOT_FOUND
             this.message = "No window found with windowId $windowId"
         }
 
