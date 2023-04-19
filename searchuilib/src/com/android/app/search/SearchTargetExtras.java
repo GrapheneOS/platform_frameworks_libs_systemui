@@ -123,9 +123,16 @@ public class SearchTargetExtras {
             "tall_card_image_description";
     public static final String BUNDLE_EXTRA_BITMAP_URL = "bitmap_url";
 
-    // Used for web suggestions count for both AA+ and QSB entry point.
+    // Used for web suggestions count in n-state for both AA+ and QSB entry point.
     // Returns the number of web suggestions to be shown.
-    public static final String WEB_SUG_COUNT = "web_sug_count";
+    public static final String BUNDLE_EXTRA_NSTATE_WEB_SUG_COUNT = "web_sug_count";
+
+    // Used for web suggestions count in 0-state for QSB entry point.
+    public static final String BUNDLE_EXTRA_ZERO_STATE_QSB_WEB_SUGGEST_COUNT =
+            "zero_state_qsb_web_suggest_count";
+    // Used for web suggestions count in 0-state for AA+ entry point.
+    public static final String BUNDLE_EXTRA_ZERO_STATE_ALL_APPS_WEB_SUGGEST_COUNT =
+            "zero_state_all_apps_web_suggest_count";
 
     /**
      *  Replaced with thumbnail crop type
