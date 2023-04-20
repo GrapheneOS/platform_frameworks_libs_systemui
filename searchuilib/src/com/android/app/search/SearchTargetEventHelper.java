@@ -20,6 +20,7 @@ import static com.android.app.search.SearchTargetExtras.isRichAnswer;
 import android.app.search.SearchTarget;
 import android.content.ComponentName;
 import android.os.Process;
+import android.os.UserHandle;
 
 import androidx.annotation.Nullable;
 
@@ -72,21 +73,24 @@ public class SearchTargetEventHelper {
     }
 
     /**
-     * Generate application target id similar to AiAi targetId for logging only 0-state.
-     * For n-state, AiAi already populates the target id in right format.
-     * AiAi target id is of format "resultType:userId:packageName:extraInfo"
+     * Generate application target id that matches the AiAi targetId for only 0-state.
+     * For n-state, AiAi already populates the target id in right format and it's unnecessary for
+     * Launcher to generate it itself.
+     * AiAi target id is of format "resultType:userHandle.Id:packageName:extraInfo"
      *
-     * When the apps from AiAi's AppPredictionService are converted to {@link SearchTarget}, we need
-     * to construct the targetId using componentName.
+     * When the apps from AiAi's AppPredictionService are converted to {@link SearchTarget},
+     * we need to construct the targetId using {@link ComponentName} and {@link UserHandle}.
+     * Both are required to create a unique id for the SearchTarget.
      *
      * @return string appTargetId
      * Example appTargetId for
      * maps - APPLICATION:0:com.google.android.apps.maps:com.google.android.maps.MapsActivity
      * clock - APPLICATION:0:com.google.android.deskclock:com.android.deskclock.DeskClock
      */
-    public static String generateAppTargetIdForLogging(@Nullable ComponentName appComponentName) {
+    public static String generateAppTargetId(@Nullable ComponentName appComponentName,
+            UserHandle userHandle) {
         StringBuilder appTargetId = new StringBuilder(
-                "APPLICATION" + ":" + Process.myUserHandle().getIdentifier() + ":");
+                "APPLICATION" + ":" + userHandle.getIdentifier() + ":");
         if (appComponentName == null) return appTargetId.append(" : ").toString();
         return appTargetId + appComponentName.getPackageName() + ":"
                 + appComponentName.getClassName();
