@@ -107,4 +107,19 @@ public class SearchTargetEventHelper {
     public static String generatePlayTargetIdForLogging(String appPackage) {
         return "PLAY" + ":" + Process.myUserHandle().getIdentifier() + ":" + appPackage + ":Gms";
     }
+
+    /**
+     * Generate target id similar to AiAi targetId for logging Toast session based on surface
+     * visible and invisible.
+     * AiAi target id is of format "resultType:userId:packageName:extraInfo"
+     *
+     * @return string TargetId for Toast session
+     * Example of Toast session target Id
+     * targetId=SESSION_INFO:0:toast:SURFACE_VISIBLE
+     * targetId=SESSION_INFO:0:toast:SURFACE_INVISIBLE
+     */
+    public static String generateToastSessionTargetIdForLogging(String surfaceVisibility) {
+        return "SESSION_INFO:" + Process.myUserHandle().getIdentifier()
+                + ":toast:" + surfaceVisibility;
+    }
 }
