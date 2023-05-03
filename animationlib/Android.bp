@@ -39,6 +39,7 @@ android_library {
 
 android_test {
     name: "animationlib_tests",
+    manifest: "tests/AndroidManifest.xml",
 
     static_libs: [
         "animationlib",
