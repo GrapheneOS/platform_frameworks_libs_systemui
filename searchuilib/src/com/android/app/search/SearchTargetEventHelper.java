@@ -122,4 +122,16 @@ public class SearchTargetEventHelper {
         return "SESSION_INFO:" + Process.myUserHandle().getIdentifier()
                 + ":toast:" + surfaceVisibility;
     }
+
+    /**
+     * Generate target id similar to AiAi targetId for logging Educard when educard is dismissed.
+     * AiAi target id is of format "resultType:userId:packageName:extraInfo"
+     *
+     * @return string TargetId for Educard
+     * Example of Educard target Id
+     * targetId=EDUCARD:0:toast:EDUCARD
+     */
+    public static String generateEducardTargetIdForLogging() {
+        return "EDUCARD" + ":" + Process.myUserHandle().getIdentifier() + ":toast:EDUCARD";
+    }
 }
