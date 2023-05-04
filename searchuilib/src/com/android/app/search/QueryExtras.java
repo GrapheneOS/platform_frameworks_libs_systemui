@@ -39,4 +39,7 @@ public class QueryExtras {
 
     // Used to know which target is deleted.
     public static final String EXTRAS_BUNDLE_DELETED_TARGET_ID = "deleted_target_id";
+
+    // Contains "educard dismissed" which is used to know if educard is dismissed.
+    public static final String EXTRAS_BUNDLE_EDUCARD_DISMISSED = "educard_dismissed";
 }
