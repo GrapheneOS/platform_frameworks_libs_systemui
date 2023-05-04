@@ -110,4 +110,10 @@ public class LayoutType {
     // Only available on or above version code 3.
     public static final String RICHANSWER_PLACEHOLDER = "richanswer_placeholder";
 
+    // Play placeholder
+    public static final String PLAY_PLACEHOLDER = "play_placeholder";
+
+    // Only available on or above version code 8 (UP1A)
+    // This layout is for educard.
+    public static final String EDUCARD = "educard";
 }
