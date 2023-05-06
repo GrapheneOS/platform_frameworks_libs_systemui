@@ -26,6 +26,8 @@ import android.text.TextUtils;
 
 import androidx.annotation.Nullable;
 
+import java.util.Arrays;
+
 /**
  * Helper class that defines key string value for {@link SearchTarget#getExtras()}
  * and also defines helper methods
@@ -67,6 +69,36 @@ public class SearchTargetExtras {
 
     // Used to denote this searchTarget is for recent block in 0-state.
     public static final String EXTRAS_RECENT_BLOCK_TARGET = "recent_block_target";
+
+    // Indicates the result source of this SearchTarget.
+    public static final String BUNDLE_EXTRA_DATA_DONATED_SOURCE = "data_donated_source";
+
+    public enum ResultSource {
+        AIAI_SEARCH_ROOT("aiai_search_root"),
+        APPSEARCH_APP_PREVIEW("appsearch_app_preview"),
+        APPSEARCH_APP_SRP_PREVIEW("appsearch_app_srp_preview");
+
+        private final String mDataSource;
+
+        ResultSource(String dataSource) {
+            mDataSource = dataSource;
+        }
+
+        public String getDataSource() {
+            return mDataSource;
+        }
+
+        public static ResultSource valueOfResultSource(String source)
+                throws IllegalArgumentException {
+            ResultSource resultSource = Arrays.stream(ResultSource.values())
+                    .filter(val -> val.getDataSource().equals(source))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Unable to resolve source: " + source));
+
+            return resultSource;
+        }
+    }
 
     public static final int GROUPING = 1 << 1;
 
