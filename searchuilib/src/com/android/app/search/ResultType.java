@@ -51,13 +51,14 @@ public class ResultType {
     public static final int EDUCARD = 1 << 19;
     public static final int SYSTEM_POINTER = 1 << 20;
     public static final int VIDEO = 1 << 21;
+    public static final int LOCATION = 1 << 22;
 
     public static final int PUBLIC_DATA_TYPE = APPLICATION | SETTING | PLAY | WEB_SUGGEST;
     public static final int PRIMITIVE_TYPE = APPLICATION | SLICE | SHORTCUT | WIDGETS | ACTION |
             LEGACY_SHORTCUT;
     public static final int CORPUS_TYPE =
             PEOPLE | SETTING | IMAGE | PLAY | SUGGEST | ASSISTANT | CHROMETAB | TIPS
-                    | PEOPLE_TILE | MEMORY | WEB_SUGGEST | VIDEO;
+                    | PEOPLE_TILE | MEMORY | WEB_SUGGEST | VIDEO | LOCATION;
     public static final int RANK_TYPE = SYSTEM_POINTER;
     public static final int UI_TYPE = EDUCARD | NO_FULFILLMENT;
 
