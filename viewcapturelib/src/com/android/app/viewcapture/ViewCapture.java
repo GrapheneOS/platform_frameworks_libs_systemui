@@ -21,10 +21,8 @@ import android.content.res.Resources;
 import android.media.permission.SafeCloseable;
 import android.os.HandlerThread;
 import android.os.Looper;
-import android.os.ParcelFileDescriptor;
 import android.os.Trace;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.Choreographer;
 import android.view.View;
@@ -33,8 +31,10 @@ import android.view.ViewTreeObserver;
 import android.view.Window;
 
 import androidx.annotation.AnyThread;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 
 import com.android.app.viewcapture.data.ExportedData;
@@ -120,6 +120,7 @@ public abstract class ViewCapture {
     /**
      * Attaches the ViewCapture to the provided window and returns a handle to detach the listener
      */
+    @NonNull
     public SafeCloseable startCapture(Window window) {
         String title = window.getAttributes().getTitle().toString();
         String name = TextUtils.isEmpty(title) ? window.toString() : title;
@@ -130,6 +131,7 @@ public abstract class ViewCapture {
      * Attaches the ViewCapture to the provided window and returns a handle to detach the listener.
      * Verifies that ViewCapture is enabled before actually attaching an onDrawListener.
      */
+    @NonNull
     public SafeCloseable startCapture(View view, String name) {
         WindowListener listener = new WindowListener(view, name);
         if (mIsEnabled) MAIN_EXECUTOR.execute(listener::attachToRoot);
@@ -140,6 +142,25 @@ public abstract class ViewCapture {
         };
     }
 
+    /**
+     * Launcher checks for leaks in many spots during its instrumented tests. The WindowListeners
+     * appear to have leaks because they store mRoot views. In reality, attached views close their
+     * respective window listeners when they are destroyed.
+     * <p>
+     * This method deletes detaches and deletes mRoot views from windowListeners. This makes the
+     * WindowListeners unusable for anything except dumping previously captured information. They
+     * are still technically enabled to allow for dumping.
+     */
+    @VisibleForTesting
+    public void stopCapture(@NonNull View rootView) {
+        mListeners.forEach(it -> {
+            if (rootView == it.mRoot) {
+                it.mRoot.getViewTreeObserver().removeOnDrawListener(it);
+                it.mRoot = null;
+            }
+        });
+    }
+
     @UiThread
     protected void enableOrDisableWindowListeners(boolean isEnabled) {
         mIsEnabled = isEnabled;
@@ -148,23 +169,18 @@ public abstract class ViewCapture {
     }
 
     @AnyThread
-    protected void dumpTo(ParcelFileDescriptor outFd, Context context) {
+    public void dumpTo(OutputStream os, Context context)
+            throws InterruptedException, ExecutionException, IOException {
         if (!mIsEnabled) {
             return;
         }
         ArrayList<Class> classList = new ArrayList<>();
-        try (OutputStream os = new ParcelFileDescriptor.AutoCloseOutputStream(outFd)) {
-            ExportedData.newBuilder()
-                    .setPackage(context.getPackageName())
-                    .addAllWindowData(getWindowData(context, classList, l -> l.mIsActive).get())
-                    .addAllClassname(toStringList(classList))
-                    .build()
-                    .writeTo(os);
-        } catch (InterruptedException | ExecutionException e) {
-            Log.e(TAG, "failed to get window data", e);
-        } catch (IOException e) {
-            Log.e(TAG, "failed to output data to wm trace", e);
-        }
+        ExportedData.newBuilder()
+                .setPackage(context.getPackageName())
+                .addAllWindowData(getWindowData(context, classList, l -> l.mIsActive).get())
+                .addAllClassname(toStringList(classList))
+                .build()
+                .writeTo(os);
     }
 
     private static List<String> toStringList(List<Class> classList) {
@@ -232,7 +248,8 @@ public abstract class ViewCapture {
      */
     private class WindowListener implements ViewTreeObserver.OnDrawListener {
 
-        public final View mRoot;
+        @Nullable // Nullable in tests only
+        public View mRoot;
         public final String name;
 
         private final ViewRef mViewRef = new ViewRef();
@@ -378,7 +395,9 @@ public abstract class ViewCapture {
 
         void detachFromRoot() {
             mIsActive = false;
-            mRoot.getViewTreeObserver().removeOnDrawListener(this);
+            if (mRoot != null) {
+                mRoot.getViewTreeObserver().removeOnDrawListener(this);
+            }
         }
 
         private void safelyEnableOnDrawListener() {
