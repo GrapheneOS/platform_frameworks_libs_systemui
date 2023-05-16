@@ -24,11 +24,14 @@ import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.os.Process
 import android.provider.Settings
+import android.util.Log
 import android.view.Choreographer
 import android.window.IDumpCallback
 import androidx.annotation.AnyThread
 import androidx.annotation.VisibleForTesting
 import java.util.concurrent.Executor
+
+private val TAG = SettingsAwareViewCapture::class.java.simpleName
 
 /**
  * ViewCapture that listens to system updates and enables / disables attached ViewCapture
@@ -41,7 +44,13 @@ internal constructor(private val context: Context, choreographer: Choreographer,
     : ViewCapture(DEFAULT_MEMORY_SIZE, DEFAULT_INIT_POOL_SIZE, choreographer, executor) {
     /** Dumps all the active view captures to the wm trace directory via LauncherAppService */
     private val mDumpCallback: IDumpCallback.Stub = object : IDumpCallback.Stub() {
-        override fun onDump(out: ParcelFileDescriptor) = dumpTo(out, context)
+        override fun onDump(out: ParcelFileDescriptor) {
+            try {
+                ParcelFileDescriptor.AutoCloseOutputStream(out).use { os -> dumpTo(os, context) }
+            } catch (e: Exception) {
+                Log.e(TAG, "failed to dump data to wm trace", e)
+            }
+        }
     }
 
     init {
