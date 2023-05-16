@@ -16,6 +16,7 @@
 package com.android.launcher3.icons;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -154,11 +155,17 @@ public class BitmapInfo {
             if (badgeInfo != null) {
                 drawable.setBadge(badgeInfo.newIcon(context, creationFlags));
             } else if ((flags & FLAG_INSTANT) != 0) {
-                drawable.setBadge(context.getDrawable(R.drawable.ic_instant_app_badge));
+                drawable.setBadge(context.getDrawable(drawable.isThemed()
+                        ? R.drawable.ic_instant_app_badge_themed
+                        : R.drawable.ic_instant_app_badge));
             } else if ((flags & FLAG_WORK) != 0) {
-                drawable.setBadge(context.getDrawable(R.drawable.ic_work_app_badge));
+                drawable.setBadge(context.getDrawable(drawable.isThemed()
+                        ? R.drawable.ic_work_app_badge_themed
+                        : R.drawable.ic_work_app_badge));
             } else if ((flags & FLAG_CLONE) != 0) {
-                drawable.setBadge(context.getDrawable(R.drawable.ic_clone_app_badge));
+                drawable.setBadge(context.getDrawable(drawable.isThemed()
+                        ? R.drawable.ic_clone_app_badge_themed
+                        : R.drawable.ic_clone_app_badge));
             }
         }
     }
