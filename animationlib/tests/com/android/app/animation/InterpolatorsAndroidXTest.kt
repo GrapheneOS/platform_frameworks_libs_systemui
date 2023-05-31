@@ -23,6 +23,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
+private const val ANDROIDX_ANIM_PACKAGE_NAME = "androidx.core.animation."
+private const val ANDROID_ANIM_PACKAGE_NAME = "android.view.animation."
+
 @SmallTest
 @RunWith(JUnit4::class)
 class InterpolatorsAndroidXTest {
@@ -46,7 +49,9 @@ class InterpolatorsAndroidXTest {
     private fun <T> Class<T>.getPublicMethods() =
             declaredMethods
                     .filter { Modifier.isPublic(it.modifiers) }
-                    .map { it.toString().replace(name, "") }
+                    .map { it.toString().replace(name, "")
+                        .replace(ANDROIDX_ANIM_PACKAGE_NAME, "")
+                        .replace(ANDROID_ANIM_PACKAGE_NAME, "") }
                     .toSet()
 
     private fun <T> Class<T>.getPublicFields() =
