@@ -171,16 +171,18 @@ public abstract class ViewCapture {
     @AnyThread
     public void dumpTo(OutputStream os, Context context)
             throws InterruptedException, ExecutionException, IOException {
-        if (!mIsEnabled) {
-            return;
-        }
+        if (mIsEnabled) getExportedData(context).writeTo(os);
+    }
+
+    @VisibleForTesting
+    public ExportedData getExportedData(Context context)
+            throws InterruptedException, ExecutionException {
         ArrayList<Class> classList = new ArrayList<>();
-        ExportedData.newBuilder()
+        return ExportedData.newBuilder()
                 .setPackage(context.getPackageName())
                 .addAllWindowData(getWindowData(context, classList, l -> l.mIsActive).get())
                 .addAllClassname(toStringList(classList))
-                .build()
-                .writeTo(os);
+                .build();
     }
 
     private static List<String> toStringList(List<Class> classList) {
