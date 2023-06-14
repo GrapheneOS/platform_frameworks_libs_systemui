@@ -19,7 +19,6 @@ package com.android.app.viewcapture
 import android.content.Intent
 import android.media.permission.SafeCloseable
 import android.testing.AndroidTestingRunner
-import android.view.Choreographer
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -41,7 +40,7 @@ class ViewCaptureTest {
     private val initPoolSize = 15
     private val viewCapture by lazy {
         object :
-            ViewCapture(memorySize, initPoolSize, Choreographer.getInstance(), MAIN_EXECUTOR) {}
+            ViewCapture(memorySize, initPoolSize, MAIN_EXECUTOR) {}
     }
 
     private val activityIntent =
@@ -52,33 +51,29 @@ class ViewCaptureTest {
     @Test
     fun testWindowListenerDumpsOneFrameAfterInvalidate() {
         activityScenarioRule.scenario.onActivity { activity ->
-            Choreographer.getInstance().postFrameCallback {
-                val closeable = startViewCaptureAndInvalidateNTimes(1, activity)
-                val rootView = activity.findViewById<View>(android.R.id.content)
-                val data = viewCapture.getDumpTask(rootView).get().get()
+            val closeable = startViewCaptureAndInvalidateNTimes(1, activity)
+            val rootView = activity.findViewById<View>(android.R.id.content)
+            val data = viewCapture.getDumpTask(rootView).get().get()
 
-                assertEquals(1, data.frameDataList.size)
-                verifyTestActivityViewHierarchy(data)
-                closeable.close()
-            }
+            assertEquals(1, data.frameDataList.size)
+            verifyTestActivityViewHierarchy(data)
+            closeable.close()
         }
     }
 
     @Test
     fun testWindowListenerDumpsCorrectlyAfterRecyclingStarted() {
         activityScenarioRule.scenario.onActivity { activity ->
-            Choreographer.getInstance().postFrameCallback {
-                val closeable = startViewCaptureAndInvalidateNTimes(memorySize + 5, activity)
-                val rootView = activity.findViewById<View>(android.R.id.content)
-                val data = viewCapture.getDumpTask(rootView).get().get()
+            val closeable = startViewCaptureAndInvalidateNTimes(memorySize + 5, activity)
+            val rootView = activity.findViewById<View>(android.R.id.content)
+            val data = viewCapture.getDumpTask(rootView).get().get()
 
-                // since ViewCapture MEMORY_SIZE is [viewCaptureMemorySize], only
-                // [viewCaptureMemorySize] frames are exported, although the view is invalidated
-                // [viewCaptureMemorySize + 5] times
-                assertEquals(memorySize, data.frameDataList.size)
-                verifyTestActivityViewHierarchy(data)
-                closeable.close()
-            }
+            // since ViewCapture MEMORY_SIZE is [viewCaptureMemorySize], only
+            // [viewCaptureMemorySize] frames are exported, although the view is invalidated
+            // [viewCaptureMemorySize + 5] times
+            assertEquals(memorySize, data.frameDataList.size)
+            verifyTestActivityViewHierarchy(data)
+            closeable.close()
         }
     }
 

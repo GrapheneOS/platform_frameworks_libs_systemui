@@ -34,6 +34,10 @@ message ExportedData {
   repeated WindowData windowData = 2;
   optional string package = 3;
   repeated string classname = 4;
+
+  /* offset between real-time clock and elapsed time clock in nanoseconds.
+     Calculated as: 1000000 * System.currentTimeMillis() - SystemClock.elapsedRealtimeNanos() */
+  optional fixed64 real_to_elapsed_time_offset_nanos = 5;
 }
 
 message WindowData {
@@ -47,7 +51,7 @@ message MotionWindowData {
 }
 
 message FrameData {
-  optional int64 timestamp = 1; // choreographer timestamp in nanoseconds
+  optional int64 timestamp = 1; // unit is elapsed realtime nanos
   optional ViewNode node = 2;
 }
 
