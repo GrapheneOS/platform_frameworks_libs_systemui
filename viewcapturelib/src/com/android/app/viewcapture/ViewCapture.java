@@ -16,9 +16,6 @@
 
 package com.android.app.viewcapture;
 
-import static com.android.app.viewcapture.data.ExportedData.MagicNumber.MAGIC_NUMBER_H;
-import static com.android.app.viewcapture.data.ExportedData.MagicNumber.MAGIC_NUMBER_L;
-
 import android.content.Context;
 import android.content.res.Resources;
 import android.media.permission.SafeCloseable;
@@ -67,9 +64,6 @@ public abstract class ViewCapture {
     // These flags are copies of two private flags in the View class.
     private static final int PFLAG_INVALIDATED = 0x80000000;
     private static final int PFLAG_DIRTY_MASK = 0x00200000;
-
-    private static final long MAGIC_NUMBER_FOR_WINSCOPE =
-            ((long) MAGIC_NUMBER_H.getNumber() << 32) | MAGIC_NUMBER_L.getNumber();
 
     // Number of frames to keep in memory
     private final int mMemorySize;
@@ -185,7 +179,6 @@ public abstract class ViewCapture {
             throws InterruptedException, ExecutionException {
         ArrayList<Class> classList = new ArrayList<>();
         return ExportedData.newBuilder()
-                .setMagicNumber(MAGIC_NUMBER_FOR_WINSCOPE)
                 .setPackage(context.getPackageName())
                 .addAllWindowData(getWindowData(context, classList, l -> l.mIsActive).get())
                 .addAllClassname(toStringList(classList))
