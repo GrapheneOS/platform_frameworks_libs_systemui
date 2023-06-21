@@ -19,9 +19,11 @@ package {
 android_library {
     name: "search_ui",
 
-    sdk_version: "current",
-    min_sdk_version: "26",
+    sdk_version: "system_current",
 
+    static_libs: [
+        "androidx.annotation_annotation",
+    ],
     srcs: [
         "src/**/*.java",
     ],

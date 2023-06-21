@@ -51,4 +51,42 @@ public class ResultType {
     public static final int EDUCARD = 1 << 19;
     public static final int SYSTEM_POINTER = 1 << 20;
     public static final int VIDEO = 1 << 21;
+
+    public static final int PUBLIC_DATA_TYPE = APPLICATION | SETTING | PLAY | WEB_SUGGEST;
+    public static final int PRIMITIVE_TYPE = APPLICATION | SLICE | SHORTCUT | WIDGETS | ACTION |
+            LEGACY_SHORTCUT;
+    public static final int CORPUS_TYPE =
+            PEOPLE | SETTING | IMAGE | PLAY | SUGGEST | ASSISTANT | CHROMETAB | NAVVYSITE | TIPS
+                    | PEOPLE_TILE | MEMORY | WEB_SUGGEST | VIDEO;
+    public static final int RANK_TYPE = SYSTEM_POINTER;
+    public static final int UI_TYPE = EDUCARD | NO_FULFILLMENT;
+
+    public static boolean isSlice(int resultType) {
+        return (resultType & SLICE) != 0;
+    }
+
+    public static boolean isSystemPointer(int resultType) {
+        return (resultType & SYSTEM_POINTER) != 0;
+    }
+
+    /**
+     * Returns result type integer where only {@code #CORPUS_TYPE} bit will turned on.
+     */
+    public static int getCorpusType(int resultType) {
+        return (resultType & CORPUS_TYPE);
+    }
+
+    /**
+     * Returns result type integer where only {@code #PRIMITIVE_TYPE} bit will be turned on.
+     */
+    public static int getPrimitiveType(int resultType) {
+        return (resultType & PRIMITIVE_TYPE);
+    }
+
+    /**
+     * Returns whether the given result type is privacy safe or not.
+     */
+    public static boolean isPrivacySafe(int resultType) {
+        return (resultType & PUBLIC_DATA_TYPE) != 0;
+    }
 }

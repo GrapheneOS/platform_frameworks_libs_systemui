@@ -47,7 +47,14 @@ public class LayoutType {
     public static final String SMALL_ICON_HORIZONTAL_TEXT = "short_icon_row";
     public static final String SMALL_ICON_HORIZONTAL_TEXT_THUMBNAIL = "short_icon_row_thumbnail";
 
-    // This layout contains a series of thumbnails (currently up to 3 per row)
+    // This layout contains a series of icon results (currently up to 4 per row).
+    // The container does not support stretching for its children, and can only contain
+    // {@link #ICON_SINGLE_VERTICAL_TEXT} layout types.
+    public static final String ICON_CONTAINER = "icon_container";
+
+    // This layout contains a series of thumbnails (currently up to 3 per row).
+    // The container supports stretching for its children, and can only contain {@link #THUMBNAIL}
+    // layout types.
     public static final String THUMBNAIL_CONTAINER = "thumbnail_container";
 
     // This layout creates a container for people grouping
@@ -74,9 +81,6 @@ public class LayoutType {
     public static final String TEXT_HEADER = "header";
 
     // horizontal bar to be inserted between fallback search results and low confidence section
-    public static final String DIVIDER = "divider";
-
-    // horizontal bar to be inserted between fallback search results and low confidence section
     public static final String EMPTY_DIVIDER = "empty_divider";
 
     // layout representing quick calculations
@@ -92,4 +96,15 @@ public class LayoutType {
     // Layout for a text header
     // Available for SearchUiManager proxy service to use above version code 3
     public static final String TEXT_HEADER_ROW = "text_header_row";
+
+    // Layout for a quick settings tile
+    public static final String QS_TILE = "qs_tile";
+
+    // Placeholder for web suggest.
+    public static final String PLACEHOLDER = "placeholder";
+
+    // Placeholder for rich answer cards.
+    // Only available on or above version code 3.
+    public static final String RICHANSWER_PLACEHOLDER = "richanswer_placeholder";
+
 }
