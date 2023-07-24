@@ -14,7 +14,8 @@ android {
             manifest.srcFile 'AndroidManifest.xml'
         }
         androidTest {
-            java.srcDirs = ["tests"]
+            java.srcDirs = ["tests/src"]
+            manifest.srcFile 'tests/AndroidManifest.xml'
         }
     }
     compileSdk 33
@@ -38,9 +39,9 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0"
-    implementation "androidx.core:core-animation:1.0.0-alpha02"
-    implementation "androidx.core:core-ktx:1.9.0"
-    androidTestImplementation "androidx.test.ext:junit:1.1.3"
-    androidTestImplementation "androidx.test:rules:1.4.0"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7"
+    implementation "androidx.core:core-animation"
+    implementation "androidx.core:core-ktx"
+    androidTestImplementation "androidx.test.ext:junit"
+    androidTestImplementation "androidx.test:rules"
 }
