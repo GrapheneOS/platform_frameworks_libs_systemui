@@ -11,6 +11,7 @@ android {
     sourceSets {
         main {
             java.srcDirs = ['src']
+            res.srcDirs = ['res']
             manifest.srcFile 'AndroidManifest.xml'
         }
         androidTest {
