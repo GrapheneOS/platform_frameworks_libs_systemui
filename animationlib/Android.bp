@@ -31,6 +31,9 @@ android_library {
         "src/**/*.java",
         "src/**/*.kt"
     ],
+    resource_dirs: [
+        "res"
+    ],
     kotlincflags: ["-Xjvm-default=all"],
     // This library is meant to access only public APIs
     // do not flip this flag to true
