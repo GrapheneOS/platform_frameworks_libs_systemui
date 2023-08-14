@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 **
-** Copyright 2018, The Android Open Source Project
+** Copyright 2023, The Android Open Source Project
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -17,12 +17,8 @@
 */
 -->
 <resources>
-    <color name="themed_icon_color">#0842A0</color>
-    <color name="themed_icon_background_color">#D3E3FD</color>
-    <color name="themed_badge_icon_color">#0842A0</color>
-    <color name="themed_badge_icon_background_color">#D3E3FD</color>
-    <color name="legacy_icon_background">#FFFFFF</color>
-
-    <!-- Yellow 600, used for highlighting "important" conversations in settings & notifications -->
-    <color name="important_conversation">#f9ab00</color>
+    <color name="themed_icon_color">@android:color/system_accent1_700</color>
+    <color name="themed_icon_background_color">@android:color/system_accent1_100</color>
+    <color name="themed_badge_icon_color">@android:color/system_accent1_700</color>
+    <color name="themed_badge_icon_background_color">@android:color/system_accent1_100</color>
 </resources>

@@ -1,5 +1,5 @@
 plugins {
-    id 'sysuigradleproject.android-library-conventions'
+    id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
     id 'com.google.protobuf'
 }
@@ -7,16 +7,10 @@ plugins {
 final String PROTOS_DIR = "${ANDROID_TOP}/frameworks/libs/systemui/motiontoollib/src/com/android/app/motiontool/proto"
 
 android {
-    compileSdk TARGET_SDK.toInteger()
-    buildToolsVersion = BUILD_TOOLS_VERSION
-
+    namespace = "com.android.app.motiontool"
+    testNamespace = "com.android.app.motiontool.tests"
     defaultConfig {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    defaultConfig {
-        minSdkVersion TARGET_SDK.toInteger()
-        targetSdkVersion TARGET_SDK.toInteger()
     }
 
     sourceSets {
@@ -30,15 +24,15 @@ android {
             manifest.srcFile "tests/AndroidManifest.xml"
         }
     }
-
-    lintOptions {
+    lint {
         abortOnError false
     }
+
 }
 
 dependencies {
     implementation "androidx.core:core:1.9.0"
-    implementation "com.google.protobuf:protobuf-lite:${protobuf_version}"
+    implementation "com.google.protobuf:protobuf-lite:${protobuf_lite_version}"
     api project(":ViewCaptureLib")
     androidTestImplementation project(':SharedTestLib')
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
