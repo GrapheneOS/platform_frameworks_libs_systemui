@@ -17,6 +17,7 @@
 package com.android.launcher3.icons;
 
 import static com.android.launcher3.icons.BaseIconFactory.getBadgeSizeForIconSize;
+import static com.android.launcher3.icons.BitmapInfo.FLAG_THEMED;
 import static com.android.launcher3.icons.GraphicsUtils.setColorAlphaBound;
 
 import android.animation.ObjectAnimator;
@@ -39,6 +40,8 @@ import android.view.animation.PathInterpolator;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.graphics.ColorUtils;
+
+import com.android.launcher3.icons.BitmapInfo.DrawableCreationFlags;
 
 public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
 
@@ -70,6 +73,8 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
     @VisibleForTesting protected boolean mIsHovered;
     protected boolean mIsDisabled;
     float mDisabledAlpha = 1f;
+
+    @DrawableCreationFlags int mCreationFlags = 0;
 
     // Animator and properties for the fast bitmap drawable's scale
     @VisibleForTesting protected static final FloatProperty<FastBitmapDrawable> SCALE
@@ -153,6 +158,14 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
      */
     public boolean isThemed() {
         return false;
+    }
+
+    /**
+     * Returns true if the drawable was created with theme, even if it doesn't
+     * support theming itself.
+     */
+    public boolean isCreatedForTheme() {
+        return isThemed() || (mCreationFlags & FLAG_THEMED) != 0;
     }
 
     @Override
@@ -317,6 +330,7 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
         if (mBadge != null) {
             cs.mBadgeConstantState = mBadge.getConstantState();
         }
+        cs.mCreationFlags = mCreationFlags;
         return cs;
     }
 
@@ -395,6 +409,8 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
         protected boolean mIsDisabled;
         private ConstantState mBadgeConstantState;
 
+        @DrawableCreationFlags int mCreationFlags = 0;
+
         public FastBitmapConstantState(Bitmap bitmap, int color) {
             mBitmap = bitmap;
             mIconColor = color;
@@ -411,6 +427,7 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
             if (mBadgeConstantState != null) {
                 drawable.setBadge(mBadgeConstantState.newDrawable());
             }
+            drawable.mCreationFlags = mCreationFlags;
             return drawable;
         }
 

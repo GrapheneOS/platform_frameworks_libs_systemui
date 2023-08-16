@@ -16,10 +16,10 @@
 package com.android.launcher3.icons;
 
 import android.content.Context;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
@@ -151,23 +151,36 @@ public class BitmapInfo {
     protected void applyFlags(Context context, FastBitmapDrawable drawable,
             @DrawableCreationFlags int creationFlags) {
         drawable.mDisabledAlpha = GraphicsUtils.getFloat(context, R.attr.disabledIconAlpha, 1f);
+        drawable.mCreationFlags = creationFlags;
         if ((creationFlags & FLAG_NO_BADGE) == 0) {
-            if (badgeInfo != null) {
-                drawable.setBadge(badgeInfo.newIcon(context, creationFlags));
-            } else if ((flags & FLAG_INSTANT) != 0) {
-                drawable.setBadge(context.getDrawable(drawable.isThemed()
-                        ? R.drawable.ic_instant_app_badge_themed
-                        : R.drawable.ic_instant_app_badge));
-            } else if ((flags & FLAG_WORK) != 0) {
-                drawable.setBadge(context.getDrawable(drawable.isThemed()
-                        ? R.drawable.ic_work_app_badge_themed
-                        : R.drawable.ic_work_app_badge));
-            } else if ((flags & FLAG_CLONE) != 0) {
-                drawable.setBadge(context.getDrawable(drawable.isThemed()
-                        ? R.drawable.ic_clone_app_badge_themed
-                        : R.drawable.ic_clone_app_badge));
+            Drawable badge = getBadgeDrawable(context, (creationFlags & FLAG_THEMED) != 0);
+            if (badge != null) {
+                drawable.setBadge(badge);
             }
         }
+    }
+
+    /**
+     * Returns a drawable representing the badge for this info
+     */
+    @Nullable
+    public Drawable getBadgeDrawable(Context context, boolean isThemed) {
+        if (badgeInfo != null) {
+            return badgeInfo.newIcon(context, isThemed ? FLAG_THEMED : 0);
+        } else if ((flags & FLAG_INSTANT) != 0) {
+            return context.getDrawable(isThemed
+                    ? R.drawable.ic_instant_app_badge_themed
+                    : R.drawable.ic_instant_app_badge);
+        } else if ((flags & FLAG_WORK) != 0) {
+            return context.getDrawable(isThemed
+                    ? R.drawable.ic_work_app_badge_themed
+                    : R.drawable.ic_work_app_badge);
+        } else if ((flags & FLAG_CLONE) != 0) {
+            return context.getDrawable(isThemed
+                    ? R.drawable.ic_clone_app_badge_themed
+                    : R.drawable.ic_clone_app_badge);
+        }
+        return null;
     }
 
     public static BitmapInfo fromBitmap(@NonNull Bitmap bitmap) {
