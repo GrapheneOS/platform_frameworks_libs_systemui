@@ -19,12 +19,6 @@ android {
             manifest.srcFile 'tests/AndroidManifest.xml'
         }
     }
-    compileSdk 33
-
-    defaultConfig {
-        minSdk 33
-        targetSdk 33
-    }
 
     lintOptions {
         abortOnError false
