@@ -85,7 +85,10 @@ class MotionToolManagerTest {
         activityScenarioRule.scenario.onActivity { activity ->
             val traceId = motionToolManager.beginTrace(getActivityViewRootId())
             Choreographer.getInstance().postFrameCallback {
-                activity.findViewById<View>(android.R.id.content).viewTreeObserver.dispatchOnDraw()
+                activity
+                    .requireViewById<View>(android.R.id.content)
+                    .viewTreeObserver
+                    .dispatchOnDraw()
 
                 val polledData = motionToolManager.pollTrace(traceId)
                 assertEquals(1, polledData.frameDataList.size)
