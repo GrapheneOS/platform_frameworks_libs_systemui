@@ -130,7 +130,10 @@ class DdmHandleMotionToolTest {
             val traceId = beginTraceResponse.beginTrace.traceId
 
             Choreographer.getInstance().postFrameCallback {
-                activity.findViewById<View>(android.R.id.content).viewTreeObserver.dispatchOnDraw()
+                activity
+                    .requireViewById<View>(android.R.id.content)
+                    .viewTreeObserver
+                    .dispatchOnDraw()
 
                 val pollTraceResponse = performPollTraceRequest(traceId)
                 assertEquals(1, pollTraceResponse.pollTrace.data.frameDataList.size)

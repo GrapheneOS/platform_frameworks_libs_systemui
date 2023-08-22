@@ -51,14 +51,21 @@ class SettingsAwareViewCaptureTest {
 
         activityScenarioRule.scenario.onActivity { activity ->
             val viewCapture: ViewCapture = SettingsAwareViewCapture(context, MAIN_EXECUTOR)
-            val rootView: View = activity.findViewById(android.R.id.content)
+            val rootView: View = activity.requireViewById(android.R.id.content)
 
             val closeable: SafeCloseable = viewCapture.startCapture(rootView, "rootViewId")
             Choreographer.getInstance().postFrameCallback {
                 rootView.viewTreeObserver.dispatchOnDraw()
 
-                assertEquals(0, viewCapture.getDumpTask(
-                        activity.findViewById(android.R.id.content)).get().get().frameDataList.size)
+                assertEquals(
+                    0,
+                    viewCapture
+                        .getDumpTask(activity.requireViewById(android.R.id.content))
+                        .get()
+                        .get()
+                        .frameDataList
+                        .size
+                )
                 closeable.close()
             }
         }
@@ -70,14 +77,21 @@ class SettingsAwareViewCaptureTest {
 
         activityScenarioRule.scenario.onActivity { activity ->
             val viewCapture: ViewCapture = SettingsAwareViewCapture(context, MAIN_EXECUTOR)
-            val rootView: View = activity.findViewById(android.R.id.content)
+            val rootView: View = activity.requireViewById(android.R.id.content)
 
             val closeable: SafeCloseable = viewCapture.startCapture(rootView, "rootViewId")
             Choreographer.getInstance().postFrameCallback {
                 rootView.viewTreeObserver.dispatchOnDraw()
 
-                assertEquals(1, viewCapture.getDumpTask(activity.findViewById(
-                        android.R.id.content)).get().get().frameDataList.size)
+                assertEquals(
+                    1,
+                    viewCapture
+                        .getDumpTask(activity.requireViewById(android.R.id.content))
+                        .get()
+                        .get()
+                        .frameDataList
+                        .size
+                )
 
                 closeable.close()
             }
