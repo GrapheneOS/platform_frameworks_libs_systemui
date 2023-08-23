@@ -52,7 +52,7 @@ class ViewCaptureTest {
     fun testWindowListenerDumpsOneFrameAfterInvalidate() {
         activityScenarioRule.scenario.onActivity { activity ->
             val closeable = startViewCaptureAndInvalidateNTimes(1, activity)
-            val rootView = activity.findViewById<View>(android.R.id.content)
+            val rootView = activity.requireViewById<View>(android.R.id.content)
             val data = viewCapture.getDumpTask(rootView).get().get()
 
             assertEquals(1, data.frameDataList.size)
@@ -65,7 +65,7 @@ class ViewCaptureTest {
     fun testWindowListenerDumpsCorrectlyAfterRecyclingStarted() {
         activityScenarioRule.scenario.onActivity { activity ->
             val closeable = startViewCaptureAndInvalidateNTimes(memorySize + 5, activity)
-            val rootView = activity.findViewById<View>(android.R.id.content)
+            val rootView = activity.requireViewById<View>(android.R.id.content)
             val data = viewCapture.getDumpTask(rootView).get().get()
 
             // since ViewCapture MEMORY_SIZE is [viewCaptureMemorySize], only
@@ -78,7 +78,7 @@ class ViewCaptureTest {
     }
 
     private fun startViewCaptureAndInvalidateNTimes(n: Int, activity: TestActivity): SafeCloseable {
-        val rootView: View = activity.findViewById(android.R.id.content)
+        val rootView: View = activity.requireViewById(android.R.id.content)
         val closeable: SafeCloseable = viewCapture.startCapture(rootView, "rootViewId")
         dispatchOnDraw(rootView, times = n)
         return closeable
