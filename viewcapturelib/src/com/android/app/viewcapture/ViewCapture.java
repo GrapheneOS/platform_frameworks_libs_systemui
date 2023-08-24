@@ -173,7 +173,7 @@ public abstract class ViewCapture {
     }
 
     @AnyThread
-    public void dumpTo(OutputStream os, Context context)
+    protected void dumpTo(OutputStream os, Context context)
             throws InterruptedException, ExecutionException, IOException {
         if (mIsEnabled) getExportedData(context).writeTo(os);
     }
