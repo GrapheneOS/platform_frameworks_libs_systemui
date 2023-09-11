@@ -17,6 +17,7 @@
 package com.android.launcher3.icons;
 
 import static com.android.launcher3.icons.BaseIconFactory.getBadgeSizeForIconSize;
+import static com.android.launcher3.icons.BitmapInfo.FLAG_NO_BADGE;
 import static com.android.launcher3.icons.BitmapInfo.FLAG_THEMED;
 import static com.android.launcher3.icons.GraphicsUtils.setColorAlphaBound;
 
@@ -336,6 +337,11 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
 
     public static ColorFilter getDisabledColorFilter() {
         return getDisabledColorFilter(1);
+    }
+
+    // Returns if the FastBitmapDrawable contains a badge.
+    public boolean hasBadge() {
+        return (mCreationFlags & FLAG_NO_BADGE) == 0;
     }
 
     private static ColorFilter getDisabledColorFilter(float disabledAlpha) {
