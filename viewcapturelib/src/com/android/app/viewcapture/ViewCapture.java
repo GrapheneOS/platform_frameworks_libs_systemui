@@ -382,6 +382,7 @@ public abstract class ViewCapture {
         }
 
         void attachToRoot() {
+            if (mRoot == null) return;
             mIsActive = true;
             if (mRoot.isAttachedToWindow()) {
                 safelyEnableOnDrawListener();
