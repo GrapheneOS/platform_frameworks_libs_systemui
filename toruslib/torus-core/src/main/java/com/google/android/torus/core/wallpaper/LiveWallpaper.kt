@@ -24,7 +24,6 @@ import android.content.IntentFilter
 import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.os.Build
-import android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 import android.os.Bundle
 import android.service.wallpaper.WallpaperService
 import android.view.MotionEvent
@@ -209,10 +208,11 @@ abstract class LiveWallpaper : WallpaperService() {
         fun getEngineSurfaceHolder(): SurfaceHolder? = this.wallpaperServiceEngine?.surfaceHolder
 
         /** Returns the wallpaper flags indicating which screen this Engine is rendering to. */
-        @RequiresApi(UPSIDE_DOWN_CAKE)
         fun getWallpaperFlags(): Int {
-            this.wallpaperServiceEngine?.let {
-                return it.wallpaperFlags
+            if (Build.VERSION.SDK_INT >= 34) {
+                this.wallpaperServiceEngine?.let {
+                    return it.wallpaperFlags
+                }
             }
             return WALLPAPER_FLAG_NOT_FOUND
         }
