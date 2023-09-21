@@ -1,0 +1,185 @@
+/*
+ * Copyright (C) 2023 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+uniform shader foreground;
+uniform shader background;
+uniform shader blurredBackground;
+uniform float2 uvOffsetFgd;
+uniform float2 uvScaleFgd;
+uniform float2 uvOffsetBgd;
+uniform float2 uvScaleBgd;
+uniform float time;
+uniform float screenAspectRatio;
+uniform float2 screenSize;
+
+#include "shaders/constants.agsl"
+#include "shaders/utils.agsl"
+#include "shaders/glass_rain.agsl"
+#include "shaders/rain.agsl"
+
+/* Constants that can be modified. */
+// The color of the highlight of each drop.
+const vec4 highlightColor = vec4(vec3(1.), 1.); // white
+// The color of the contact ambient occlusion shadow.
+const vec4 contactShadowColor = vec4(vec3(0.), 1.); // black
+// The color of the contact ambient occlusion shadow.
+const vec4 dropTint = vec4(vec3(1.), 1.); // white
+// Glass tint.
+const vec4 glassTint = vec4(vec3(0.5), 1.); // gray
+// rain tint.
+const vec4 rainTint = vec4(vec3(0.5), 1.); // gray
+
+// How much of tint we want in the drops.
+const float dropTintIntensity = 0.09;
+// How much of highlight we want.
+const float uHighlightIntensity = 0.7;
+// How much of contact shadow we want.
+const float uDropShadowIntensity = 0.5;
+// rain visibility (how visible it is).
+const float rainVisibility = 0.4;
+// How heavy it rains. 1: heavy showers; 0: no rain.
+const float rainIntensity = 0.21;
+
+vec4 main(float2 fragCoord) {
+    float2 uv = fragCoord / screenSize;
+    // Adjusts the UVs to have the expected rect of the image.
+    float2 uvTextureBgd = fragCoord * uvScaleBgd + uvOffsetBgd;
+    vec4 colorForeground = foreground.eval(fragCoord * uvScaleFgd + uvOffsetFgd);
+    vec4 color = vec4(0., 0., 0., 1.);
+
+    // Generate small glass rain.
+    GlassRain drippingRain = generateGlassRain(
+         uv,
+         screenAspectRatio,
+         time,
+         /* Grid size = */ vec2(4.0, 2.0),
+         /* rain intensity = */ 0.8);
+    float dropMask = drippingRain.dropMask;
+    float droppletsMask = drippingRain.droppletsMask;
+    float trailMask = drippingRain.trailMask;
+    vec2 dropUvMasked = drippingRain.drop * drippingRain.dropMask;
+    vec2 droppletsUvMasked = drippingRain.dropplets * drippingRain.droppletsMask;
+
+    // Generate medium glass rain and combine with small one.
+    drippingRain = generateGlassRain(
+          uv,
+          screenAspectRatio,
+          time * 1.267,
+          /* Grid size = */ vec2(3.0, 1.0),
+          /* rain intensity = */ 0.6);
+    dropMask = max(drippingRain.dropMask, dropMask);
+    droppletsMask = max(drippingRain.droppletsMask, droppletsMask);
+    trailMask = max(drippingRain.trailMask, trailMask);
+    dropUvMasked = mix(dropUvMasked,
+        drippingRain.drop * drippingRain.dropMask, drippingRain.dropMask);
+    droppletsUvMasked = mix(droppletsUvMasked,
+        drippingRain.dropplets * drippingRain.droppletsMask, drippingRain.droppletsMask);
+
+    /* Generate distortion UVs. */
+    // UV distortion for the drop and dropplets.
+    float distortionDrop = 1.0;
+    float distortionDropplets = 0.6;
+    vec2 uvDiffractionOffsets =
+        distortionDrop * dropUvMasked + distortionDropplets * droppletsUvMasked;
+
+    // Get color of the background texture.
+    color = background.eval(uvTextureBgd + uvDiffractionOffsets * screenSize);
+
+    // Add some slight tint to the fog glass. Since we use gray, we reduce the contrast.
+    vec3 blurredImage = mix(blurredBackground.eval(uvTextureBgd).rgb, glassTint.rgb, 0.07);
+    // The blur mask (when we will show the regular background).
+    float blurMask = smoothstep(0.5, 1., max(trailMask, max(dropMask, droppletsMask)));
+    color.rgb = mix(blurredImage, color.rgb, blurMask);
+
+    /*
+     * Drop coloring. This section is important to make the drops visible when we have a solid
+     * color as a background (since we rely normally on the UV distortion).
+     */
+    // Tint the rain drops.
+    color.rgb = mix(
+        color.rgb,
+        dropTint.rgb,
+        dropTintIntensity * smoothstep(0.7, 1., max(dropMask, droppletsMask)));
+    // add highlight to drops.
+    color.rgb = mix(
+        color.rgb,
+        highlightColor.rgb,
+        uHighlightIntensity
+            // Adjust this scalars to make it visible.
+            * smoothstep(0.05, 0.08, max(dropUvMasked * 1.4, droppletsUvMasked * 1.7)).x);
+    // add shadows to drops.
+    color.rgb = mix(
+        color.rgb,
+        contactShadowColor.rgb,
+        uDropShadowIntensity *
+            // Adjust this scalars to make it visible.
+            smoothstep(0.055, 0.1, max(length(dropUvMasked * 1.7),
+                length(droppletsUvMasked * 1.9))));
+
+    // Add rotation for the rain (as a default sin(time * 0.05) can be used).
+    float variation = wiggle(time - uv.y * 1.1, 0.10);
+    uv = rotateAroundPoint(uv, vec2(0.5, -1.42), variation * PI / 9.);
+
+    // Generate rain behind the subject.
+    Rain rain = generateRain(
+          uv,
+          screenAspectRatio,
+          time * 18.,
+          /* Grid size = */ vec2(30.0, 4.0),
+          /* rain intensity = */ rainIntensity);
+
+    color.rgb = mix(color.rgb, highlightColor.rgb, rainVisibility * rain.dropMask);
+
+    // Add the foreground. Any effect from here will be in front of the subject.
+    color.rgb = mix(color.rgb, colorForeground.rgb, colorForeground.a);
+
+    // Generate rain in front of the subject (bigger and faster).
+    rain = generateRain(
+          uv,
+          screenAspectRatio,
+          time * 27.,
+          /* Grid size = */ vec2(8.0, 3.0),
+          /* rain intensity = */ rainIntensity);
+
+    // The rain that is closer, make it less visible
+    color.rgb = mix(color.rgb, highlightColor.rgb, 0.7 * rainVisibility * rain.dropMask);
+
+    /* Debug rain drops on glass */
+    // resets color.
+    // color.rgb *= 0.;
+    // Shows the UV of each cell.
+    // color.rg = drippingRain.cellUv.xy;
+    // Shows the grid.
+    // if (drippingRain.cellUv.x > 0.49 || drippingRain.cellUv.y > 0.49) color.r = 1.0;
+    // Shows the main drop mask.
+    // color.rgb += drippingRain.dropMask;
+    // Shows the dropplets mask.
+    // color.rgb += drippingRain.droppletsMask;
+    // Shows the trail.
+    // color.rgb += drippingRain.trailMask * 0.3;
+    // background blurMask.
+    // color.rgb += blurMask;
+    // tears uv.
+    // color.rg += -droppletsUvMasked;
+
+    /* Debug rain */
+    // resets color.
+    // color.rgb *= 0.;
+    // color.rgb += rain.dropMask;
+    // if (rain.cellUv.x > 0.49 || rain.cellUv.y > 0.49) color.r = 1.0;
+
+    return color;
+}

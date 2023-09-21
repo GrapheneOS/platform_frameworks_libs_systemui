@@ -40,23 +40,52 @@ android_library {
     platform_apis: false
 }
 
-android_test {
-    name: "animationlib_tests",
-    manifest: "tests/AndroidManifest.xml",
-
+android_library {
+    name: "animationlib-tests-base",
+    libs: [
+        "android.test.base",
+        "androidx.test.core",
+    ],
     static_libs: [
         "animationlib",
         "androidx.test.ext.junit",
         "androidx.test.rules",
         "testables",
+    ]
+}
+
+android_app {
+    name: "TestAnimationLibApp",
+    platform_apis: true,
+    static_libs: [
+        "animationlib-tests-base",
+    ]
+}
+
+android_robolectric_test {
+    enabled: true,
+    name: "animationlib_robo_tests",
+    srcs: [
+        "tests/src/**/*.kt",
+        "tests/robolectric/src/**/*.kt"
     ],
-    libs: [
-        "android.test.base",
+    java_resource_dirs: ["tests/robolectric/config"],
+    instrumentation_for: "TestAnimationLibApp",
+    upstream: true,
+}
+
+android_test {
+    name: "animationlib_tests",
+    manifest: "tests/AndroidManifest.xml",
+
+    static_libs: [
+        "animationlib-tests-base",
     ],
     srcs: [
-        "**/*.java",
-        "**/*.kt"
+        "tests/src/**/*.java",
+        "tests/src/**/*.kt"
     ],
     kotlincflags: ["-Xjvm-default=all"],
     test_suites: ["general-tests"],
 }
+

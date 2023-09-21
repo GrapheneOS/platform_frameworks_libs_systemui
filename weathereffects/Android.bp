@@ -1,0 +1,76 @@
+// Copyright (C) 2023 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+android_library {
+    name: "WeatherEffectsLib",
+    manifest: "AndroidManifest.xml",
+    sdk_version: "system_current",
+    // min_sdk version must be specified to not compile against platform apis.
+    // Using RuntimeShader requires minimum of 33.
+    min_sdk_version: "33",
+    static_libs: [
+        "androidx.slice_slice-core",
+        "androidx.slice_slice-builders",
+        "dagger2",
+        "jsr330", // Dagger inject annotations.
+        "kotlinx_coroutines_android",
+        "kotlinx_coroutines",
+        "androidx.core_core-ktx",
+        "androidx.appcompat_appcompat",
+        "androidx-constraintlayout_constraintlayout",
+        "toruslib",
+    ],
+    srcs: [
+        "src/**/*.java",
+        "src/**/*.kt",
+        // TODO(b/300991599): Split out debug source.
+        "debug/src/**/*.java",
+        "debug/src/**/*.kt"
+    ],
+    resource_dirs: [
+        "res",
+        // TODO(b/300991599): Split out debug resources.
+        "debug/res"
+    ],
+    javacflags: ["-Adagger.fastInit=enabled"],
+    kotlincflags: ["-Xjvm-default=all"],
+    plugins: ["dagger2-compiler"],
+    dxflags: ["--multi-dex"],
+    // This library is meant to access only public APIs, do not flip this flag to true.
+    platform_apis: false
+}
+
+android_app {
+    name: "WeatherEffects",
+    owner: "google",
+    privileged: false,
+    sdk_version: "system_current",
+    min_sdk_version: "33",
+    static_libs: [
+        "WeatherEffectsLib"
+    ],
+    use_embedded_native_libs: true,
+    optimize: {
+        enabled: true,
+        shrink: true,
+        shrink_resources: true,
+    },
+}
+
+// TODO(b/300991599): setup test configuration.
+

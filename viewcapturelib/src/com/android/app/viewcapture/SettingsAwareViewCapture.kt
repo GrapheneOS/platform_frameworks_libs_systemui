@@ -89,6 +89,7 @@ internal constructor(private val context: Context, executor: Executor)
         @JvmStatic
         fun getInstance(context: Context): ViewCapture = when {
             INSTANCE != null -> INSTANCE!!
+            !android.os.Build.IS_DEBUGGABLE -> NoOpViewCapture()
             Looper.myLooper() == Looper.getMainLooper() -> SettingsAwareViewCapture(
                     context.applicationContext,
                     createAndStartNewLooperExecutor("SAViewCapture",

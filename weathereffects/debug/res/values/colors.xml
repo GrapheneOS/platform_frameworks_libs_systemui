@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-     Copyright (C) 2017 The Android Open Source Project
+     Copyright (C) 2023 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -14,9 +14,8 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/legacy_icon_background"/>
-    <foreground>
-        <com.android.launcher3.icons.FixedScaleDrawable />
-    </foreground>
-</adaptive-icon>
+<resources>
+    <color name="status_bar">#EDF2EB</color> <!-- 14% black -->
+    <color name="clear_camo_brown">#F0F4D0</color> <!-- 14% black -->
+    <color name="dark_camo_brown">#576500</color> <!-- 14% black -->
+</resources>
