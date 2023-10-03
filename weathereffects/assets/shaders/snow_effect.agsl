@@ -17,8 +17,10 @@
 uniform shader foreground;
 uniform shader background;
 uniform shader blurredBackground;
-uniform float2 uvOffsets;
-uniform float uvScale;
+uniform float2 uvOffsetFgd;
+uniform float2 uvScaleFgd;
+uniform float2 uvOffsetBgd;
+uniform float2 uvScaleBgd;
 uniform float time;
 uniform float screenAspectRatio;
 uniform float2 screenSize;
@@ -34,7 +36,7 @@ const vec4 snowColor = vec4(vec3(0.9), 1.);
 const vec4 glassTint = vec4(vec3(0.8), 1.); // gray
 
 // snow opacity (how visible it is).
-const float snowOpacity = 0.8;
+const float snowOpacity = 1.4;
 
 // how frosted the glass is.
 const float frostedGlassIntensity = 0.07;
@@ -42,22 +44,21 @@ const float frostedGlassIntensity = 0.07;
 vec4 main(float2 fragCoord) {
     float2 uv = fragCoord / screenSize;
     // Adjusts the UVs to have the expected rect of the image.
-    float2 uvTexture = fragCoord * uvScale + uvOffsets;
-
-    vec4 colorForeground = foreground.eval(uvTexture);
+    vec4 colorForeground = foreground.eval(fragCoord * uvScaleFgd + uvOffsetFgd);
+    vec4 colorBackground = background.eval(fragCoord * uvScaleBgd + uvOffsetBgd);
     vec4 color = vec4(0., 0., 0., 1.);
 
     // Add some slight tint to the frosted glass.
 
     // Get color of the background texture.
-    color.rgb = mix(background.eval(uvTexture).rgb, glassTint.rgb, frostedGlassIntensity);
+    color.rgb = mix(colorBackground.rgb, glassTint.rgb, frostedGlassIntensity);
     for (float i = 9.; i > 2.; i--) {
         // Generate snow behind the subject.
         Snow snow = generateSnow(
-              /* uvNorm = */ uv,
-              /* fragment aspect ratio = */ screenAspectRatio,
-              /* time = */ time * 1.25,
-              /* Grid size = */ vec2(3.0, 2.0),
+              uv,
+              screenAspectRatio,
+              time * 1.25,
+              /* Grid size = */ vec2(2.1, 1.4),
               /* layer number = */ i);
 
         color.rgb = mix(color.rgb, snowColor.rgb, snowOpacity * snow.flakeMask);
@@ -69,10 +70,10 @@ vec4 main(float2 fragCoord) {
     for (float i = 2.; i >= 0.; i--) {
         // Generate snow behind the subject.
         Snow snow = generateSnow(
-              /* uvNorm = */ uv,
-              /* fragment aspect ratio = */ screenAspectRatio,
-              /* time = */ time * 1.25,
-              /* Grid size = */ vec2(3.0, 2.0),
+              uv,
+              screenAspectRatio,
+              time * 1.25,
+              /* Grid size = */ vec2(2.1, 1.4),
               /* layer number = */ i);
 
         color.rgb = mix(color.rgb, snowColor.rgb, snowOpacity * snow.flakeMask);
