@@ -144,7 +144,7 @@ vec4 main(float2 fragCoord) {
     color.rgb = mix(color.rgb, highlightColor.rgb, rainVisibility * rain.dropMask);
 
     // Add the foreground. Any effect from here will be in front of the subject.
-    color.rgb = mix(color.rgb, colorForeground.rgb, colorForeground.a);
+    color.rgb = normalBlend(color.rgb, colorForeground.rgb, colorForeground.a);
 
     // Generate rain in front of the subject (bigger and faster).
     rain = generateRain(

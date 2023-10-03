@@ -46,14 +46,6 @@ float fbm (vec3 st, vec2 time) {
     return result;
 }
 
-vec3 normalBlendWithWhiteSrc(vec3 b, float o) {
-    return b * (1. - o) + o;
-}
-
-vec3 normalBlend(vec3 b, vec3 f, float o) {
-    return b * (1. - o) + f * o;
-}
-
 vec4 main(float2 fragCoord) {
     float2 uv = fragCoord / screenSize;
     uv.y /= screenAspectRatio;

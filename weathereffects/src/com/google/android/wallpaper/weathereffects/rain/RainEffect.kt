@@ -16,7 +16,6 @@
 
 package com.google.android.wallpaper.weathereffects.rain
 
-import android.graphics.Bitmap
 import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -39,7 +38,7 @@ class RainEffect(
     private var elapsedTime: Float = 0f
 
     init {
-        updateTextureUniforms(rainConfig.blurredBackground)
+        updateTextureUniforms()
         adjustCropping(surfaceSize)
         prepareColorGrading()
     }
@@ -102,7 +101,7 @@ class RainEffect(
         rainConfig.shader.setFloatUniform("screenAspectRatio", surfaceSize.getAspectRatio())
     }
 
-    private fun updateTextureUniforms(blurredBackground: Bitmap) {
+    private fun updateTextureUniforms() {
         rainConfig.shader.setInputBuffer(
             "foreground",
             BitmapShader(rainConfig.foreground, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
@@ -115,7 +114,11 @@ class RainEffect(
 
         rainConfig.shader.setInputBuffer(
             "blurredBackground",
-            BitmapShader(blurredBackground, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
+            BitmapShader(
+                rainConfig.blurredBackground,
+                Shader.TileMode.MIRROR,
+                Shader.TileMode.MIRROR
+            )
         )
     }
 

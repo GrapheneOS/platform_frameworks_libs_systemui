@@ -24,6 +24,7 @@ import android.graphics.Shader
 import android.util.SizeF
 import com.google.android.torus.utils.extensions.getAspectRatio
 import com.google.android.wallpaper.weathereffects.WeatherEffect
+import com.google.android.wallpaper.weathereffects.utils.ImageCrop
 import kotlin.random.Random
 
 /** Defines and generates the rain weather effect animation. */
@@ -69,7 +70,38 @@ class SnowEffect(
     }
 
     private fun adjustCropping(surfaceSize: SizeF) {
-        adjustUVs(surfaceSize)
+        val imageCropFgd = ImageCrop.centerCoverCrop(
+            surfaceSize.width,
+            surfaceSize.height,
+            snowConfig.foreground.width.toFloat(),
+            snowConfig.foreground.height.toFloat()
+        )
+        snowConfig.shader.setFloatUniform(
+            "uvOffsetFgd",
+            imageCropFgd.leftOffset,
+            imageCropFgd.topOffset
+        )
+        snowConfig.shader.setFloatUniform(
+            "uvScaleFgd",
+            imageCropFgd.horizontalScale,
+            imageCropFgd.verticalScale
+        )
+        val imageCropBgd = ImageCrop.centerCoverCrop(
+            surfaceSize.width,
+            surfaceSize.height,
+            snowConfig.background.width.toFloat(),
+            snowConfig.background.height.toFloat()
+        )
+        snowConfig.shader.setFloatUniform(
+            "uvOffsetBgd",
+            imageCropBgd.leftOffset,
+            imageCropBgd.topOffset
+        )
+        snowConfig.shader.setFloatUniform(
+            "uvScaleBgd",
+            imageCropBgd.horizontalScale,
+            imageCropBgd.verticalScale
+        )
         snowConfig.shader.setFloatUniform("screenSize", surfaceSize.width, surfaceSize.height)
         snowConfig.shader.setFloatUniform("screenAspectRatio", surfaceSize.getAspectRatio())
     }
@@ -103,23 +135,6 @@ class SnowEffect(
             "intensity",
             snowConfig.colorGradingIntensity
         )
-    }
-
-    private fun adjustUVs(surfaceSize: SizeF) {
-        val uvScaleHeight: Float = imageSize.height / surfaceSize.height
-        val uvScaleWidth: Float = imageSize.width / surfaceSize.width
-
-        val uvScale = if (imageSize.getAspectRatio() > surfaceSize.getAspectRatio()) {
-            uvScaleHeight
-        } else {
-            uvScaleWidth
-        }
-
-        val horizontalOffset = (imageSize.width - surfaceSize.width * uvScale) / 2f
-        val verticalOffset = (imageSize.height - surfaceSize.height * uvScale) / 2f
-
-        snowConfig.shader.setFloatUniform("uvOffsets", horizontalOffset, verticalOffset)
-        snowConfig.shader.setFloatUniform("uvScale", uvScale)
     }
 
     private companion object {
