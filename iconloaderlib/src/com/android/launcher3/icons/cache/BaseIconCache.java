@@ -329,9 +329,11 @@ public abstract class BaseIconCache {
         if (entry.bitmap.isNullOrLowRes()) return;
 
         CharSequence entryTitle = cachingLogic.getLabel(object);
-        if (entryTitle == null) {
-            Log.wtf(TAG, "No label returned from caching logic instance: " + cachingLogic);
-            entryTitle = "";
+        if (TextUtils.isEmpty(entryTitle)) {
+            if (entryTitle == null) {
+                Log.wtf(TAG, "No label returned from caching logic instance: " + cachingLogic);
+            }
+            entryTitle = componentName.getPackageName();;
         }
         entry.title = entryTitle;
 
@@ -490,6 +492,9 @@ public abstract class BaseIconCache {
             @NonNull final T object, @NonNull final CacheEntry entry,
             @NonNull final CachingLogic<T> cachingLogic, @NonNull final UserHandle user) {
         entry.title = cachingLogic.getLabel(object);
+        if (TextUtils.isEmpty(entry.title)) {
+            entry.title = cachingLogic.getComponent(object).getPackageName();
+        }
         entry.contentDescription = getUserBadgedLabel(
                 cachingLogic.getDescription(object, entry.title), user);
     }

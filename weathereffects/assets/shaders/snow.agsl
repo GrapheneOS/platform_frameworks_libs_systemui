@@ -44,7 +44,8 @@ Snow generateSnow(
     in float layerNumber
 ) {
     /* Grid. */
-    float depth = 1. + layerNumber * 0.3;
+    // Increase the last number to make each layer more separate from the previous one.
+    float depth = 1. + layerNumber * 0.35;
     float speedAdj = 1. + layerNumber * 0.15;
     float layerR = idGenerator(layerNumber);
     snowGridSize *= depth;
@@ -83,7 +84,8 @@ Snow generateSnow(
 
     // Horizontal movement: Wiggle.
     float wiggleSpeed = 3.0;
-    float wiggleAmp = 0.8;
+    // Adjust wiggle based on layer number (0 = closer to screen => we want less movement).
+    float wiggleAmp = 0.4 + 0.4 * smoothstep(0.5, 2.5, layerNumber);
     // Define the start based on the cell id.
     float horizontalStartAmp = 0.5;
     // Add the wiggle (equation decided by testing in Grapher).

@@ -44,3 +44,21 @@ float wiggle(float time, float wiggleSpeed) {
     return sin(wiggleSpeed * time + 0.5 * sin(wiggleSpeed * 5. * time))
         * sin(wiggleSpeed * time) - 0.5;
 }
+
+/*
+ * This is the normal blend mode in which the foreground is painted on top of the background based
+ * on the foreground opacity.
+ *
+ * @param b the background color.
+ * @param f the foreground color.
+ * @param o the mask or the foreground alpha.
+ *
+ * Note: this blending function expects the foreground to have premultiplied alpha.
+ */
+vec3 normalBlend(vec3 b, vec3 f, float o) {
+    return b * (1. - o) + f;
+}
+
+vec3 normalBlendWithWhiteSrc(vec3 b, float o) {
+    return b * (1. - o) + o;
+}
