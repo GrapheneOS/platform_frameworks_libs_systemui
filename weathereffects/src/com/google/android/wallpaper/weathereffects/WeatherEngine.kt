@@ -130,7 +130,9 @@ class WeatherEngine(
             }
 
             WallpaperInfoContract.WeatherEffect.FOG -> {
-                val fogConfig = FogEffectConfig.create(context.assets, foreground, background)
+                val fogConfig = FogEffectConfig.create(
+                    context.assets, foreground, background, context.resources.displayMetrics.density
+                )
                 activeEffect = FogEffect(fogConfig, screenSize.toSizeF())
             }
 
