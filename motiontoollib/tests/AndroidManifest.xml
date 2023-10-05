@@ -15,14 +15,14 @@
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.android.app.motiontool">
+    package="com.android.app.motiontool.tests">
 
     <application
         android:debuggable="true"
         android:theme="@android:style/Theme.NoTitleBar">
 
         <activity
-            android:name=".util.TestActivity"
+            android:name="com.android.app.motiontool.util.TestActivity"
             android:exported="false" />
 
         <uses-library android:name="android.test.runner" />
@@ -32,6 +32,6 @@
     <instrumentation
         android:name="android.testing.TestableInstrumentation"
         android:label="Tests for MotionTool Lib"
-        android:targetPackage="com.android.app.motiontool"/>
+        android:targetPackage="com.android.app.motiontool.tests"/>
 
 </manifest>

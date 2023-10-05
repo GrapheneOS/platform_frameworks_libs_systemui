@@ -98,7 +98,7 @@ message EndTraceRequest {
 }
 
 message EndTraceResponse {
-  optional com.android.app.viewcapture.data.ExportedData exported_data = 1;
+  optional com.android.app.viewcapture.data.MotionWindowData data = 1;
 }
 
 // Polls collected motion trace data collected since the last PollTraceRequest (or the
@@ -108,6 +108,6 @@ message PollTraceRequest {
 }
 
 message PollTraceResponse {
-  optional com.android.app.viewcapture.data.ExportedData exported_data = 1;
+  optional com.android.app.viewcapture.data.MotionWindowData data = 1;
 }
 

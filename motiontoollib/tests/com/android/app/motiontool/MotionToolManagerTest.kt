@@ -85,14 +85,17 @@ class MotionToolManagerTest {
         activityScenarioRule.scenario.onActivity { activity ->
             val traceId = motionToolManager.beginTrace(getActivityViewRootId())
             Choreographer.getInstance().postFrameCallback {
-                activity.findViewById<View>(android.R.id.content).viewTreeObserver.dispatchOnDraw()
+                activity
+                    .requireViewById<View>(android.R.id.content)
+                    .viewTreeObserver
+                    .dispatchOnDraw()
 
-                val polledExportedData = motionToolManager.pollTrace(traceId)
-                assertEquals(1, polledExportedData.frameDataList.size)
+                val polledData = motionToolManager.pollTrace(traceId)
+                assertEquals(1, polledData.frameDataList.size)
 
                 // Verify that frameData is only included once and is not returned again
-                val endExportedData = motionToolManager.endTrace(traceId)
-                assertEquals(0, endExportedData.frameDataList.size)
+                val endData = motionToolManager.endTrace(traceId)
+                assertEquals(0, endData.frameDataList.size)
             }
         }
     }
