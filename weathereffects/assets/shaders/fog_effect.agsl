@@ -20,10 +20,11 @@ uniform float2 uvOffsetFgd;
 uniform float2 uvScaleFgd;
 uniform float2 uvOffsetBgd;
 uniform float2 uvScaleBgd;
-uniform float2 timeForeground;
-uniform float2 timeBackground;
-uniform float screenAspectRatio;
-uniform float2 screenSize;
+uniform half2 timeForeground;
+uniform half2 timeBackground;
+uniform half screenAspectRatio;
+uniform half2 screenSize;
+uniform half pixelDensity;
 
 #include "shaders/constants.agsl"
 #include "shaders/utils.agsl"
@@ -56,12 +57,13 @@ vec4 main(float2 fragCoord) {
     float frontFog = smoothstep(-0.616, 0.552, fbm(vec3(uv * 0.886, 123.1), timeForeground));
     float bgdFog = smoothstep(-0.744, 0.28, fbm(vec3(uv * 1.2, 231.), timeBackground));
 
-    float dithering =  (1. - idGenerator(uv) * 0.161);
+    float dither = 1. - triangleNoise(fragCoord * pixelDensity) * 0.161;
 
-    color.rgb = normalBlendWithWhiteSrc(color.rgb, 0.8 * dithering * bgdFog);
+    color.rgb = normalBlendWithWhiteSrc(color.rgb, 0.8 * dither * bgdFog);
     // Add the foreground. Any effect from here will be in front of the subject.
     color.rgb = normalBlend(color.rgb, colorForeground.rgb, colorForeground.a);
     // foreground fog.
     color.rgb = normalBlendWithWhiteSrc(color.rgb, 0.5 * frontFog);
+
     return color;
 }
