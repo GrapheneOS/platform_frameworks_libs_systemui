@@ -72,5 +72,24 @@ android_app {
     },
 }
 
-// TODO(b/300991599): setup test configuration.
+android_test {
+    name: "weathereffects_tests",
+    instrumentation_for: "WeatherEffects",
+    manifest: "AndroidManifest.xml",
+    test_suites: ["general-tests"],
+    sdk_version: "current",
+    srcs: [
+        "tests/src/**/*.java",
+        "tests/src/**/*.kt",
+    ],
+    static_libs: [
+        "WeatherEffectsLib",
+        "androidx.test.rules",
+        "androidx.test.ext.junit",
+        "androidx.test.core",
+        "androidx.test.runner",
+        "kotlinx_coroutines_test",
+        "truth"
+    ],
+}
 

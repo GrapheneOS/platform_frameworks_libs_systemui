@@ -25,7 +25,6 @@ import com.google.android.torus.utils.extensions.getAspectRatio
 import com.google.android.wallpaper.weathereffects.WeatherEffect
 import com.google.android.wallpaper.weathereffects.utils.ImageCrop
 import kotlin.math.sin
-import kotlin.math.sqrt
 import kotlin.random.Random
 
 /** Defines and generates the fog weather effect animation. */
@@ -52,8 +51,8 @@ class FogEffect(
 
     override fun update(deltaMillis: Long, frameTimeNanos: Long) {
         val time = 0.02f * frameTimeNanos.toFloat() * NANOS_TO_SECONDS
-        val generalVariation: Float = 0.4f + 0.6f * sqrt(sin(time + sin(3f * time)))
-        elapsedTime += generalVariation * deltaMillis * MILLIS_TO_SECONDS
+        val variation = sin(time + sin(3f * time)) * 0.5f + 0.5f
+        elapsedTime += variation * deltaMillis * MILLIS_TO_SECONDS
 
         val speed = elapsedTime * 0.248f
 
@@ -131,6 +130,8 @@ class FogEffect(
             "background",
             BitmapShader(fogConfig.background, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
         )
+
+        fogConfig.shader.setFloatUniform("pixelDensity", fogConfig.pixelDensity)
     }
 
     private fun prepareColorGrading() {

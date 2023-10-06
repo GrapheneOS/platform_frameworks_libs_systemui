@@ -56,14 +56,16 @@ vec4 main(float2 fragCoord) {
     // Calculate the floor UVs.
     vec3 colorFloor = floor(colorTmp) * SLICE_LAST_IDX_INV;
     ivec2 uvFloor = ivec2(
-    int(colorFloor.b * LAST_SLICE_FIRST_IDX + colorFloor.r * SLICE_LAST_IDX),
-    int(colorFloor.g * SLICE_LAST_IDX));
+        int(colorFloor.b * LAST_SLICE_FIRST_IDX + colorFloor.r * SLICE_LAST_IDX),
+        int(colorFloor.g * SLICE_LAST_IDX)
+    );
 
     // Calculate the ceil UVs.
     vec3 colorCeil = ceil(colorTmp) * SLICE_LAST_IDX_INV;
     ivec2 uvCeil = ivec2(
-    int(colorCeil.b * LAST_SLICE_FIRST_IDX + colorCeil.r * SLICE_LAST_IDX),
-    int(colorCeil.g * SLICE_LAST_IDX));
+        int(colorCeil.b * LAST_SLICE_FIRST_IDX + colorCeil.r * SLICE_LAST_IDX),
+        int(colorCeil.g * SLICE_LAST_IDX)
+    );
 
     /*
      * Fetch the color from the LUT, and combine both floor and ceiling options based on the

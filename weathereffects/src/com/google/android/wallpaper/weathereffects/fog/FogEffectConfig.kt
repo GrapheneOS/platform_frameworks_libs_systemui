@@ -37,6 +37,8 @@ data class FogEffectConfig(
     val foreground: Bitmap,
     /** A bitmap containing the background of the image. */
     val background: Bitmap,
+    /** Pixel density of the display. Used for dithering. */
+    val pixelDensity: Float
 ) {
 
     companion object {
@@ -48,10 +50,16 @@ data class FogEffectConfig(
          * @param assets the application [AssetManager].
          * @param foreground a bitmap containing the foreground of the image.
          * @param background a bitmap containing the background of the image.
+         * @param pixelDensity pixel density of the display.
          *
          * @return the [FogEffectConfig] object.
          */
-        fun create(assets: AssetManager, foreground: Bitmap, background: Bitmap): FogEffectConfig {
+        fun create(
+            assets: AssetManager,
+            foreground: Bitmap,
+            background: Bitmap,
+            pixelDensity: Float,
+        ): FogEffectConfig {
             return FogEffectConfig(
                 shader = GraphicsUtils.loadShader(assets, "shaders/fog_effect.agsl"),
                 colorGradingShader = GraphicsUtils.loadShader(
@@ -61,7 +69,8 @@ data class FogEffectConfig(
                 lut = GraphicsUtils.loadTexture(assets, "textures/lut_rain_and_fog.png"),
                 colorGradingIntensity = 0.7f,
                 foreground,
-                background
+                background,
+                pixelDensity
             )
         }
     }
