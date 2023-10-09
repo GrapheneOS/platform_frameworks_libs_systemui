@@ -46,6 +46,7 @@ import com.android.app.viewcapture.data.MotionWindowData;
 import com.android.app.viewcapture.data.ViewNode;
 import com.android.app.viewcapture.data.WindowData;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -175,7 +176,12 @@ public abstract class ViewCapture {
     @AnyThread
     protected void dumpTo(OutputStream os, Context context)
             throws InterruptedException, ExecutionException, IOException {
-        if (mIsEnabled) getExportedData(context).writeTo(os);
+        if (mIsEnabled) {
+            DataOutputStream dataOutputStream = new DataOutputStream(os);
+            ExportedData ex = getExportedData(context);
+            dataOutputStream.writeInt(ex.getSerializedSize());
+            ex.writeTo(dataOutputStream);
+        }
     }
 
     @VisibleForTesting
