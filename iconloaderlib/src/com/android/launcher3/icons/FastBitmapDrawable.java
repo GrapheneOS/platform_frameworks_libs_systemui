@@ -172,6 +172,9 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
             mAlpha = alpha;
             mPaint.setAlpha(alpha);
             invalidateSelf();
+            if (mBadge != null) {
+                mBadge.setAlpha(alpha);
+            }
         }
     }
 
