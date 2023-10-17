@@ -20,26 +20,26 @@ uniform float2 uvOffsetFgd;
 uniform float2 uvScaleFgd;
 uniform float2 uvOffsetBgd;
 uniform float2 uvScaleBgd;
-uniform half2 timeForeground;
-uniform half2 timeBackground;
+uniform half timeForeground;
+uniform half timeBackground;
 uniform half screenAspectRatio;
 uniform half2 screenSize;
 uniform half pixelDensity;
 
 #include "shaders/constants.agsl"
 #include "shaders/utils.agsl"
-#include "shaders/simplex_noise.agsl"
+#include "shaders/simplex_flow_noise.agsl"
 
-// TODO: explore a more performant way of generating the volumetric fog effect.
 const int numOctaves = 2;
 
-float fbm (vec3 st, vec2 time) {
-    vec3 p = st;
+float fbm(vec2 p, half time) {
     float a = 0.5;
     float result = 0.0;
+    float rot = 1.2;
 
     for (int i = 0; i < numOctaves; i++) {
-        result += a * simplex3d(vec3(p.xy + time, p.z));
+        result += a * simplex2d_flow(p, rot, time);
+        rot *= 1.25;
         p *= 2.0152;
         a *= 0.5;
     }
@@ -54,8 +54,8 @@ vec4 main(float2 fragCoord) {
     vec4 colorForeground = foreground.eval(fragCoord * uvScaleFgd + uvOffsetFgd);
     vec4 color = background.eval(fragCoord * uvScaleBgd + uvOffsetBgd);
 
-    float frontFog = smoothstep(-0.616, 0.552, fbm(vec3(uv * 0.886, 123.1), timeForeground));
-    float bgdFog = smoothstep(-0.744, 0.28, fbm(vec3(uv * 1.2, 231.), timeBackground));
+    float frontFog = smoothstep(-0.616, 0.552, fbm(uv * 0.8, timeForeground));
+    float bgdFog = smoothstep(-0.744, 0.28, fbm(uv * 1.2, timeBackground));
 
     float dither = 1. - triangleNoise(fragCoord * pixelDensity) * 0.161;
 
