@@ -35,10 +35,6 @@ class FogEffect(
 ) : WeatherEffect {
 
     private val fogPaint = Paint().also { it.shader = fogConfig.colorGradingShader }
-    private val variationFgd: FloatArray = FloatArray(2)
-    private val timeFgd: FloatArray = FloatArray(2)
-    private val variationBgd: FloatArray = FloatArray(2)
-    private val timeBgd: FloatArray = FloatArray(2)
     private var elapsedTime: Float = 0f
 
     init {
@@ -51,23 +47,14 @@ class FogEffect(
 
     override fun update(deltaMillis: Long, frameTimeNanos: Long) {
         val time = 0.02f * frameTimeNanos.toFloat() * NANOS_TO_SECONDS
-        val variation = sin(time + sin(3f * time)) * 0.5f + 0.5f
+
+        // Variation range [1, 1.5]. We don't want the variation to be 0.
+        val variation = (sin(time + sin(3f * time)) * 0.5f + 0.5f) * 1.5f
         elapsedTime += variation * deltaMillis * MILLIS_TO_SECONDS
 
-        val speed = elapsedTime * 0.248f
+        fogConfig.shader.setFloatUniform("timeBackground", elapsedTime * 1.5f)
+        fogConfig.shader.setFloatUniform("timeForeground", elapsedTime * 2.0f)
 
-        variationFgd[0] = 0.256f * sin(speed)
-        variationFgd[1] = 0.156f * sin(speed) * sin(speed)
-        timeFgd[0] = 0.04f * elapsedTime * 5f + variationFgd[0]
-        timeFgd[1] = 0.003f * elapsedTime * 5f + variationFgd[1]
-
-        variationBgd[0] = 0.156f * sin((speed + Math.PI.toFloat() / 2.0f))
-        variationBgd[1] = 0.0156f * sin((speed * Math.PI.toFloat() / 3.0f)) * sin(speed)
-        timeBgd[0] = 0.08f * elapsedTime * 5f + variationBgd[0]
-        timeBgd[1] = 0.02f * elapsedTime * 5f + variationBgd[1]
-
-        fogConfig.shader.setFloatUniform("timeForeground", timeFgd[0], timeFgd[1])
-        fogConfig.shader.setFloatUniform("timeBackground", timeBgd[0], timeBgd[1])
         fogConfig.colorGradingShader.setInputShader("texture", fogConfig.shader)
     }
 
