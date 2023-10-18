@@ -419,6 +419,7 @@ public class BaseIconFactory implements AutoCloseable {
         mOldBounds.set(icon.getBounds());
 
         if (icon instanceof AdaptiveIconDrawable) {
+            // We are ignoring KEY_SHADOW_DISTANCE because regular icons ignore this at the moment b/298203449
             int offset = Math.max((int) Math.ceil(BLUR_FACTOR * size),
                     Math.round(size * (1 - scale) / 2));
             // b/211896569: AdaptiveIconDrawable do not work properly for non top-left bounds
