@@ -30,7 +30,9 @@ public class UserIconInfo {
     public static final int TYPE_WORK = 1;
     public static final int TYPE_CLONED = 2;
 
-    @IntDef({TYPE_MAIN, TYPE_WORK, TYPE_CLONED})
+    public static final int TYPE_PRIVATE = 3;
+
+    @IntDef({TYPE_MAIN, TYPE_WORK, TYPE_CLONED, TYPE_PRIVATE})
     public @interface UserType { }
 
     public final UserHandle user;
@@ -59,5 +61,9 @@ public class UserIconInfo {
 
     public boolean isCloned() {
         return type == TYPE_CLONED;
+    }
+
+    public boolean isPrivate() {
+        return type == TYPE_PRIVATE;
     }
 }
