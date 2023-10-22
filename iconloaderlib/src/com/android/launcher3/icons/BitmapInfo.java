@@ -32,10 +32,12 @@ public class BitmapInfo {
     static final int FLAG_WORK = 1 << 0;
     static final int FLAG_INSTANT = 1 << 1;
     static final int FLAG_CLONE = 1 << 2;
+    static final int FLAG_PRIVATE = 1 << 3;
     @IntDef(flag = true, value = {
             FLAG_WORK,
             FLAG_INSTANT,
-            FLAG_CLONE
+            FLAG_CLONE,
+            FLAG_PRIVATE
     })
     @interface BitmapInfoFlags {}
 
@@ -179,6 +181,10 @@ public class BitmapInfo {
             return context.getDrawable(isThemed
                     ? R.drawable.ic_clone_app_badge_themed
                     : R.drawable.ic_clone_app_badge);
+        } else if ((flags & FLAG_PRIVATE) != 0) {
+            return context.getDrawable(isThemed
+                    ? R.drawable.ic_private_profile_app_badge_themed
+                    : R.drawable.ic_private_profile_app_badge);
         }
         return null;
     }
