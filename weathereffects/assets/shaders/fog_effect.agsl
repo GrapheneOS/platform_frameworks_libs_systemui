@@ -28,7 +28,7 @@ uniform half pixelDensity;
 
 #include "shaders/constants.agsl"
 #include "shaders/utils.agsl"
-#include "shaders/simplex_flow_noise.agsl"
+#include "shaders/simplex2d.agsl"
 
 const int numOctaves = 2;
 

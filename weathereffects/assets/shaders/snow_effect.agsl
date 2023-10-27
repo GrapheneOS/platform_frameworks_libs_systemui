@@ -16,6 +16,7 @@
 
 uniform shader foreground;
 uniform shader background;
+uniform shader accumulatedSnow;
 uniform shader blurredBackground;
 uniform float2 uvOffsetFgd;
 uniform float2 uvScaleFgd;
@@ -44,8 +45,10 @@ const float frostedGlassIntensity = 0.07;
 vec4 main(float2 fragCoord) {
     float2 uv = fragCoord / screenSize;
     // Adjusts the UVs to have the expected rect of the image.
-    vec4 colorForeground = foreground.eval(fragCoord * uvScaleFgd + uvOffsetFgd);
+    float2 adjustedUvForeground = fragCoord * uvScaleFgd + uvOffsetFgd;
+    vec4 colorForeground = foreground.eval(adjustedUvForeground);
     vec4 colorBackground = background.eval(fragCoord * uvScaleBgd + uvOffsetBgd);
+
     vec4 color = vec4(0., 0., 0., 1.);
 
     // Add some slight tint to the frosted glass.
@@ -66,6 +69,12 @@ vec4 main(float2 fragCoord) {
 
     // Add the foreground. Any effect from here will be in front of the subject.
     color.rgb = mix(color.rgb, colorForeground.rgb, colorForeground.a);
+
+    // Add accumulated snow.
+    vec2 accSnow = accumulatedSnow.eval(adjustedUvForeground).rg;
+    float snowLayer = smoothstep(0.2, 0.8, accSnow.r);
+    float snowTexture = smoothstep(0.2, 0.7, accSnow.g);
+    color.rgb = mix(color.rgb, vec3(0.95), 0.98 * snowLayer * (0.05 + 0.95 * snowTexture));
 
     for (float i = 2.; i >= 0.; i--) {
         // Generate snow behind the subject.

@@ -30,6 +30,17 @@ vec2 getVectorFromAngle(float theta) {
     return vec2(cos(theta), sin(theta));
 }
 
+// Returns kernel summation from the given simplex vertices (v0, v1, v2), and their corresponding
+// gradients (g0, g1, g2).
+float kernel_summation(vec2 v0, vec2 v1, vec2 v2, vec2 g0, vec2 g1, vec2 g2) {
+   vec3 w = max(0.5 - vec3(dot(v0, v0), dot(v1, v1), dot(v2, v2)), 0.0);
+
+    w = w*w*w*w;
+    vec3 n = w * vec3(dot(v0, g0), dot(v1, g1), dot(v2, g2));
+
+    return dot(n, vec3(32.0));
+}
+
 // 2D Simplex noise with dynamic gradient vectors. Return value [-1, 1].
 //
 // This method produces similar visuals to Simplex noise 3D, but at a lower computational cost.
@@ -70,11 +81,29 @@ float simplex2d_flow(vec2 p, float rot, float time) {
     g1 += getVectorFromAngle(rot * time * hash1d(i+walk));
     g2 += getVectorFromAngle(rot * time * hash1d(i+1.));
 
-    // Kernel summation
-    vec3 w = max(0.5 - vec3(dot(v0, v0), dot(v1, v1), dot(v2, v2)), 0.0);
+    return kernel_summation(v0, v1, v2, g0, g1, g2);
+}
 
-    w = w*w*w*w;
-    vec3 n = w * vec3(dot(v0, g0), dot(v1, g1), dot(v2, g2));
+// 2D Simplex noise
+float simplex2d(vec2 p) {
+    // Skew the input coordinate and find the simplex index.
+    vec2 i = floor(p + (p.x + p.y) * SKEW);
+    // First vertex of the triangle.
+    vec2 v0 = p - i + (i.x + i.y) * UNSKEW;
 
-    return dot(n, vec3(32.0));
+    // Find two other vertices.
+    // Determines which triangle we should walk.
+    // If y>x, m=0 upper triangle, x>y, m=1 lower triangle.
+    float side = step(v0.y, v0.x);
+    vec2 walk = vec2(side, 1.0 - side);
+
+    vec2 v1 = v0 - walk + UNSKEW;
+    vec2 v2 = v0 - 1.0 + 2.*UNSKEW;
+
+    // Get random gradient vector.
+    vec2 g0 = hash2d(i);
+    vec2 g1 = hash2d(i+walk);
+    vec2 g2 = hash2d(i+1.0);
+
+    return kernel_summation(v0, v1, v2, g0, g1, g2);
 }
