@@ -26,6 +26,8 @@ import com.google.android.wallpaper.weathereffects.utils.GraphicsUtils
 data class SnowEffectConfig(
     /** The main shader of the effect. */
     val shader: RuntimeShader,
+    /** The shader of accumulated snow effect. */
+    val accumulatedSnowShader: RuntimeShader,
     /** The color grading shader. */
     val colorGradingShader: RuntimeShader,
     /** The main lut (color grading) for the effect. */
@@ -56,6 +58,9 @@ data class SnowEffectConfig(
         fun create(context: Context, foreground: Bitmap, background: Bitmap): SnowEffectConfig {
             return SnowEffectConfig(
                 shader = GraphicsUtils.loadShader(context.assets, "shaders/snow_effect.agsl"),
+                accumulatedSnowShader = GraphicsUtils.loadShader(
+                    context.assets, "shaders/snow_accumulation.agsl"
+                ),
                 colorGradingShader = GraphicsUtils.loadShader(
                     context.assets,
                     "shaders/color_grading_lut.agsl"

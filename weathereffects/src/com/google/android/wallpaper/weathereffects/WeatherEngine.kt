@@ -138,7 +138,7 @@ class WeatherEngine(
 
             WallpaperInfoContract.WeatherEffect.SNOW -> {
                 val snowConfig = SnowEffectConfig.create(context, foreground, background)
-                activeEffect = SnowEffect(snowConfig, screenSize.toSizeF())
+                activeEffect = SnowEffect(snowConfig, screenSize.toSizeF(), context.mainExecutor)
             }
 
             else -> {

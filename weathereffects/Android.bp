@@ -21,8 +21,8 @@ android_library {
     manifest: "AndroidManifest.xml",
     sdk_version: "system_current",
     // min_sdk version must be specified to not compile against platform apis.
-    // Using RuntimeShader requires minimum of 33.
-    min_sdk_version: "33",
+    // Using HardwareBufferRenderer requires minimum of 34.
+    min_sdk_version: "34",
     static_libs: [
         "androidx.slice_slice-core",
         "androidx.slice_slice-builders",
@@ -60,7 +60,7 @@ android_app {
     owner: "google",
     privileged: false,
     sdk_version: "system_current",
-    min_sdk_version: "33",
+    min_sdk_version: "34",
     static_libs: [
         "WeatherEffectsLib"
     ],
