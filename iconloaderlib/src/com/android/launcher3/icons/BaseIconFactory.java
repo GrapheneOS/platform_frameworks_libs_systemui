@@ -7,6 +7,7 @@ import static android.graphics.drawable.AdaptiveIconDrawable.getExtraInsetFracti
 
 import static com.android.launcher3.icons.BitmapInfo.FLAG_CLONE;
 import static com.android.launcher3.icons.BitmapInfo.FLAG_INSTANT;
+import static com.android.launcher3.icons.BitmapInfo.FLAG_PRIVATE;
 import static com.android.launcher3.icons.BitmapInfo.FLAG_WORK;
 import static com.android.launcher3.icons.ShadowGenerator.BLUR_FACTOR;
 
@@ -265,6 +266,7 @@ public class BaseIconFactory implements AutoCloseable {
             if (info != null) {
                 op = op.setFlag(FLAG_WORK, info.isWork());
                 op = op.setFlag(FLAG_CLONE, info.isCloned());
+                op = op.setFlag(FLAG_PRIVATE, info.isPrivate());
             }
         }
         return op;
@@ -274,6 +276,10 @@ public class BaseIconFactory implements AutoCloseable {
     protected UserIconInfo getUserInfo(@NonNull UserHandle user) {
         int key = user.hashCode();
         UserIconInfo info = mCachedUserInfo.get(key);
+        /*
+        * We do not have the ability to distinguish between different badged users here.
+        * As such all badged users will have the work profile badge applied.
+        */
         if (info == null) {
             // Simple check to check if the provided user is work profile or not based on badging
             NoopDrawable d = new NoopDrawable();
