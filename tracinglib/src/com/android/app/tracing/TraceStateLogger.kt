@@ -17,6 +17,7 @@
 package com.android.app.tracing
 
 import android.os.Trace
+import android.util.Log
 
 /**
  * Utility class used to log state changes easily in a track with a custom name.
@@ -37,7 +38,8 @@ import android.os.Trace
 class TraceStateLogger(
     private val trackName: String,
     private val logOnlyIfDifferent: Boolean = true,
-    private val instantEvent: Boolean = true
+    private val instantEvent: Boolean = true,
+    private val logcat: Boolean = false,
 ) {
 
     private var previousValue: String? = null
@@ -50,6 +52,9 @@ class TraceStateLogger(
         if (logOnlyIfDifferent && previousValue == newValue) return
         Trace.asyncTraceForTrackEnd(Trace.TRACE_TAG_APP, trackName, 0)
         Trace.asyncTraceForTrackBegin(Trace.TRACE_TAG_APP, trackName, newValue, 0)
+        if (logcat) {
+            Log.d(trackName, "newValue: $newValue")
+        }
         previousValue = newValue
     }
 }
