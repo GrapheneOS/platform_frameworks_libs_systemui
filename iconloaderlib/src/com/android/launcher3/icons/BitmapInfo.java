@@ -43,11 +43,9 @@ public class BitmapInfo {
 
     public static final int FLAG_THEMED = 1 << 0;
     public static final int FLAG_NO_BADGE = 1 << 1;
-    public static final int FLAG_SKIP_USER_BADGE = 1 << 2;
     @IntDef(flag = true, value = {
             FLAG_THEMED,
             FLAG_NO_BADGE,
-            FLAG_SKIP_USER_BADGE,
     })
     public @interface DrawableCreationFlags {}
 
@@ -157,32 +155,20 @@ public class BitmapInfo {
         drawable.mDisabledAlpha = GraphicsUtils.getFloat(context, R.attr.disabledIconAlpha, 1f);
         drawable.mCreationFlags = creationFlags;
         if ((creationFlags & FLAG_NO_BADGE) == 0) {
-            Drawable badge = getBadgeDrawable(context, (creationFlags & FLAG_THEMED) != 0,
-                    (creationFlags & FLAG_SKIP_USER_BADGE) != 0);
+            Drawable badge = getBadgeDrawable(context, (creationFlags & FLAG_THEMED) != 0);
             if (badge != null) {
                 drawable.setBadge(badge);
             }
         }
     }
 
-    public Drawable getBadgeDrawable(Context context, boolean isThemed) {
-        return getBadgeDrawable(context, isThemed, false);
-    }
-
     /**
      * Returns a drawable representing the badge for this info
      */
     @Nullable
-    private Drawable getBadgeDrawable(Context context, boolean isThemed, boolean skipUserBadge) {
+    public Drawable getBadgeDrawable(Context context, boolean isThemed) {
         if (badgeInfo != null) {
-            int creationFlag = isThemed ? FLAG_THEMED : 0;
-            if (skipUserBadge) {
-                creationFlag |= FLAG_SKIP_USER_BADGE;
-            }
-            return badgeInfo.newIcon(context, creationFlag);
-        }
-        if (skipUserBadge) {
-            return null;
+            return badgeInfo.newIcon(context, isThemed ? FLAG_THEMED : 0);
         } else if ((flags & FLAG_INSTANT) != 0) {
             return context.getDrawable(isThemed
                     ? R.drawable.ic_instant_app_badge_themed
