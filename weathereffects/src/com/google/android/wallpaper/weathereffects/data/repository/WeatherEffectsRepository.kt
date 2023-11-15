@@ -61,23 +61,6 @@ class WeatherEffectsRepository @Inject constructor(
 
             val foreground = fgBitmap!!
             val background = bgBitmap!!
-
-            var success = true
-            // TODO: Only persist assets when the wallpaper is applied.
-            success = success and WallpaperFileUtils.export(
-                context,
-                WallpaperFileUtils.FG_FILE_NAME,
-                foreground,
-            )
-            success = success and WallpaperFileUtils.export(
-                context,
-                WallpaperFileUtils.BG_FILE_NAME,
-                background,
-            )
-            if (!success) {
-                Log.e(TAG, "Failed to export assets during wallpaper generation")
-                return
-            }
             _wallpaperImage.value = WallpaperImageModel(
                 foreground,
                 background,
@@ -85,10 +68,8 @@ class WeatherEffectsRepository @Inject constructor(
             )
         } catch (e: RuntimeException) {
             Log.e(TAG, "Unable to load wallpaper: ", e)
-            null
         } catch (e: OutOfMemoryError) {
             Log.e(TAG, "Unable to load wallpaper: ", e)
-            null
         }
     }
 
@@ -115,10 +96,34 @@ class WeatherEffectsRepository @Inject constructor(
             )
         } catch (e: RuntimeException) {
             Log.e(TAG, "Unable to load wallpaper: ", e)
-            null
         } catch (e: OutOfMemoryError) {
             Log.e(TAG, "Unable to load wallpaper: ", e)
-            null
+        }
+    }
+
+    suspend fun saveWallpaper() {
+        val foreground = _wallpaperImage.value?.foreground
+        val background = _wallpaperImage.value?.background
+
+        var success = true
+        success = success and (foreground?.let {
+            WallpaperFileUtils.export(
+                context,
+                WallpaperFileUtils.FG_FILE_NAME,
+                it,
+            )
+        } == true)
+        success = success and (background?.let {
+            WallpaperFileUtils.export(
+                context,
+                WallpaperFileUtils.BG_FILE_NAME,
+                it,
+            )
+        } == true)
+        if (success) {
+            Log.d(TAG, "Successfully save wallpaper")
+        } else {
+            Log.e(TAG, "Failed to save wallpaper")
         }
     }
 

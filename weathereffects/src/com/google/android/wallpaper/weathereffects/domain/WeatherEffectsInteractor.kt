@@ -34,4 +34,8 @@ class WeatherEffectsInteractor @Inject constructor(
     suspend fun loadWallpaper() {
         repository.loadWallpaperFromLocalStorage()
     }
+
+    suspend fun saveWallpaper() {
+        repository.saveWallpaper()
+    }
 }

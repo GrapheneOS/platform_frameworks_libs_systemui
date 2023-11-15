@@ -34,6 +34,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.google.android.torus.core.activity.TorusViewerActivity
 import com.google.android.torus.core.engine.TorusEngine
 import com.google.android.torus.utils.extensions.setImmersiveFullScreen
+import com.google.android.wallpaper.weathereffects.dagger.BackgroundScope
 import com.google.android.wallpaper.weathereffects.dagger.MainScope
 import com.google.android.wallpaper.weathereffects.provider.WallpaperInfoContract
 import com.google.android.wallpaper.weathereffects.shared.model.WallpaperFileModel
@@ -49,6 +50,9 @@ class WallpaperEffectsDebugActivity : TorusViewerActivity() {
     @Inject
     @MainScope
     lateinit var mainScope: CoroutineScope
+    @Inject
+    @BackgroundScope
+    lateinit var bgScope: CoroutineScope
     @Inject
     lateinit var context: Context
     @Inject
@@ -116,6 +120,7 @@ class WallpaperEffectsDebugActivity : TorusViewerActivity() {
                 ComponentName(this, WeatherWallpaperService::class.java)
             )
             this.startActivityForResult(i, SET_WALLPAPER_REQUEST_CODE)
+            saveWallpaper()
         }
 
         rootView.requireViewById<FrameLayout>(R.id.wallpaper_layout)
@@ -184,6 +189,12 @@ class WallpaperEffectsDebugActivity : TorusViewerActivity() {
             )
             setDebugText("Wallpaper updated successfully.\n* Weather: " +
                     "$weatherEffect\n* Foreground: $fgPath\n* Background: $bgPath")
+        }
+    }
+
+    private fun saveWallpaper() {
+        bgScope.launch {
+            interactor.saveWallpaper()
         }
     }
 

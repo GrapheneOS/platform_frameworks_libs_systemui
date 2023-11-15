@@ -55,9 +55,6 @@ android {
 
 dependencies {
     implementation "androidx.appcompat:appcompat:$versions.appcompat"
-
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$versions.kotlin"
-
     implementation "androidx.core:core-ktx:$versions.ktx"
     implementation "androidx.slice:slice-builders:$versions.androidXLib"
     implementation "androidx.slice:slice-core:$versions.androidXLib"
