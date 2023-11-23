@@ -51,6 +51,22 @@ inline fun <T> traceSection(tag: String, block: () -> T): T =
         block()
     }
 
+/**
+ * Same as [traceSection], but the tag is provided as a lambda to help avoiding creating expensive
+ * strings when not needed.
+ */
+inline fun <T> traceSection(tag: () -> String, block: () -> T): T =
+    if (Trace.isTagEnabled(Trace.TRACE_TAG_APP)) {
+        Trace.traceBegin(Trace.TRACE_TAG_APP, tag())
+        try {
+            block()
+        } finally {
+            Trace.traceEnd(Trace.TRACE_TAG_APP)
+        }
+    } else {
+        block()
+    }
+
 class TraceUtils {
     companion object {
         const val TAG = "TraceUtils"
@@ -69,6 +85,7 @@ class TraceUtils {
         inline fun namedRunnable(tag: String, crossinline block: () -> Unit): Runnable {
             return object : Runnable, TraceNameSupplier {
                 override fun getTraceName(): String = tag
+
                 override fun run() = block()
             }
         }
