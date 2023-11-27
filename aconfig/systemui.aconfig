@@ -11,5 +11,5 @@ flag {
     name: "home_panel_dream"
     namespace: "systemui"
     description: "Enables the home controls dream feature"
-    bug: "311439802"
+    bug: "298025023"
 }
