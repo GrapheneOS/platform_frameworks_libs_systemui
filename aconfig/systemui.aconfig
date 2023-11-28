@@ -6,3 +6,10 @@ flag {
     description: "An Example Flag"
     bug: "308482106"
 }
+
+flag {
+    name: "home_panel_dream"
+    namespace: "systemui"
+    description: "Enables the home controls dream feature"
+    bug: "298025023"
+}
