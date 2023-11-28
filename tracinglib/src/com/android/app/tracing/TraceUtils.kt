@@ -71,7 +71,23 @@ class TraceUtils {
         private const val DEBUG_COROUTINE_TRACING = false
         const val DEFAULT_TRACK_NAME = "AsyncTraces"
 
+        @JvmStatic
+        inline fun <T> trace(crossinline tag: () -> String, crossinline block: () -> T): T {
+            return traceSection(tag) { block() }
+        }
+
+        @JvmStatic
+        inline fun <T> trace(tag: String, crossinline block: () -> T): T {
+            return traceSection(tag) { block() }
+        }
+
+        @JvmStatic
         inline fun traceRunnable(tag: String, crossinline block: () -> Unit): Runnable {
+            return Runnable { traceSection(tag) { block() } }
+        }
+
+        @JvmStatic
+        inline fun traceRunnable(crossinline tag: () -> String, crossinline block: () -> Unit): Runnable {
             return Runnable { traceSection(tag) { block() } }
         }
 
@@ -80,6 +96,7 @@ class TraceUtils {
          *
          * This is useful for posting Runnables to Handlers with meaningful names.
          */
+        @JvmStatic
         inline fun namedRunnable(tag: String, crossinline block: () -> Unit): Runnable {
             return object : Runnable, TraceNameSupplier {
                 override fun getTraceName(): String = tag
@@ -100,6 +117,7 @@ class TraceUtils {
          * This can be used to trace coroutine code. Note that all usages of this method will appear
          * under a single track.
          */
+        @JvmStatic
         inline fun <T> traceAsync(method: String, block: () -> T): T =
             traceAsync(DEFAULT_TRACK_NAME, method, block)
 
@@ -110,6 +128,7 @@ class TraceUtils {
          * [trackName] of the track. The track is one of the rows visible in a perfetto trace inside
          * the app process.
          */
+        @JvmStatic
         inline fun <T> traceAsync(trackName: String, method: String, block: () -> T): T {
             val cookie = lastCookie.incrementAndGet()
             Trace.asyncTraceForTrackBegin(Trace.TRACE_TAG_APP, trackName, method, cookie)
