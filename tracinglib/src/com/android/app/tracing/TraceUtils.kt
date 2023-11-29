@@ -39,33 +39,31 @@ import kotlinx.coroutines.withContext
  * Run a block within a [Trace] section. Calls [Trace.beginSection] before and [Trace.endSection]
  * after the passed block.
  */
-inline fun <T> traceSection(tag: String, block: () -> T): T =
-    if (Trace.isTagEnabled(Trace.TRACE_TAG_APP)) {
-        Trace.traceBegin(Trace.TRACE_TAG_APP, tag)
-        try {
-            block()
-        } finally {
-            Trace.traceEnd(Trace.TRACE_TAG_APP)
-        }
-    } else {
+inline fun <T> traceSection(tag: String, block: () -> T): T {
+    val tracingEnabled = Trace.isTagEnabled(Trace.TRACE_TAG_APP)
+    if (tracingEnabled) Trace.traceBegin(Trace.TRACE_TAG_APP, tag)
+    return try {
+        // Note that as this is inline, the block section would be duplicated if it is called
+        // several times. For this reason, we're using the try/finally even if tracing is disabled.
         block()
+    } finally {
+        if (tracingEnabled) Trace.traceEnd(Trace.TRACE_TAG_APP)
     }
+}
 
 /**
  * Same as [traceSection], but the tag is provided as a lambda to help avoiding creating expensive
  * strings when not needed.
  */
-inline fun <T> traceSection(tag: () -> String, block: () -> T): T =
-    if (Trace.isTagEnabled(Trace.TRACE_TAG_APP)) {
-        Trace.traceBegin(Trace.TRACE_TAG_APP, tag())
-        try {
-            block()
-        } finally {
-            Trace.traceEnd(Trace.TRACE_TAG_APP)
-        }
-    } else {
+inline fun <T> traceSection(tag: () -> String, block: () -> T): T {
+    val tracingEnabled = Trace.isTagEnabled(Trace.TRACE_TAG_APP)
+    if (tracingEnabled) Trace.traceBegin(Trace.TRACE_TAG_APP, tag())
+    return try {
         block()
+    } finally {
+        if (tracingEnabled) Trace.traceEnd(Trace.TRACE_TAG_APP)
     }
+}
 
 class TraceUtils {
     companion object {
