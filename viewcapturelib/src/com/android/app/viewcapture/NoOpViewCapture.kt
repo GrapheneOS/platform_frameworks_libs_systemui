@@ -11,11 +11,11 @@ import android.view.Window
  */
 class NoOpViewCapture: ViewCapture(0, 0,
         createAndStartNewLooperExecutor("NoOpViewCapture", HandlerThread.MIN_PRIORITY)) {
-    override fun startCapture(view: View?, name: String?): SafeCloseable {
+    override fun startCapture(view: View, name: String): SafeCloseable {
         return SafeCloseable { }
     }
 
-    override fun startCapture(window: Window?): SafeCloseable {
+    override fun startCapture(window: Window): SafeCloseable {
         return SafeCloseable { }
     }
 }
