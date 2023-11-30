@@ -16,14 +16,9 @@
 
 package com.android.launcher3.util;
 
-import static com.android.launcher3.icons.BitmapInfo.FLAG_CLONE;
-import static com.android.launcher3.icons.BitmapInfo.FLAG_PRIVATE;
-import static com.android.launcher3.icons.BitmapInfo.FLAG_WORK;
-
 import android.os.UserHandle;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 
 /**
  * Data class which stores various properties of a {@link android.os.UserHandle}
@@ -70,12 +65,5 @@ public class UserIconInfo {
 
     public boolean isPrivate() {
         return type == TYPE_PRIVATE;
-    }
-
-    @NonNull
-    public FlagOp applyBitmapInfoFlags(@NonNull FlagOp op) {
-        return op.setFlag(FLAG_WORK, isWork())
-                .setFlag(FLAG_CLONE, isCloned())
-                .setFlag(FLAG_PRIVATE, isPrivate());
     }
 }
