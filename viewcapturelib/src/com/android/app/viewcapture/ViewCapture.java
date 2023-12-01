@@ -128,7 +128,7 @@ public abstract class ViewCapture {
      * Attaches the ViewCapture to the provided window and returns a handle to detach the listener
      */
     @NonNull
-    public SafeCloseable startCapture(Window window) {
+    public SafeCloseable startCapture(@NonNull Window window) {
         String title = window.getAttributes().getTitle().toString();
         String name = TextUtils.isEmpty(title) ? window.toString() : title;
         return startCapture(window.getDecorView(), name);
@@ -139,16 +139,16 @@ public abstract class ViewCapture {
      * Verifies that ViewCapture is enabled before actually attaching an onDrawListener.
      */
     @NonNull
-    public SafeCloseable startCapture(View view, String name) {
+    public SafeCloseable startCapture(@NonNull View view, @NonNull String name) {
         WindowListener listener = new WindowListener(view, name);
         if (mIsEnabled) MAIN_EXECUTOR.execute(listener::attachToRoot);
         mListeners.add(listener);
-
-        Context context = view.getContext();
-        context.registerComponentCallbacks(listener);
+        view.getContext().registerComponentCallbacks(listener);
 
         return () -> {
-            context.unregisterComponentCallbacks(listener);
+            if (listener.mRoot != null && listener.mRoot.getContext() != null) {
+                listener.mRoot.getContext().unregisterComponentCallbacks(listener);
+            }
             mListeners.remove(listener);
             listener.detachFromRoot();
         };
