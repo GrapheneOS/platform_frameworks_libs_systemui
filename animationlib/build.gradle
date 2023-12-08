@@ -11,10 +11,12 @@ android {
     sourceSets {
         main {
             java.srcDirs = ['src']
+            res.srcDirs = ['res']
             manifest.srcFile 'AndroidManifest.xml'
         }
         androidTest {
-            java.srcDirs = ["tests"]
+            java.srcDirs = ["tests/src"]
+            manifest.srcFile 'tests/AndroidManifest.xml'
         }
     }
     compileSdk 33

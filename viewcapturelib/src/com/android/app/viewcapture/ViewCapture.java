@@ -16,15 +16,18 @@
 
 package com.android.app.viewcapture;
 
+import static com.android.app.viewcapture.data.ExportedData.MagicNumber.MAGIC_NUMBER_H;
+import static com.android.app.viewcapture.data.ExportedData.MagicNumber.MAGIC_NUMBER_L;
+
 import android.content.Context;
 import android.content.res.Resources;
 import android.media.permission.SafeCloseable;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.os.Trace;
 import android.text.TextUtils;
 import android.util.SparseArray;
-import android.view.Choreographer;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -51,6 +54,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -65,6 +69,9 @@ public abstract class ViewCapture {
     private static final int PFLAG_INVALIDATED = 0x80000000;
     private static final int PFLAG_DIRTY_MASK = 0x00200000;
 
+    private static final long MAGIC_NUMBER_FOR_WINSCOPE =
+            ((long) MAGIC_NUMBER_H.getNumber() << 32) | MAGIC_NUMBER_L.getNumber();
+
     // Number of frames to keep in memory
     private final int mMemorySize;
     protected static final int DEFAULT_MEMORY_SIZE = 2000;
@@ -77,16 +84,13 @@ public abstract class ViewCapture {
     private final List<WindowListener> mListeners = new ArrayList<>();
 
     protected final Executor mBgExecutor;
-    private final Choreographer mChoreographer;
 
     // Pool used for capturing view tree on the UI thread.
     private ViewRef mPool = new ViewRef();
     private boolean mIsEnabled = true;
 
-    protected ViewCapture(int memorySize, int initPoolSize, Choreographer choreographer,
-            Executor bgExecutor) {
+    protected ViewCapture(int memorySize, int initPoolSize, Executor bgExecutor) {
         mMemorySize = memorySize;
-        mChoreographer = choreographer;
         mBgExecutor = bgExecutor;
         mBgExecutor.execute(() -> initPool(initPoolSize));
     }
@@ -171,16 +175,21 @@ public abstract class ViewCapture {
     @AnyThread
     public void dumpTo(OutputStream os, Context context)
             throws InterruptedException, ExecutionException, IOException {
-        if (!mIsEnabled) {
-            return;
-        }
+        if (mIsEnabled) getExportedData(context).writeTo(os);
+    }
+
+    @VisibleForTesting
+    public ExportedData getExportedData(Context context)
+            throws InterruptedException, ExecutionException {
         ArrayList<Class> classList = new ArrayList<>();
-        ExportedData.newBuilder()
+        return ExportedData.newBuilder()
+                .setMagicNumber(MAGIC_NUMBER_FOR_WINSCOPE)
                 .setPackage(context.getPackageName())
                 .addAllWindowData(getWindowData(context, classList, l -> l.mIsActive).get())
                 .addAllClassname(toStringList(classList))
-                .build()
-                .writeTo(os);
+                .setRealToElapsedTimeOffsetNanos(TimeUnit.MILLISECONDS
+                        .toNanos(System.currentTimeMillis()) - SystemClock.elapsedRealtimeNanos())
+                .build();
     }
 
     private static List<String> toStringList(List<Class> classList) {
@@ -280,7 +289,7 @@ public abstract class ViewCapture {
             ViewRef captured = mViewRef.next;
             if (captured != null) {
                 captured.callback = mCaptureCallback;
-                captured.choreographerTimeNanos = mChoreographer.getFrameTimeNanos();
+                captured.elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos();
                 mBgExecutor.execute(captured);
             }
             mIsFirstFrame = false;
@@ -293,12 +302,12 @@ public abstract class ViewCapture {
          */
         @WorkerThread
         private void captureViewPropertiesBg(ViewRef viewRefStart) {
-            long choreographerTimeNanos = viewRefStart.choreographerTimeNanos;
+            long elapsedRealtimeNanos = viewRefStart.elapsedRealtimeNanos;
             mFrameIndexBg++;
             if (mFrameIndexBg >= mMemorySize) {
                 mFrameIndexBg = 0;
             }
-            mFrameTimesNanosBg[mFrameIndexBg] = choreographerTimeNanos;
+            mFrameTimesNanosBg[mFrameIndexBg] = elapsedRealtimeNanos;
 
             ViewPropertyRef recycle = mNodesBg[mFrameIndexBg];
 
@@ -546,7 +555,7 @@ public abstract class ViewCapture {
         public ViewRef next;
 
         public Consumer<ViewRef> callback = null;
-        public long choreographerTimeNanos = 0;
+        public long elapsedRealtimeNanos = 0;
 
         public void transferTo(ViewPropertyRef out) {
             out.childCount = this.childCount;

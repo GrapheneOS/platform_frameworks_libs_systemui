@@ -50,8 +50,7 @@ class SettingsAwareViewCaptureTest {
         Settings.Global.putInt(context.contentResolver, VIEW_CAPTURE_ENABLED, 0)
 
         activityScenarioRule.scenario.onActivity { activity ->
-            val viewCapture: ViewCapture =
-                SettingsAwareViewCapture(context, Choreographer.getInstance(), MAIN_EXECUTOR)
+            val viewCapture: ViewCapture = SettingsAwareViewCapture(context, MAIN_EXECUTOR)
             val rootView: View = activity.requireViewById(android.R.id.content)
 
             val closeable: SafeCloseable = viewCapture.startCapture(rootView, "rootViewId")
@@ -77,8 +76,7 @@ class SettingsAwareViewCaptureTest {
         Settings.Global.putInt(context.contentResolver, VIEW_CAPTURE_ENABLED, 1)
 
         activityScenarioRule.scenario.onActivity { activity ->
-            val viewCapture: ViewCapture =
-                SettingsAwareViewCapture(context, Choreographer.getInstance(), MAIN_EXECUTOR)
+            val viewCapture: ViewCapture = SettingsAwareViewCapture(context, MAIN_EXECUTOR)
             val rootView: View = activity.requireViewById(android.R.id.content)
 
             val closeable: SafeCloseable = viewCapture.startCapture(rootView, "rootViewId")
