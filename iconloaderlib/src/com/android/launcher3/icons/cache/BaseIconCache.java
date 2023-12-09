@@ -21,6 +21,7 @@ import static com.android.launcher3.icons.BaseIconFactory.getFullResDefaultActiv
 import static com.android.launcher3.icons.BitmapInfo.LOW_RES_ICON;
 import static com.android.launcher3.icons.GraphicsUtils.flattenBitmap;
 import static com.android.launcher3.icons.GraphicsUtils.setColorAlphaBound;
+import static com.android.launcher3.icons.cache.IconCacheUpdateHandler.ICON_UPDATE_TOKEN;
 
 import static java.util.Objects.requireNonNull;
 
@@ -499,9 +500,16 @@ public abstract class BaseIconCache {
                 cachingLogic.getDescription(object, entry.title), user);
     }
 
-    public synchronized void clear() {
+    public synchronized void clearMemoryCache() {
         assertWorkerThread();
-        mIconDb.clear();
+        mCache.clear();
+    }
+
+    /**
+     * Returns true if an icon update is in progress
+     */
+    public boolean isIconUpdateInProgress() {
+        return mWorkerHandler.hasMessages(0, ICON_UPDATE_TOKEN);
     }
 
     /**

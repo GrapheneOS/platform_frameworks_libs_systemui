@@ -57,7 +57,7 @@ public class IconCacheUpdateHandler {
      */
     private static final boolean MODE_CLEAR_VALID_ITEMS = false;
 
-    private static final Object ICON_UPDATE_TOKEN = new Object();
+    static final Object ICON_UPDATE_TOKEN = new Object();
 
     private final HashMap<String, PackageInfo> mPkgInfoMap;
     private final BaseIconCache mIconCache;
