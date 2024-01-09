@@ -29,10 +29,10 @@ import com.android.launcher3.util.FlagOp;
 
 public class BitmapInfo {
 
-    public static final int FLAG_WORK = 1 << 0;
-    public static final int FLAG_INSTANT = 1 << 1;
-    public static final int FLAG_CLONE = 1 << 2;
-    public static final int FLAG_PRIVATE = 1 << 3;
+    static final int FLAG_WORK = 1 << 0;
+    static final int FLAG_INSTANT = 1 << 1;
+    static final int FLAG_CLONE = 1 << 2;
+    static final int FLAG_PRIVATE = 1 << 3;
     @IntDef(flag = true, value = {
             FLAG_WORK,
             FLAG_INSTANT,
@@ -170,14 +170,21 @@ public class BitmapInfo {
         if (badgeInfo != null) {
             return badgeInfo.newIcon(context, isThemed ? FLAG_THEMED : 0);
         } else if ((flags & FLAG_INSTANT) != 0) {
-            return new UserBadgeDrawable(context, R.drawable.ic_instant_app_badge, isThemed);
+            return context.getDrawable(isThemed
+                    ? R.drawable.ic_instant_app_badge_themed
+                    : R.drawable.ic_instant_app_badge);
         } else if ((flags & FLAG_WORK) != 0) {
-            return new UserBadgeDrawable(context, R.drawable.ic_work_app_badge, isThemed);
+            return context.getDrawable(isThemed
+                    ? R.drawable.ic_work_app_badge_themed
+                    : R.drawable.ic_work_app_badge);
         } else if ((flags & FLAG_CLONE) != 0) {
-            return new UserBadgeDrawable(context, R.drawable.ic_clone_app_badge, isThemed);
+            return context.getDrawable(isThemed
+                    ? R.drawable.ic_clone_app_badge_themed
+                    : R.drawable.ic_clone_app_badge);
         } else if ((flags & FLAG_PRIVATE) != 0) {
-            return new UserBadgeDrawable(
-                    context, R.drawable.ic_private_profile_app_badge, isThemed);
+            return context.getDrawable(isThemed
+                    ? R.drawable.ic_private_profile_app_badge_themed
+                    : R.drawable.ic_private_profile_app_badge);
         }
         return null;
     }
