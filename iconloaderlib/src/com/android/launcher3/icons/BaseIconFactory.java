@@ -264,7 +264,9 @@ public class BaseIconFactory implements AutoCloseable {
                 info = getUserInfo(options.mUserHandle);
             }
             if (info != null) {
-                op = info.applyBitmapInfoFlags(op);
+                op = op.setFlag(FLAG_WORK, info.isWork());
+                op = op.setFlag(FLAG_CLONE, info.isCloned());
+                op = op.setFlag(FLAG_PRIVATE, info.isPrivate());
             }
         }
         return op;
