@@ -1,4 +1,5 @@
 package: "com.android.systemui.shared"
+container: "system"
 
 # Note: for shared flags across SystemUI & framework
 

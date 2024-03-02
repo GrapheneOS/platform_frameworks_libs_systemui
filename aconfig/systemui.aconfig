@@ -1,4 +1,5 @@
 package: "com.android.systemui.shared"
+container: "system"
 
 flag {
     name: "example_shared_flag"
