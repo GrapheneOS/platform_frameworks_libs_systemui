@@ -19,11 +19,14 @@ package com.google.android.wallpaper.weathereffects.graphics.rain
 import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.util.SizeF
+import com.google.android.wallpaper.weathereffects.graphics.FrameBuffer
 import com.google.android.wallpaper.weathereffects.graphics.WeatherEffect
 import com.google.android.wallpaper.weathereffects.graphics.utils.GraphicsUtils
 import com.google.android.wallpaper.weathereffects.graphics.utils.ImageCrop
+import java.util.concurrent.Executor
 import kotlin.random.Random
 
 /** Defines and generates the rain weather effect animation. */
@@ -31,10 +34,19 @@ class RainEffect(
     /** The config of the rain effect. */
     private val rainConfig: RainEffectConfig,
     /** The initial size of the surface where the effect will be shown. */
-    surfaceSize: SizeF
+    surfaceSize: SizeF,
+    private val mainExecutor: Executor
 ) : WeatherEffect {
 
     private val rainPaint = Paint().also { it.shader = rainConfig.colorGradingShader }
+    // Set blur effect to reduce the outline noise. No need to set blur effect every time we
+    // re-generate the outline buffer.
+    private val outlineBuffer =
+        FrameBuffer(rainConfig.background.width, rainConfig.background.height).apply {
+            setRenderEffect(RenderEffect.createBlurEffect(2f, 2f, Shader.TileMode.CLAMP))
+        }
+    private val outlineBufferPaint = Paint().also { it.shader = rainConfig.outlineShader }
+
     private var elapsedTime: Float = 0f
 
     init {
@@ -66,6 +78,7 @@ class RainEffect(
 
     override fun release() {
         rainConfig.lut?.recycle()
+        outlineBuffer.close()
     }
 
     override fun setIntensity(intensity: Float) {
@@ -75,6 +88,11 @@ class RainEffect(
             "intensity",
             rainConfig.colorGradingIntensity * intensity
         )
+        val thickness = 1f + intensity * 10f
+        rainConfig.outlineShader.setFloatUniform("thickness", thickness)
+
+        // Need to recreate the outline buffer as the uniform has changed.
+        createOutlineBuffer()
     }
 
     private fun adjustCropping(surfaceSize: SizeF) {
@@ -131,14 +149,30 @@ class RainEffect(
     }
 
     private fun updateTextureUniforms() {
-        rainConfig.rainShowerShader.setInputBuffer(
-            "foreground",
+        val foregroundBuffer =
             BitmapShader(rainConfig.foreground, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
-        )
+        rainConfig.rainShowerShader.setInputBuffer("foreground", foregroundBuffer)
+        rainConfig.outlineShader.setInputBuffer("texture", foregroundBuffer)
 
         rainConfig.rainShowerShader.setInputBuffer(
             "background",
             BitmapShader(rainConfig.background, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
+        )
+    }
+
+    private fun createOutlineBuffer() {
+        val canvas = outlineBuffer.beginDrawing()
+        canvas.drawPaint(outlineBufferPaint)
+        outlineBuffer.endDrawing()
+
+        outlineBuffer.tryObtainingImage(
+            { buffer ->
+                rainConfig.rainShowerShader.setInputBuffer(
+                    "outlineBuffer",
+                    BitmapShader(buffer, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
+                )
+            },
+            mainExecutor
         )
     }
 

@@ -145,3 +145,51 @@ GlassRain generateGlassRain(
     return GlassRain(
         dropPos, cellMainDropMask, trailDropsPos, cellDroppletsMask, cellTrailMask, cellUv);
 }
+
+/**
+ * Generate rain drops that stay in place on the glass surface.
+ */
+vec3 generateStaticGlassRain(vec2 uv, half screenAspectRatio, half time, half intensity) {
+    vec2 gridSize = vec2(15., 15.);
+    // Aspect ratio impacts visible cells.
+    gridSize.y /= screenAspectRatio;
+    // scale the UV to allocate number of rows and columns.
+    vec2 gridUv = uv * gridSize;
+    // Invert y (otherwise it goes from 0=top to 1=bottom).
+    gridUv.y = 1. - gridUv.y;
+    // Generate column id, to offset columns vertically (so rain is not aligned).
+    float columnId = idGenerator(floor(gridUv.x));
+    gridUv.y += columnId * 5.6;
+
+    // Get the cell ID based on the grid position. Value from 0 to 1.
+    float cellId = idGenerator(floor(gridUv));
+
+    // Draw rain drops with a probability based on the cell id.
+    if (cellId < 0.8) {
+        return vec3(0.);
+    }
+
+    // For each cell, we set the internal UV from -0.5 (left, bottom) to 0.5 (right, top).
+    vec2 cellUv = fract(gridUv) - 0.5;
+    vec2 pixUv = cellUv;
+    pixUv.x *= -1;
+    vec2 pixDistance = screenSize * pixUv / gridSize;
+
+    float delay = 3.5173;
+    float duration = 8.2;
+    float t = time + 100. * cellId;
+    float circletime = floor(t / (duration + delay));
+    float delayOffset = idGenerator(floor(gridUv) + vec2(circletime, 43.14 * cellId));
+    float normalizedTime = map(/* value */     mod(t, duration + delay) - delay * delayOffset,
+                               /* in range */  0, duration,
+                               /* out range */ 0, 1);
+    // Apply a curve to the time.
+    normalizedTime *= normalizedTime;
+
+    vec2 pos = cellUv * (1.5 - 0.5 * cellId + normalizedTime * 50.);
+    float mask = smoothstep(0.3, 0.2, length(pos))
+                 * smoothstep(0.2, 0.06, normalizedTime)
+                 * smoothstep(0., 0.45, intensity);
+
+    return vec3(pos * 0.19, mask);
+}
