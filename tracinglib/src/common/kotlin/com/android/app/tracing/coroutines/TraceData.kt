@@ -61,7 +61,7 @@ internal class TraceData : TraceStatus {
      * Removes all current trace slices from the current thread. Called when coroutine is suspended.
      */
     internal fun endAllOnThread() {
-        for (i in 0..slices.size) {
+        for (i in 0..<slices.size) {
             endSlice()
         }
     }
