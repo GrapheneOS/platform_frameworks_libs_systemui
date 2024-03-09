@@ -46,7 +46,6 @@ import android.os.Handler;
 import android.os.LocaleList;
 import android.os.Looper;
 import android.os.Process;
-import android.os.SystemClock;
 import android.os.Trace;
 import android.os.UserHandle;
 import android.text.TextUtils;
@@ -588,8 +587,9 @@ public abstract class BaseIconCache {
 
                     entry.title = appInfo.loadLabel(mPackageManager);
                     entry.contentDescription = getUserBadgedLabel(entry.title, user);
-                    entry.bitmap = BitmapInfo.of(
-                            useLowResIcon ? LOW_RES_ICON : iconInfo.icon, iconInfo.color);
+                    entry.bitmap = useLowResIcon
+                            ? BitmapInfo.of(LOW_RES_ICON, iconInfo.color)
+                            : iconInfo;
 
                     // Add the icon in the DB here, since these do not get written during
                     // package updates.
