@@ -84,7 +84,7 @@ class SnowEffect(
             "intensity",
             snowConfig.colorGradingIntensity * intensity
         )
-        snowConfig.accumulatedSnowShader.setFloatUniform("intensity", intensity)
+        snowConfig.accumulatedSnowShader.setFloatUniform("snowThickness", intensity)
 
         // Regenerate accumulated snow since the uniform changed.
         generateAccumulatedSnow()
@@ -166,9 +166,8 @@ class SnowEffect(
     private fun generateAccumulatedSnow() {
         val renderingCanvas = frameBuffer.beginDrawing()
         snowConfig.accumulatedSnowShader.setFloatUniform(
-            "imageSize",
-            renderingCanvas.width.toFloat(),
-            renderingCanvas.height.toFloat()
+            "imageWidth",
+            renderingCanvas.width.toFloat()
         )
         snowConfig.accumulatedSnowShader.setInputBuffer(
             "foreground",

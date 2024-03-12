@@ -19,27 +19,70 @@ package {
 java_library {
     name: "tracinglib-platform",
     defaults: ["tracinglib-defaults"],
-    srcs: ["src/platform/kotlin/**/*.kt"],
+    static_libs: [
+        "kotlinx_coroutines_android",
+        "com_android_systemui_flags_lib",
+    ],
+    srcs: ["src/androidPlatformApi/kotlin/**/*.kt"],
 }
 
 java_library {
     name: "tracinglib-androidx",
     defaults: ["tracinglib-defaults"],
-    srcs: ["src/androidx/kotlin/**/*.kt"],
-    sdk_version: "31",
-    min_sdk_version: "19",
     static_libs: [
+        "kotlinx_coroutines_android",
+        "com_android_systemui_flags_lib",
         "androidx.tracing_tracing",
     ],
+    srcs: ["src/androidMinApi19/kotlin/**/*.kt"],
+    sdk_version: "31",
+    min_sdk_version: "19",
+}
+
+java_test_host {
+    name: "tracinglib-host-test",
+    defaults: ["tracinglib-defaults"],
+    srcs: [
+        "src/fakeMain/kotlin/**/*.kt",
+        "src/fakeTest/kotlin/**/*.kt",
+    ],
+    static_libs: [
+        "kotlinx_coroutines",
+        "kotlinx_coroutines_test",
+    ],
+    libs: [
+        "junit",
+    ],
+}
+
+android_app {
+    name: "TracingLibTestApp",
+    platform_apis: true,
+    manifest: "empty-manifest.xml",
+    use_resource_processor: true,
+}
+
+android_robolectric_test {
+    enabled: true,
+    name: "tracinglib-robolectric-test",
+    defaults: ["tracinglib-defaults"],
+    srcs: ["src/androidRoboTest/kotlin/**/*.kt"],
+    java_resource_dirs: ["test_config"],
+    static_libs: [
+        "kotlinx_coroutines",
+        "kotlinx_coroutines_test",
+    ],
+    libs: [
+        "androidx.test.core",
+        "androidx.test.runner",
+    ],
+    instrumentation_for: "TracingLibTestApp",
+    upstream: true,
 }
 
 java_defaults {
     name: "tracinglib-defaults",
-    common_srcs: ["src/common/kotlin/**/*.kt"],
-    static_libs: [
-        "kotlinx_coroutines_android",
-        "com_android_systemui_flags_lib",
-    ],
+    common_srcs: ["src/commonMain/kotlin/**/*.kt"],
     kotlincflags: [
         "-Xjvm-default=all",
         "-Xmulti-platform",

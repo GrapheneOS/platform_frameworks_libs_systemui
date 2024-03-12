@@ -15,8 +15,8 @@
  */
 
 uniform shader foreground;
-uniform float2 imageSize;
-uniform half intensity;
+uniform half imageWidth;
+uniform half snowThickness;
 
 #include "shaders/simplex2d.agsl"
 #include "shaders/utils.agsl"
@@ -27,17 +27,19 @@ float random(vec2 uv) {
 
 vec4 main(float2 fragCoord) {
     // fragCoord should be already the adjusted UVs to have the expected rect of the image.
-    float variation = 0.5 + 0.5 * simplex2d(25. * fragCoord / imageSize.xx);
-    float distance = 8. * variation * intensity;
+    vec2 uv = fragCoord / imageWidth;
+    float variation = 0.3 + simplex2d(11. * uv);
+    float distance = 20. * variation * snowThickness;
+
     float aN = foreground.eval(fragCoord + vec2(0., distance)).a;
     float aS = foreground.eval(fragCoord + vec2(0., -distance)).a;
     float dY = (aN - aS) * 0.5;
     dY = max(dY, 0.0);
 
-    float accumulatedSnow = smoothstep(0.1, 1.8, sqrt(dY * dY) * 5.0);
+    float accumulatedSnow = smoothstep(0.1, 1.8, dY * 5.0);
     vec4 color = vec4(0., 0., 0., 1.);
     color.r = accumulatedSnow;
-    color.g = random(fragCoord / imageSize.xx);
+    color.g = random(uv);
     color.b = variation;
     return color;
 }

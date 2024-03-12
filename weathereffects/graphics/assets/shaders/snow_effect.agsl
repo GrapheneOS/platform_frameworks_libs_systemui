@@ -32,9 +32,9 @@ uniform float2 screenSize;
 
 /* Constants that can be modified. */
 // Snow tint.
-const vec4 snowColor = vec4(vec3(0.9), 1.);
+const vec3 snowColor = vec3(0.9);
 // Glass tint.
-const vec4 glassTint = vec4(vec3(0.8), 1.); // gray
+const vec3 glassTint = vec3(0.8); // gray
 
 // snow opacity (how visible it is).
 const float snowOpacity = 1.4;
@@ -54,7 +54,7 @@ vec4 main(float2 fragCoord) {
     // Add some slight tint to the frosted glass.
 
     // Get color of the background texture.
-    color.rgb = mix(colorBackground.rgb, glassTint.rgb, frostedGlassIntensity);
+    color.rgb = mix(colorBackground.rgb, glassTint, frostedGlassIntensity);
     for (half i = 9.; i > 2.; i--) {
         // Generate snow behind the subject.
         // Normalized layer index.
@@ -66,7 +66,7 @@ vec4 main(float2 fragCoord) {
               /* Grid size = */ vec2(mix(3.0, 6.0, idx), mix(1.0, 3.0, idx)),
               /* layer number = */ i);
 
-        color.rgb = mix(color.rgb, snowColor.rgb, snowOpacity * snow.flakeMask);
+        color.rgb = mix(color.rgb, snowColor, snowOpacity * snow.flakeMask);
     }
 
     // Add the foreground. Any effect from here will be in front of the subject.
@@ -87,7 +87,7 @@ vec4 main(float2 fragCoord) {
               /* Grid size = */ vec2(i + 1., 1.4),
               /* layer number = */ i);
 
-        color.rgb = mix(color.rgb, snowColor.rgb, snowOpacity * snow.flakeMask);
+        color.rgb = mix(color.rgb, snowColor, snowOpacity * snow.flakeMask);
     }
 
     /* Debug snow */
