@@ -30,6 +30,16 @@ data class FogEffectConfig(
     val colorGradingShader: RuntimeShader,
     /** The main lut (color grading) for the effect. */
     val lut: Bitmap?,
+    /**
+     * The clouds texture, which will be placed in front of the foreground. The texture is expected
+     * to be tileable, and at least 16-bit per channel for render quality.
+     */
+    val cloudsTexture: Bitmap,
+    /**
+     * The fog texture. This will be placed behind the foreground. The texture is expected to be
+     * tileable, and at least 16-bit per channel for render quality.
+     */
+    val fogTexture: Bitmap,
     /** A bitmap containing the foreground of the image. */
     val foreground: Bitmap,
     /** A bitmap containing the background of the image. */
@@ -61,6 +71,10 @@ data class FogEffectConfig(
         shader = GraphicsUtils.loadShader(assets, SHADER_PATH),
         colorGradingShader = GraphicsUtils.loadShader(assets, COLOR_GRADING_SHADER_PATH),
         lut = GraphicsUtils.loadTexture(assets, LOOKUP_TABLE_TEXTURE_PATH),
+        cloudsTexture = GraphicsUtils.loadTexture(assets, CLOUDS_TEXTURE_PATH)
+                ?: throw RuntimeException("Clouds texture is missing."),
+        fogTexture = GraphicsUtils.loadTexture(assets, FOG_TEXTURE_PATH)
+                ?: throw RuntimeException("Fog texture is missing."),
         foreground,
         background,
         pixelDensity,
@@ -72,6 +86,8 @@ data class FogEffectConfig(
         private const val SHADER_PATH = "shaders/fog_effect.agsl"
         private const val COLOR_GRADING_SHADER_PATH = "shaders/color_grading_lut.agsl"
         private const val LOOKUP_TABLE_TEXTURE_PATH = "textures/lut_rain_and_fog.png"
+        private const val CLOUDS_TEXTURE_PATH = "textures/clouds.png"
+        private const val FOG_TEXTURE_PATH = "textures/fog.png"
         private const val DEFAULT_INTENSITY = 1f
         private const val COLOR_GRADING_INTENSITY = 0.7f
     }
