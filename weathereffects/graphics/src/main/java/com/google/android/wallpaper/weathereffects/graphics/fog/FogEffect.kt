@@ -47,14 +47,27 @@ class FogEffect(
     override fun resize(newSurfaceSize: SizeF) = adjustCropping(newSurfaceSize)
 
     override fun update(deltaMillis: Long, frameTimeNanos: Long) {
-        val time = 0.02f * frameTimeNanos.toFloat() * NANOS_TO_SECONDS
+        val deltaTime = deltaMillis * MILLIS_TO_SECONDS
 
-        // Variation range [1, 1.5]. We don't want the variation to be 0.
-        val variation = (sin(time + sin(3f * time)) * 0.5f + 0.5f) * 1.5f
-        elapsedTime += variation * deltaMillis * MILLIS_TO_SECONDS
+        val time = frameTimeNanos.toFloat() * NANOS_TO_SECONDS
+        // Variation range [0.4, 1]. We don't want the variation to be 0.
+        val variation = sin(0.06f * time + sin(0.18f * time)) * 0.3f + 0.7f
+        elapsedTime += variation * deltaTime
 
-        fogConfig.shader.setFloatUniform("timeBackground", elapsedTime * 1.5f)
-        fogConfig.shader.setFloatUniform("timeForeground", elapsedTime * 2.0f)
+        val scaledElapsedTime = elapsedTime * 0.248f
+
+        val variationFgd0 = 0.256f * sin(scaledElapsedTime)
+        val variationFgd1 = 0.156f * sin(scaledElapsedTime) * sin(scaledElapsedTime)
+        val timeFgd0 = 0.4f * elapsedTime * 5f + variationFgd0
+        val timeFgd1 = 0.03f * elapsedTime * 5f + variationFgd1
+
+        val variationBgd0 = 0.156f * sin((scaledElapsedTime + Math.PI.toFloat() / 2.0f))
+        val variationBgd1 =
+            0.0156f * sin((scaledElapsedTime + Math.PI.toFloat() / 3.0f)) * sin(scaledElapsedTime)
+        val timeBgd0 = 0.8f * elapsedTime * 5f + variationBgd0
+        val timeBgd1 = 0.2f * elapsedTime * 5f + variationBgd1
+
+        fogConfig.shader.setFloatUniform("time", timeFgd0, timeFgd1, timeBgd0, timeBgd1)
 
         fogConfig.colorGradingShader.setInputShader("texture", fogConfig.shader)
     }
@@ -130,6 +143,28 @@ class FogEffect(
         fogConfig.shader.setInputBuffer(
             "background",
             BitmapShader(fogConfig.background, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
+        )
+
+        fogConfig.shader.setInputBuffer(
+            "clouds",
+            BitmapShader(fogConfig.cloudsTexture, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT)
+        )
+
+        fogConfig.shader.setFloatUniform(
+            "cloudsSize",
+            fogConfig.cloudsTexture.width.toFloat(),
+            fogConfig.cloudsTexture.height.toFloat()
+        )
+
+        fogConfig.shader.setInputBuffer(
+            "fog",
+            BitmapShader(fogConfig.fogTexture, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT)
+        )
+
+        fogConfig.shader.setFloatUniform(
+            "fogSize",
+            fogConfig.fogTexture.width.toFloat(),
+            fogConfig.fogTexture.height.toFloat()
         )
 
         fogConfig.shader.setFloatUniform("pixelDensity", fogConfig.pixelDensity)
