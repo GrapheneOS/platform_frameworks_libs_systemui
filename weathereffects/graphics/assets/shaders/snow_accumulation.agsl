@@ -22,14 +22,14 @@ uniform half snowThickness;
 #include "shaders/utils.agsl"
 
 float random(vec2 uv) {
-    return fract(sin(dot(uv.xy, vec2(14.53898, 56.233))) * 45312.644263742);
+    return fract(sin(dot(uv, vec2(14.53898, 56.233))) * 45312.644263742);
 }
 
 vec4 main(float2 fragCoord) {
     // fragCoord should be already the adjusted UVs to have the expected rect of the image.
     vec2 uv = fragCoord / imageWidth;
     float variation = 0.3 + simplex2d(11. * uv);
-    float distance = 20. * variation * snowThickness;
+    float distance = variation * snowThickness;
 
     float aN = foreground.eval(fragCoord + vec2(0., distance)).a;
     float aS = foreground.eval(fragCoord + vec2(0., -distance)).a;

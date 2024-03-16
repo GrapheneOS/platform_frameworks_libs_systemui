@@ -17,7 +17,6 @@
 uniform shader foreground;
 uniform shader background;
 uniform shader accumulatedSnow;
-uniform shader blurredBackground;
 uniform float2 uvOffsetFgd;
 uniform float2 uvScaleFgd;
 uniform float2 uvOffsetBgd;

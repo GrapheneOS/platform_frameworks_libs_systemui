@@ -17,7 +17,13 @@
 package com.android.app.tracing.coroutines
 
 import com.android.app.tracing.TraceState.openSectionsOnCurrentThread
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.newSingleThreadContext
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -25,27 +31,174 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.BlockJUnit4ClassRunner
 
+/**
+ * Helper util for asserting that the open trace sections on the current thread equal the passed
+ * list of strings.
+ */
+private fun assertTraceEquals(vararg openTraceSections: String) {
+    assertArrayEquals(openTraceSections, openSectionsOnCurrentThread())
+}
+
+/** Helper util for asserting that there are no open trace sections on the current thread. */
+private fun assertTraceIsEmpty() = assertEquals(0, openSectionsOnCurrentThread().size)
+
+/**
+ * Helper util for calling [runTest] with a [TraceContextElement]. This is useful for formatting
+ * purposes. Passing an arg to `runTest {}` directly, as in `fun testStuff() =
+ * runTest(TraceContextElement()) {}` would require more indentations according to our style guide.
+ */
+private fun runTestWithTraceContext(testBody: suspend TestScope.() -> Unit) =
+    runTest(context = TraceContextElement(), testBody = testBody)
+
 @RunWith(BlockJUnit4ClassRunner::class)
 class CoroutineTracingTest {
+    @Test
+    fun nestedTraceSectionsOnSingleThread() = runTestWithTraceContext {
+        val fetchData: suspend () -> String = {
+            delay(1L)
+            traceCoroutine("span-for-fetchData") {
+                assertTraceEquals("span-for-launch", "span-for-fetchData")
+            }
+            "stuff"
+        }
+        launch("span-for-launch") {
+            assertEquals("stuff", fetchData())
+            assertTraceEquals("span-for-launch")
+        }
+        assertTraceIsEmpty()
+    }
+
+    private fun CoroutineScope.testTraceSectionsMultiThreaded(
+        thread1Context: CoroutineContext,
+        thread2Context: CoroutineContext
+    ) {
+        val fetchData1: suspend () -> String = {
+            assertTraceEquals("span-for-launch-1")
+            delay(1L)
+            traceCoroutine("span-for-fetchData-1") {
+                assertTraceEquals("span-for-launch-1", "span-for-fetchData-1")
+            }
+            assertTraceEquals("span-for-launch-1")
+            "stuff-1"
+        }
+
+        val fetchData2: suspend () -> String = {
+            assertTraceEquals(
+                "span-for-launch-1",
+                "span-for-launch-2",
+            )
+            delay(1L)
+            traceCoroutine("span-for-fetchData-2") {
+                assertTraceEquals("span-for-launch-1", "span-for-launch-2", "span-for-fetchData-2")
+            }
+            assertTraceEquals(
+                "span-for-launch-1",
+                "span-for-launch-2",
+            )
+            "stuff-2"
+        }
+
+        val thread1 = newSingleThreadContext("thread-#1") + thread1Context
+        val thread2 = newSingleThreadContext("thread-#2") + thread2Context
+
+        launch("span-for-launch-1", thread1) {
+            assertEquals("stuff-1", fetchData1())
+            assertTraceEquals("span-for-launch-1")
+            launch("span-for-launch-2", thread2) {
+                assertEquals("stuff-2", fetchData2())
+                assertTraceEquals("span-for-launch-1", "span-for-launch-2")
+            }
+            assertTraceEquals("span-for-launch-1")
+        }
+        assertTraceIsEmpty()
+
+        // Launching without the trace extension won't result in traces
+        launch(thread1) { assertTraceIsEmpty() }
+        launch(thread2) { assertTraceIsEmpty() }
+    }
 
     @Test
-    fun nestedTraceSectionsOnSingleThread() {
-        runTest(TraceContextElement()) {
-            val fetchData: suspend () -> String = {
-                delay(1L)
-                traceCoroutine("span-for-fetchData") {
-                    assertArrayEquals(
-                        arrayOf("span-for-launch", "span-for-fetchData"),
-                        openSectionsOnCurrentThread()
-                    )
-                }
-                "stuff"
-            }
-            launch("span-for-launch") {
-                assertEquals("stuff", fetchData())
-                assertArrayEquals(arrayOf("span-for-launch"), openSectionsOnCurrentThread())
-            }
-            assertEquals(0, openSectionsOnCurrentThread().size)
+    fun nestedTraceSectionsMultiThreaded1() = runTestWithTraceContext {
+        // Thread-#1 and Thread-#2 inherit TraceContextElement from the test's CoroutineContext.
+        testTraceSectionsMultiThreaded(
+            thread1Context = EmptyCoroutineContext,
+            thread2Context = EmptyCoroutineContext
+        )
+    }
+
+    @Test
+    fun nestedTraceSectionsMultiThreaded2() = runTest {
+        // Thread-#2 inherits the TraceContextElement from Thread-#1. The test's CoroutineContext
+        // does not need a TraceContextElement because it does not do any tracing.
+        testTraceSectionsMultiThreaded(
+            thread1Context = TraceContextElement(),
+            thread2Context = EmptyCoroutineContext
+        )
+    }
+
+    @Test
+    fun nestedTraceSectionsMultiThreaded3() = runTest {
+        // Thread-#2 overrides the TraceContextElement from Thread-#1, but the merging context
+        // should be fine; it is essentially a no-op. The test's CoroutineContext does not need the
+        // trace context because it does not do any tracing.
+        testTraceSectionsMultiThreaded(
+            thread1Context = TraceContextElement(),
+            thread2Context = TraceContextElement()
+        )
+    }
+
+    @Test
+    fun nestedTraceSectionsMultiThreaded4() = runTestWithTraceContext {
+        // TraceContextElement is merged on each context switch, which should have no effect on the
+        // trace results.
+        testTraceSectionsMultiThreaded(
+            thread1Context = TraceContextElement(),
+            thread2Context = TraceContextElement()
+        )
+    }
+
+    @Test
+    fun missingTraceContextObjects() = runTest {
+        // Thread-#1 is missing a TraceContextElement, so some of the trace sections get dropped.
+        // The resulting trace sections will be different than the 4 tests above.
+        val fetchData1: suspend () -> String = {
+            assertTraceIsEmpty()
+            delay(1L)
+            traceCoroutine("span-for-fetchData-1") { assertTraceIsEmpty() }
+            assertTraceIsEmpty()
+            "stuff-1"
         }
+
+        val fetchData2: suspend () -> String = {
+            assertTraceEquals(
+                "span-for-launch-2",
+            )
+            delay(1L)
+            traceCoroutine("span-for-fetchData-2") {
+                assertTraceEquals("span-for-launch-2", "span-for-fetchData-2")
+            }
+            assertTraceEquals(
+                "span-for-launch-2",
+            )
+            "stuff-2"
+        }
+
+        val thread1 = newSingleThreadContext("thread-#1")
+        val thread2 = newSingleThreadContext("thread-#2") + TraceContextElement()
+
+        launch("span-for-launch-1", thread1) {
+            assertEquals("stuff-1", fetchData1())
+            assertTraceIsEmpty()
+            launch("span-for-launch-2", thread2) {
+                assertEquals("stuff-2", fetchData2())
+                assertTraceEquals("span-for-launch-2")
+            }
+            assertTraceIsEmpty()
+        }
+        assertTraceIsEmpty()
+
+        // Launching without the trace extension won't result in traces
+        launch(thread1) { assertTraceIsEmpty() }
+        launch(thread2) { assertTraceIsEmpty() }
     }
 }

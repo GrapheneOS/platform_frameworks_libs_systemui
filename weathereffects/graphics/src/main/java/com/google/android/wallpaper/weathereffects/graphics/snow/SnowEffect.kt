@@ -26,6 +26,7 @@ import com.google.android.wallpaper.weathereffects.graphics.FrameBuffer
 import com.google.android.wallpaper.weathereffects.graphics.WeatherEffect
 import com.google.android.wallpaper.weathereffects.graphics.utils.GraphicsUtils
 import com.google.android.wallpaper.weathereffects.graphics.utils.ImageCrop
+import com.google.android.wallpaper.weathereffects.graphics.utils.MathUtils
 import java.util.concurrent.Executor
 import kotlin.random.Random
 
@@ -39,6 +40,7 @@ class SnowEffect(
     private val mainExecutor: Executor
 ) : WeatherEffect {
 
+    private var snowSpeed: Float = 0.8f
     private val snowPaint = Paint().also { it.shader = snowConfig.colorGradingShader }
     private var elapsedTime: Float = 0f
 
@@ -59,7 +61,8 @@ class SnowEffect(
     override fun resize(newSurfaceSize: SizeF) = adjustCropping(newSurfaceSize)
 
     override fun update(deltaMillis: Long, frameTimeNanos: Long) {
-        elapsedTime += deltaMillis * MILLIS_TO_SECONDS
+        elapsedTime += snowSpeed * deltaMillis * MILLIS_TO_SECONDS
+
         snowConfig.shader.setFloatUniform("time", elapsedTime)
         snowConfig.colorGradingShader.setInputShader("texture", snowConfig.shader)
     }
@@ -79,13 +82,21 @@ class SnowEffect(
     }
 
     override fun setIntensity(intensity: Float) {
+        /**
+         * Increase effect speed as weather intensity decreases. This compensates for the floaty
+         * appearance when there are fewer particles at the original speed.
+         */
+        snowSpeed = MathUtils.map(intensity, 0f, 1f, 2.5f, 1.7f)
+
         snowConfig.shader.setFloatUniform("intensity", intensity)
         snowConfig.colorGradingShader.setFloatUniform(
             "intensity",
             snowConfig.colorGradingIntensity * intensity
         )
-        snowConfig.accumulatedSnowShader.setFloatUniform("snowThickness", intensity)
-
+        snowConfig.accumulatedSnowShader.setFloatUniform(
+            "snowThickness",
+            snowConfig.maxAccumulatedSnowThickness * intensity
+        )
         // Regenerate accumulated snow since the uniform changed.
         generateAccumulatedSnow()
     }
@@ -141,15 +152,6 @@ class SnowEffect(
         snowConfig.shader.setInputBuffer(
             "background",
             BitmapShader(snowConfig.background, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
-        )
-
-        snowConfig.shader.setInputBuffer(
-            "blurredBackground",
-            BitmapShader(
-                snowConfig.blurredBackground,
-                Shader.TileMode.MIRROR,
-                Shader.TileMode.MIRROR
-            )
         )
     }
 

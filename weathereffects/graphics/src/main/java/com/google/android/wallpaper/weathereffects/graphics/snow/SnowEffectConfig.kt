@@ -42,6 +42,8 @@ data class SnowEffectConfig(
     @FloatRange(from = 0.0, to = 1.0) val intensity: Float,
     /** The intensity of the color grading. 0: no color grading, 1: color grading in full effect. */
     @FloatRange(from = 0.0, to = 1.0) val colorGradingIntensity: Float,
+    /** Max thickness for the accumulated snow. */
+    val maxAccumulatedSnowThickness: Float,
 ) {
     /**
      * Constructor for [SnowEffectConfig].
@@ -67,7 +69,8 @@ data class SnowEffectConfig(
         background,
         blurredBackground = GraphicsUtils.blurImage(context, background, BLUR_RADIUS),
         intensity,
-        COLOR_GRADING_INTENSITY
+        COLOR_GRADING_INTENSITY,
+        MAX_SNOW_THICKNESS
     )
 
     private companion object {
@@ -78,5 +81,6 @@ data class SnowEffectConfig(
         private const val BLUR_RADIUS = 20f
         private const val DEFAULT_INTENSITY = 1f
         private const val COLOR_GRADING_INTENSITY = 0.7f
+        private const val MAX_SNOW_THICKNESS = 10f
     }
 }
