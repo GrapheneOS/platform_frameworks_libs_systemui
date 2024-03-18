@@ -16,18 +16,32 @@
 
 package com.android.app.tracing.coroutines
 
-import com.android.app.tracing.instant
+import com.android.app.tracing.beginSlice
+import com.android.app.tracing.endSlice
 import com.android.systemui.Flags.coroutineTracing
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CopyableThreadContextElement
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineName
+
+/**
+ * If `true`, the CoroutineDispatcher and CoroutineName will be included in the trace each time the
+ * coroutine context changes. This makes the trace extremely noisy, so it is off by default.
+ */
+private const val DEBUG_COROUTINE_CONTEXT_UPDATES = false
 
 /**
  * Returns a new [CoroutineContext] used for tracing. Used to hide internal implementation details.
  */
 fun createCoroutineTracingContext(): CoroutineContext {
     return if (coroutineTracing()) TraceContextElement() else EmptyCoroutineContext
+}
+
+private fun CoroutineContext.nameForTrace(): String {
+    val dispatcherStr = "${this[CoroutineDispatcher]}"
+    val nameStr = "${this[CoroutineName]?.name}"
+    return "CoroutineDispatcher: $dispatcherStr; CoroutineName: $nameStr"
 }
 
 /**
@@ -50,13 +64,13 @@ internal class TraceContextElement(private val traceData: TraceData = TraceData(
         val oldState = threadLocalTrace.get()
         oldState?.endAllOnThread()
         threadLocalTrace.set(traceData)
-        instant("resuming ${context[CoroutineDispatcher]}")
+        if (DEBUG_COROUTINE_CONTEXT_UPDATES) beginSlice(context.nameForTrace())
         traceData.beginAllOnThread()
         return oldState
     }
 
     override fun restoreThreadContext(context: CoroutineContext, oldState: TraceData?) {
-        instant("suspending ${context[CoroutineDispatcher]}")
+        if (DEBUG_COROUTINE_CONTEXT_UPDATES) endSlice()
         traceData.endAllOnThread()
         threadLocalTrace.set(oldState)
         oldState?.beginAllOnThread()
