@@ -153,6 +153,11 @@ class SnowEffect(
             "background",
             BitmapShader(snowConfig.background, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
         )
+
+        snowConfig.shader.setInputBuffer(
+            "noise",
+            BitmapShader(snowConfig.noiseTexture, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT)
+        )
     }
 
     private fun prepareColorGrading() {

@@ -94,6 +94,20 @@ vec3 normalBlendWithWhiteSrc(vec3 b, float o) {
     return b * (1. - o) + o;
 }
 
+/*
+ * This is the normal blend mode in which the foreground is painted on top of the background based
+ * on the foreground opacity.
+ *
+ * @param b the background color.
+ * @param f the foreground color.
+ * @param o the mask or the foreground alpha.
+ *
+ * Note: this blending function expects the foreground to NOT have premultiplied alpha.
+ */
+vec3 normalBlendNotPremultiplied(vec3 b, vec3 f, float o) {
+    return mix(b, f, o);
+}
+
 /** Math Utils */
 // function created on Grapher (equation decided by testing in Grapher).
 float wiggle(float time, float wiggleSpeed) {

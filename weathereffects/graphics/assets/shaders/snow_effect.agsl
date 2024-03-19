@@ -17,6 +17,7 @@
 uniform shader foreground;
 uniform shader background;
 uniform shader accumulatedSnow;
+uniform shader noise;
 uniform float2 uvOffsetFgd;
 uniform float2 uvScaleFgd;
 uniform float2 uvOffsetBgd;
@@ -29,71 +30,96 @@ uniform float2 screenSize;
 #include "shaders/utils.agsl"
 #include "shaders/snow.agsl"
 
-/* Constants that can be modified. */
 // Snow tint.
-const vec3 snowColor = vec3(0.9);
-// Glass tint.
-const vec3 glassTint = vec3(0.8); // gray
+const vec4 snowColor = vec4(1., 1., 1., 0.95);
+// Background tint
+const vec4 bgdTint = vec4(0.8, 0.8, 0.8, 0.07);
 
-// snow opacity (how visible it is).
-const float snowOpacity = 1.4;
-
-// how frosted the glass is.
-const float frostedGlassIntensity = 0.07;
+// Indices of the different snow layers.
+const float farthestSnowLayerIndex = 9;
+const float midSnowLayerIndex = 3;
+const float closestSnowLayerIndex = 0;
 
 vec4 main(float2 fragCoord) {
     float2 uv = fragCoord / screenSize;
+    float2 uvAdjusted = vec2(uv.x, uv.y / screenAspectRatio);
+
+    /**
+     * The effect is consisted of 2 image textures (foreground and background) + 10 layers of
+     * snow + 1 layer of snow accumulation. Below describes the rendering order (back to front):
+     * 1. Background
+     * 2. Background snow layers (from farthest layer to mid layer)
+     * 3. Foreground
+     * 4. Snow accumulation layer (on subject)
+     * 5. Foreground snow layers (from mid layer to closest layer)
+     */
+
     // Adjusts the UVs to have the expected rect of the image.
     float2 adjustedUvForeground = fragCoord * uvScaleFgd + uvOffsetFgd;
     vec4 colorForeground = foreground.eval(adjustedUvForeground);
     vec4 colorBackground = background.eval(fragCoord * uvScaleBgd + uvOffsetBgd);
 
-    vec4 color = vec4(0., 0., 0., 1.);
+    // 1. Draw background.
+    vec4 color = colorBackground;
 
-    // Add some slight tint to the frosted glass.
+    // Add slight tint to the background.
+    color.rgb = normalBlendNotPremultiplied(color.rgb, bgdTint.rgb, bgdTint.a);
 
-    // Get color of the background texture.
-    color.rgb = mix(colorBackground.rgb, glassTint, frostedGlassIntensity);
-    for (half i = 9.; i > 2.; i--) {
-        // Generate snow behind the subject.
-        // Normalized layer index.
-        half idx = (i - 2.) / (9. - 2.);
+    // 2. Generate snow layers behind the subject.
+    for (float i = farthestSnowLayerIndex; i > midSnowLayerIndex; i--) {
         Snow snow = generateSnow(
-              uv,
-              screenAspectRatio,
-              time * mix(1.25, 5., idx),
-              /* Grid size = */ vec2(mix(3.0, 6.0, idx), mix(1.0, 3.0, idx)),
-              /* layer number = */ i);
+            uv,
+            screenAspectRatio,
+            time,
+            // TODO: adjust grid size based on aspect ratio.
+            /* Grid size = */ vec2(7., 1.5),
+            /* layer number = */ i,
+            closestSnowLayerIndex,
+            farthestSnowLayerIndex);
 
-        color.rgb = mix(color.rgb, snowColor, snowOpacity * snow.flakeMask);
+        color.rgb =
+            normalBlendNotPremultiplied(color.rgb, snowColor.rgb, snowColor.a * snow.flakeMask);
     }
 
-    // Add the foreground. Any effect from here will be in front of the subject.
+    // 3. Add the foreground layer. Any effect from here will be in front of the subject.
     color.rgb = normalBlend(color.rgb, colorForeground.rgb, colorForeground.a);
 
-    // Add accumulated snow.
+    // 4. Add accumulated snow layer.
+    // Load noise texture to give "fluffy-ness" to the snow. Displace the sampling of the noise.
+    vec3 cloudsNoise = noise.eval(uvAdjusted * 7000 + vec2(fragCoord.y, -fragCoord.x)).rgb;
+    // Add dither to give texture to the snow and ruffle the edges.
+    float dither = abs(triangleNoise(fragCoord * 0.01));
+
+    // Get the accumulated snow buffer. r contains its mask, g contains some random noise.
     vec2 accSnow = accumulatedSnow.eval(adjustedUvForeground).rg;
-    float snowLayer = smoothstep(0.2, 0.8, accSnow.r);
-    float snowTexture = smoothstep(0.2, 0.7, accSnow.g);
-    color.rgb = mix(color.rgb, vec3(0.95), 0.98 * snowLayer * (0.05 + 0.95 * snowTexture));
+    // Sharpen the mask of the accumulated snow, but not in excess.
+    float accSnowMask = smoothstep(0.1, 0.9, /* mask= */ accSnow.r);
+    // Makes the edges of the snow layer accumulation rougher.
+    accSnowMask = map(accSnowMask, 1. - cloudsNoise.b - 0.3 * dither, 1., 0., 1.);
+    // Load snow texture and dither. Make it have gray-ish values.
+    float accSnowTexture = smoothstep(0.2, 0.7, /* noise= */ accSnow.g) * 0.7;
+    accSnowTexture = map(accSnowTexture, dither - 1, 1, 0, 1);
+    // Adjust snow texture coverage/shape.
+    accSnowTexture = map(accSnowTexture, 0.67, 0.8, 0, 1);
+    accSnowMask = map(accSnowMask, 0., 1., 0., 1.- 0.6 * accSnowTexture - 0.35 * dither);
 
-    for (half i = 2.; i >= 0.; i--) {
-        // Generate snow behind the subject.
+    color.rgb = normalBlendNotPremultiplied(color.rgb, snowColor.rgb, snowColor.a * accSnowMask);
+
+    // 5. Generate snow in front of the subject.
+    for (float i = midSnowLayerIndex; i >= closestSnowLayerIndex; i--) {
         Snow snow = generateSnow(
-              uv,
-              screenAspectRatio,
-              time * 1.25,
-              /* Grid size = */ vec2(i + 1., 1.4),
-              /* layer number = */ i);
+            uv,
+            screenAspectRatio,
+            time,
+            // TODO: adjust grid size based on aspect ratio
+            /* Grid size = */ vec2(7., 1.5),
+            /* layer number = */ i,
+            closestSnowLayerIndex,
+            farthestSnowLayerIndex);
 
-        color.rgb = mix(color.rgb, snowColor, snowOpacity * snow.flakeMask);
+        color.rgb =
+            normalBlendNotPremultiplied(color.rgb, snowColor.rgb, snowColor.a * snow.flakeMask);
     }
-
-    /* Debug snow */
-    // resets color.
-    // color.rgb *= 0.;
-    // color.rgb += snow.flakeMask;
-    // if (snow.cellUv.x > 0.49 || snow.cellUv.y > 0.49) color.r = 1.0;
 
     return color;
 }
