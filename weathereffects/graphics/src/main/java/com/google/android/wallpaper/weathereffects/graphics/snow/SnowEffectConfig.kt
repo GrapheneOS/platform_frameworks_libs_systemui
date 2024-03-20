@@ -41,8 +41,6 @@ data class SnowEffectConfig(
     val foreground: Bitmap,
     /** A bitmap containing the background of the image. */
     val background: Bitmap,
-    /** A bitmap containing the blurred background. */
-    val blurredBackground: Bitmap,
     /** The amount of the snow flakes. This contributes to the color grading as well. */
     @FloatRange(from = 0.0, to = 1.0) val intensity: Float,
     /** The intensity of the color grading. 0: no color grading, 1: color grading in full effect. */
@@ -74,7 +72,6 @@ data class SnowEffectConfig(
         lut = GraphicsUtils.loadTexture(context.assets, LOOKUP_TABLE_TEXTURE_PATH),
         foreground,
         background,
-        blurredBackground = GraphicsUtils.blurImage(context, background, BLUR_RADIUS),
         intensity,
         COLOR_GRADING_INTENSITY,
         MAX_SNOW_THICKNESS
@@ -86,7 +83,6 @@ data class SnowEffectConfig(
         private const val COLOR_GRADING_SHADER_PATH = "shaders/color_grading_lut.agsl"
         private const val NOISE_TEXTURE_PATH = "textures/clouds.png"
         private const val LOOKUP_TABLE_TEXTURE_PATH = "textures/lut_rain_and_fog.png"
-        private const val BLUR_RADIUS = 20f
         private const val DEFAULT_INTENSITY = 1f
         private const val COLOR_GRADING_INTENSITY = 0.7f
         private const val MAX_SNOW_THICKNESS = 10f

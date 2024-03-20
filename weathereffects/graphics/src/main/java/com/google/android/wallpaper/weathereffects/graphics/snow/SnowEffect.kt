@@ -77,7 +77,6 @@ class SnowEffect(
 
     override fun release() {
         snowConfig.lut?.recycle()
-        snowConfig.blurredBackground.recycle()
         frameBuffer.close()
     }
 
