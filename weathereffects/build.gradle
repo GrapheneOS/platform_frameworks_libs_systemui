@@ -13,7 +13,7 @@
 // limitations under the License.
 buildscript {
     ext.versions = [
-            'gradle'       : '7.4.2',
+            'gradle'       : '8.1.0',
             'minSdk'       : 34,
             'targetSdk'    : 34,
             'compileSdk'   : 34,
@@ -56,6 +56,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.kotlin.kapt'
 
 android {
+    namespace 'com.google.android.wallpaper.weathereffects'
     compileSdk versions.compileSdk
 
     defaultConfig {

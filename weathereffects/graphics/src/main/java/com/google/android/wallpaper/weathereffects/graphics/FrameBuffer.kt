@@ -23,6 +23,7 @@ import android.graphics.RecordingCanvas
 import android.graphics.RenderEffect
 import android.graphics.RenderNode
 import android.hardware.HardwareBuffer
+import androidx.annotation.VisibleForTesting
 import java.time.Duration
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -49,7 +50,7 @@ class FrameBuffer(width: Int, height: Int, format: Int = HardwareBuffer.RGBA_888
         }
 
     private val executor = Executors.newFixedThreadPool(/* nThreads = */ 1)
-    private val colorSpace = ColorSpace.get(ColorSpace.Named.SRGB)
+    @VisibleForTesting val colorSpace = ColorSpace.get(ColorSpace.Named.SRGB)
 
     /**
      * Recording drawing commands.
@@ -81,11 +82,14 @@ class FrameBuffer(width: Int, height: Int, format: Int = HardwareBuffer.RGBA_888
      *   executor.
      */
     fun tryObtainingImage(onImageReady: (image: Bitmap) -> Unit, callbackExecutor: Executor) {
+        if (renderer.isClosed) return
         renderer.obtainRenderRequest().setColorSpace(colorSpace).draw(executor) { result ->
             if (result.status == HardwareBufferRenderer.RenderResult.SUCCESS) {
-                result.fence.await(Duration.ofMillis(3000))
-                Bitmap.wrapHardwareBuffer(buffer, colorSpace)?.let {
-                    callbackExecutor.execute { onImageReady.invoke(it) }
+                result.fence.await(Duration.ofMillis(RESULT_FENCE_TIME_OUT))
+                if (!buffer.isClosed) {
+                    Bitmap.wrapHardwareBuffer(buffer, colorSpace)?.let {
+                        callbackExecutor.execute { onImageReady.invoke(it) }
+                    }
                 }
             }
         }
@@ -99,4 +103,8 @@ class FrameBuffer(width: Int, height: Int, format: Int = HardwareBuffer.RGBA_888
      *   configured RenderEffects.
      */
     fun setRenderEffect(renderEffect: RenderEffect?) = node.setRenderEffect(renderEffect)
+
+    companion object {
+        const val RESULT_FENCE_TIME_OUT = 3000L
+    }
 }
