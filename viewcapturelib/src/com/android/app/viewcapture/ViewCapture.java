@@ -486,8 +486,7 @@ public abstract class ViewCapture {
 
         @Override
         public void onTrimMemory(int level) {
-            if (ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL == level
-                    || ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW == level) {
+            if (level >= ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) {
                 mNodesBg = new ViewPropertyRef[0];
                 mFrameTimesNanosBg = new long[0];
                 if (mRoot != null && mRoot.getContext() != null) {
@@ -505,7 +504,7 @@ public abstract class ViewCapture {
 
         @Override
         public void onLowMemory() {
-            onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW);
+            onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_BACKGROUND);
         }
     }
 
