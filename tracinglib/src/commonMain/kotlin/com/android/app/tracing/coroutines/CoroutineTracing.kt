@@ -16,26 +16,27 @@
 
 package com.android.app.tracing.coroutines
 
-import android.util.Log
 import com.android.app.tracing.asyncTraceForTrackBegin
 import com.android.app.tracing.asyncTraceForTrackEnd
 import com.android.app.tracing.isEnabled
-import com.android.systemui.Flags.coroutineTracing
+import java.util.concurrent.ThreadLocalRandom
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.coroutines.coroutineContext
-import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
-@PublishedApi internal const val DEBUG_COROUTINE_TRACING = false
 @PublishedApi internal const val TAG = "CoroutineTracing"
-@PublishedApi internal const val DEFAULT_TRACK_NAME = "AsyncTraces"
+
+@PublishedApi internal const val DEFAULT_TRACK_NAME = "Coroutines"
 
 /**
  * Convenience function for calling [CoroutineScope.launch] with [traceCoroutine] to enable tracing.
@@ -166,59 +167,36 @@ suspend inline fun <T> withContext(
  * @see endSlice
  * @see traceCoroutine
  */
+@OptIn(ExperimentalContracts::class)
 suspend inline fun <T> traceCoroutine(spanName: () -> String, block: () -> T): T {
+    contract {
+        callsInPlace(spanName, InvocationKind.AT_MOST_ONCE)
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
+
     // For coroutine tracing to work, trace spans must be added and removed even when
     // tracing is not active (i.e. when TRACE_TAG_APP is disabled). Otherwise, when the
     // coroutine resumes when tracing is active, we won't know its name.
-    val tracer = getTraceData()
-    var spanString = "<none>"
-    var coroutineSpanCookie = TraceData.INVALID_SPAN
-    when (tracer) {
-        is MissingTraceData -> logVerbose(tracer.message, spanName)
-        is TraceData -> {
-            spanString = spanName()
-            coroutineSpanCookie = tracer.beginSpan(spanString)
-        }
-    }
+    val tracer = currentCoroutineContext()[TraceContextElement]?.traceData
 
-    // For now, also trace to "AsyncTraces". This will allow us to verify the correctness
-    // of the COROUTINE_TRACING feature flag.
-    val asyncTraceCookie =
-        if (isEnabled()) Random.nextInt(TraceData.FIRST_VALID_SPAN, Int.MAX_VALUE)
-        else TraceData.INVALID_SPAN
-    if (asyncTraceCookie != TraceData.INVALID_SPAN) {
-        asyncTraceForTrackBegin(DEFAULT_TRACK_NAME, spanString, asyncTraceCookie)
-    }
+    val asyncTracingEnabled = isEnabled()
+    val spanString = if (tracer != null || asyncTracingEnabled) spanName() else "<none>"
+
+    tracer?.beginSpan(spanString)
+
+    // Also trace to the "Coroutines" async track. This makes it easy to see the duration of
+    // coroutine spans. When the coroutine_tracing flag is enabled, those same names will
+    // appear in small slices on each thread as the coroutines are suspended and resumed.
+    val cookie = if (asyncTracingEnabled) ThreadLocalRandom.current().nextInt() else 0
+    if (asyncTracingEnabled) asyncTraceForTrackBegin(DEFAULT_TRACK_NAME, spanString, cookie)
     try {
         return block()
     } finally {
-        if (asyncTraceCookie != TraceData.INVALID_SPAN) {
-            asyncTraceForTrackEnd(DEFAULT_TRACK_NAME, spanString, asyncTraceCookie)
-        }
-        if (tracer is TraceData) {
-            tracer.endSpan(coroutineSpanCookie)
-        }
+        if (asyncTracingEnabled) asyncTraceForTrackEnd(DEFAULT_TRACK_NAME, spanString, cookie)
+        tracer?.endSpan()
     }
 }
 
 /** @see traceCoroutine */
 suspend inline fun <T> traceCoroutine(spanName: String, block: () -> T): T =
     traceCoroutine({ spanName }, block)
-
-@PublishedApi
-internal suspend fun getTraceData(): TraceStatus {
-    return if (!coroutineTracing()) {
-        MissingTraceData("Experimental flag COROUTINE_TRACING is off")
-    } else if (coroutineContext[TraceContextElement] == null) {
-        MissingTraceData("Current CoroutineContext is missing TraceContextElement")
-    } else {
-        threadLocalTrace.get() ?: MissingTraceData("ThreadLocal TraceData is null")
-    }
-}
-
-@PublishedApi
-internal inline fun logVerbose(logMessage: String, spanName: () -> String) {
-    if (DEBUG_COROUTINE_TRACING && Log.isLoggable(TAG, Log.VERBOSE)) {
-        Log.v(TAG, "$logMessage. Dropping trace section: \"${spanName()}\"")
-    }
-}

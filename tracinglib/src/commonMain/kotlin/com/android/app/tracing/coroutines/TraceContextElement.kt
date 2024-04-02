@@ -26,6 +26,19 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 
 /**
+ * Thread-local storage for giving each thread a unique [TraceData]. It can only be used when paired
+ * with a [TraceContextElement].
+ *
+ * [CURRENT_TRACE] will be `null` if either 1) we aren't in a coroutine, or 2) the current coroutine
+ * context does not have [TraceContextElement]. In both cases, writing to this thread-local would be
+ * undefined behavior if it were not null, which is why we use null as the default value rather than
+ * an empty TraceData.
+ *
+ * @see traceCoroutine
+ */
+internal val CURRENT_TRACE = ThreadLocal<TraceData?>()
+
+/**
  * If `true`, the CoroutineDispatcher and CoroutineName will be included in the trace each time the
  * coroutine context changes. This makes the trace extremely noisy, so it is off by default.
  */
@@ -52,18 +65,21 @@ private fun CoroutineContext.nameForTrace(): String {
  *
  * @see traceCoroutine
  */
-internal class TraceContextElement(private val traceData: TraceData = TraceData()) :
+@PublishedApi
+internal class TraceContextElement(@PublishedApi internal val traceData: TraceData = TraceData()) :
     CopyableThreadContextElement<TraceData?> {
 
-    internal companion object Key : CoroutineContext.Key<TraceContextElement>
+    @PublishedApi internal companion object Key : CoroutineContext.Key<TraceContextElement>
 
     override val key: CoroutineContext.Key<*>
         get() = Key
 
     override fun updateThreadContext(context: CoroutineContext): TraceData? {
-        val oldState = threadLocalTrace.get()
+        val oldState = CURRENT_TRACE.get()
+        // oldState should never be null because we always initialize the thread-local with a
+        // non-null instance,
         oldState?.endAllOnThread()
-        threadLocalTrace.set(traceData)
+        CURRENT_TRACE.set(traceData)
         if (DEBUG_COROUTINE_CONTEXT_UPDATES) beginSlice(context.nameForTrace())
         traceData.beginAllOnThread()
         return oldState
@@ -72,15 +88,15 @@ internal class TraceContextElement(private val traceData: TraceData = TraceData(
     override fun restoreThreadContext(context: CoroutineContext, oldState: TraceData?) {
         if (DEBUG_COROUTINE_CONTEXT_UPDATES) endSlice()
         traceData.endAllOnThread()
-        threadLocalTrace.set(oldState)
+        CURRENT_TRACE.set(oldState)
         oldState?.beginAllOnThread()
     }
 
     override fun copyForChild(): CopyableThreadContextElement<TraceData?> {
-        return TraceContextElement(traceData.copy())
+        return TraceContextElement(traceData.clone())
     }
 
     override fun mergeForChild(overwritingElement: CoroutineContext.Element): CoroutineContext {
-        return TraceContextElement(traceData.copy())
+        return TraceContextElement(traceData.clone())
     }
 }

@@ -17,7 +17,7 @@
 package com.android.app.tracing
 
 import androidx.tracing.Trace
-import kotlin.random.Random
+import java.util.concurrent.ThreadLocalRandom
 
 @PublishedApi
 internal actual fun isEnabled(): Boolean {
@@ -69,7 +69,7 @@ internal actual fun instant(eventName: String) {
 
 internal actual fun instantForTrack(trackName: String, eventName: String) {
     if (Trace.isEnabled()) {
-        val cookie = Random.nextInt()
+        val cookie = ThreadLocalRandom.current().nextInt()
         val name = "instant:${namedSlice(trackName,eventName)}"
         asyncTraceBegin(name, cookie)
         asyncTraceEnd(name, cookie)

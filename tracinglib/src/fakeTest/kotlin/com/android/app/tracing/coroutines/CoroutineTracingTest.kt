@@ -17,9 +17,11 @@
 package com.android.app.tracing.coroutines
 
 import com.android.app.tracing.TraceState.openSectionsOnCurrentThread
+import java.util.concurrent.ThreadLocalRandom
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
@@ -27,6 +29,9 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.BlockJUnit4ClassRunner
@@ -52,6 +57,56 @@ private fun runTestWithTraceContext(testBody: suspend TestScope.() -> Unit) =
 
 @RunWith(BlockJUnit4ClassRunner::class)
 class CoroutineTracingTest {
+
+    @Test
+    fun testTraceStorage() = runTest {
+        val fetchData: suspend () -> String = {
+            delay(ThreadLocalRandom.current().nextLong(0, 10))
+            traceCoroutine("span-for-fetchData") {
+                assertTraceEquals("span-for-launch", "span-for-fetchData")
+            }
+            "stuff"
+        }
+        assertNull(CURRENT_TRACE.get())
+        val threadContexts =
+            listOf(
+                newSingleThreadContext("thread-#1"),
+                newSingleThreadContext("thread-#2"),
+                newSingleThreadContext("thread-#3"),
+                newSingleThreadContext("thread-#4"),
+            )
+        kotlinx.coroutines.withContext(TraceContextElement()) {
+            assertNotNull(CURRENT_TRACE.get())
+            assertTrue(
+                CURRENT_TRACE.get() === currentCoroutineContext()[TraceContextElement]?.traceData
+            )
+            val job = launch {
+                repeat(1000) {
+                    launch("span-for-launch", threadContexts[it % threadContexts.size]) {
+                        assertTrue(
+                            CURRENT_TRACE.get() ===
+                                currentCoroutineContext()[TraceContextElement]?.traceData
+                        )
+                        assertNotNull(CURRENT_TRACE.get())
+                        assertEquals("stuff", fetchData())
+                        assertTraceEquals("span-for-launch")
+                        assertNotNull(CURRENT_TRACE.get())
+                    }
+                }
+            }
+            // half the time of the max delay in fetchData(), therefore cancelling some of the
+            // outstanding jobs
+            delay(5L)
+            job.cancel()
+            assertNotNull(CURRENT_TRACE.get())
+            assertTrue(
+                CURRENT_TRACE.get() === currentCoroutineContext()[TraceContextElement]?.traceData
+            )
+        }
+        // Should be null again after the coroutine finished
+        assertNull(CURRENT_TRACE.get())
+    }
+
     @Test
     fun nestedTraceSectionsOnSingleThread() = runTestWithTraceContext {
         val fetchData: suspend () -> String = {

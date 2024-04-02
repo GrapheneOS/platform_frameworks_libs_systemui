@@ -17,7 +17,7 @@
 package com.android.app.tracing
 
 import com.android.app.tracing.coroutines.traceCoroutine
-import kotlin.random.Random
+import java.util.concurrent.ThreadLocalRandom
 
 /**
  * Writes a trace message to indicate that a given section of code has begun running __on the
@@ -155,7 +155,7 @@ object TraceUtils {
      */
     @JvmStatic
     inline fun <T> traceAsync(trackName: String, method: String, block: () -> T): T {
-        val cookie = Random.nextInt()
+        val cookie = ThreadLocalRandom.current().nextInt()
         asyncTraceForTrackBegin(trackName, method, cookie)
         try {
             return block()
