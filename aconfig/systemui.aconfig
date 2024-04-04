@@ -31,3 +31,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "bouncer_area_exclusion"
+    namespace : "systemui"
+    description : "Exclusion List to calculated a default bouncer region on dream"
+    bug : "327003425"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

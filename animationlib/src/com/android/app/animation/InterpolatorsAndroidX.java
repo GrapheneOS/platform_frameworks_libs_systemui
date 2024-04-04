@@ -264,6 +264,15 @@ public class InterpolatorsAndroidX {
         }
     };
 
+    /**
+     * Use this interpolator for animating progress values coming from the back callback to get
+     * the predictive-back-typical decelerate motion.
+     *
+     * This interpolator is similar to {@link Interpolators#STANDARD_DECELERATE} but has a slight
+     * acceleration phase at the start.
+     */
+    public static final Interpolator BACK_GESTURE = new PathInterpolator(0.1f, 0.1f, 0f, 1f);
+
     private static final float FAST_FLING_PX_MS = 10;
 
     /*
