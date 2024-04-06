@@ -14,5 +14,7 @@
 // limitations under the License.
 //
 
-soong_namespace {
-}
+// TODO(b/332914405): TEST_MAPPING files do not support soong_namespace
+// Temporarily disable the namespace for now
+//soong_namespace {
+//}

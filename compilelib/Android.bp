@@ -20,7 +20,7 @@ package {
 }
 
 filegroup {
-    name: "ReleaseJavaFiles",
+    name: "compilelib-ReleaseJavaFiles",
     srcs: [
         "src-release/**/*.java",
     ],
@@ -28,7 +28,7 @@ filegroup {
 }
 
 filegroup {
-    name: "DebugJavaFiles",
+    name: "compilelib-DebugJavaFiles",
     srcs: [
         "src-debug/**/*.java",
     ],
@@ -37,11 +37,11 @@ filegroup {
 
 java_library {
     name: "compilelib",
-    srcs: [":ReleaseJavaFiles"],
+    srcs: [":compilelib-ReleaseJavaFiles"],
     product_variables: {
         debuggable: {
-            srcs: [":DebugJavaFiles"],
-            exclude_srcs: [":ReleaseJavaFiles"],
+            srcs: [":compilelib-DebugJavaFiles"],
+            exclude_srcs: [":compilelib-ReleaseJavaFiles"],
         },
     },
 }
