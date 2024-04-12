@@ -165,8 +165,6 @@ public class Interpolators {
 
     public static final Interpolator DECELERATED_EASE = new PathInterpolator(0, 0, .2f, 1f);
     public static final Interpolator ACCELERATED_EASE = new PathInterpolator(0.4f, 0, 1f, 1f);
-    public static final Interpolator PREDICTIVE_BACK_DECELERATED_EASE =
-            new PathInterpolator(0, 0, 0, 1f);
     public static final Interpolator ALPHA_IN = new PathInterpolator(0.4f, 0f, 1f, 1f);
     public static final Interpolator ALPHA_OUT = new PathInterpolator(0f, 0f, 0.8f, 1f);
     public static final Interpolator ACCELERATE = new AccelerateInterpolator();
