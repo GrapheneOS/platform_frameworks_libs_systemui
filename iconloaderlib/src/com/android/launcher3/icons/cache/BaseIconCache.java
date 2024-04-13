@@ -21,7 +21,6 @@ import static com.android.launcher3.icons.BaseIconFactory.getFullResDefaultActiv
 import static com.android.launcher3.icons.BitmapInfo.LOW_RES_ICON;
 import static com.android.launcher3.icons.GraphicsUtils.flattenBitmap;
 import static com.android.launcher3.icons.GraphicsUtils.setColorAlphaBound;
-import static com.android.launcher3.icons.cache.IconCacheUpdateHandler.ICON_UPDATE_TOKEN;
 
 import static java.util.Objects.requireNonNull;
 
@@ -133,6 +132,8 @@ public abstract class BaseIconCache {
     @NonNull
     private final Looper mBgLooper;
 
+    private volatile boolean mIconUpdateInProgress = false;
+
     public BaseIconCache(@NonNull final Context context, @Nullable final String dbFileName,
             @NonNull final Looper bgLooper, final int iconDpi, final int iconPixelSize,
             final boolean inMemoryCache) {
@@ -200,7 +201,8 @@ public abstract class BaseIconCache {
         if (resources != null && iconId != 0) {
             try {
                 return resources.getDrawableForDensity(iconId, mIconDpi);
-            } catch (Resources.NotFoundException e) { }
+            } catch (Resources.NotFoundException e) {
+            }
         }
         return getFullResDefaultActivityIcon(mIconDpi);
     }
@@ -209,7 +211,8 @@ public abstract class BaseIconCache {
     public Drawable getFullResIcon(@NonNull final String packageName, final int iconId) {
         try {
             return getFullResIcon(mPackageManager.getResourcesForApplication(packageName), iconId);
-        } catch (PackageManager.NameNotFoundException e) { }
+        } catch (PackageManager.NameNotFoundException e) {
+        }
         return getFullResDefaultActivityIcon(mIconDpi);
     }
 
@@ -218,8 +221,17 @@ public abstract class BaseIconCache {
         try {
             return getFullResIcon(mPackageManager.getResourcesForApplication(info.applicationInfo),
                     info.getIconResource());
-        } catch (PackageManager.NameNotFoundException e) { }
+        } catch (PackageManager.NameNotFoundException e) {
+        }
         return getFullResDefaultActivityIcon(mIconDpi);
+    }
+
+    public void setIconUpdateInProgress(boolean updating) {
+        mIconUpdateInProgress = updating;
+    }
+
+    public boolean isIconUpdateInProgress() {
+        return mIconUpdateInProgress;
     }
 
     /**
@@ -236,13 +248,13 @@ public abstract class BaseIconCache {
     private void removeFromMemCacheLocked(@Nullable final String packageName,
             @Nullable final UserHandle user) {
         HashSet<ComponentKey> forDeletion = new HashSet<>();
-        for (ComponentKey key: mCache.keySet()) {
+        for (ComponentKey key : mCache.keySet()) {
             if (key.componentName.getPackageName().equals(packageName)
                     && key.user.equals(user)) {
                 forDeletion.add(key);
             }
         }
-        for (ComponentKey condemned: forDeletion) {
+        for (ComponentKey condemned : forDeletion) {
             mCache.remove(condemned);
         }
     }
@@ -299,6 +311,7 @@ public abstract class BaseIconCache {
 
     /**
      * Adds an entry into the DB and the in-memory cache.
+     *
      * @param replaceExisting if true, it will recreate the bitmap even if it already exists in
      *                        the memory. This is useful then the previous bitmap was created using
      *                        old data.
@@ -333,7 +346,7 @@ public abstract class BaseIconCache {
             if (entryTitle == null) {
                 Log.wtf(TAG, "No label returned from caching logic instance: " + cachingLogic);
             }
-            entryTitle = componentName.getPackageName();;
+            entryTitle = componentName.getPackageName();
         }
         entry.title = entryTitle;
 
@@ -348,6 +361,7 @@ public abstract class BaseIconCache {
 
     /**
      * Updates {@param values} to contain versioning information and adds it to the DB.
+     *
      * @param values {@link ContentValues} containing icon & title
      */
     private void addIconToDB(@NonNull final ContentValues values, @NonNull final ComponentName key,
@@ -468,8 +482,10 @@ public abstract class BaseIconCache {
             if (usePackageIcon) {
                 CacheEntry packageEntry = getEntryForPackageLocked(
                         componentName.getPackageName(), user, false);
-                if (DEBUG) Log.d(TAG, "using package default icon for " +
-                        componentName.toShortString());
+                if (DEBUG) {
+                    Log.d(TAG, "using package default icon for "
+                            + componentName.toShortString());
+                }
                 entry.bitmap = packageEntry.bitmap;
                 entry.contentDescription = packageEntry.contentDescription;
 
@@ -502,13 +518,6 @@ public abstract class BaseIconCache {
     public synchronized void clearMemoryCache() {
         assertWorkerThread();
         mCache.clear();
-    }
-
-    /**
-     * Returns true if an icon update is in progress
-     */
-    public boolean isIconUpdateInProgress() {
-        return mWorkerHandler.hasMessages(0, ICON_UPDATE_TOKEN);
     }
 
     /**
@@ -716,17 +725,19 @@ public abstract class BaseIconCache {
         public static final String COLUMN_SYSTEM_STATE = "system_state";
         public static final String COLUMN_KEYWORDS = "keywords";
 
-        public static final String[] COLUMNS_LOW_RES = new String[] {
+        public static final String[] COLUMNS_LOW_RES = new String[]{
                 COLUMN_COMPONENT,
                 COLUMN_LABEL,
                 COLUMN_ICON_COLOR,
                 COLUMN_FLAGS};
         public static final String[] COLUMNS_HIGH_RES = Arrays.copyOf(COLUMNS_LOW_RES,
                 COLUMNS_LOW_RES.length + 2, String[].class);
+
         static {
             COLUMNS_HIGH_RES[COLUMNS_LOW_RES.length] = COLUMN_ICON;
             COLUMNS_HIGH_RES[COLUMNS_LOW_RES.length + 1] = COLUMN_MONO_ICON;
         }
+
         private static final int INDEX_TITLE = Arrays.asList(COLUMNS_LOW_RES).indexOf(COLUMN_LABEL);
         private static final int INDEX_COLOR = Arrays.asList(COLUMNS_LOW_RES)
                 .indexOf(COLUMN_ICON_COLOR);
