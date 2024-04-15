@@ -5,10 +5,7 @@ import static android.graphics.Paint.DITHER_FLAG;
 import static android.graphics.Paint.FILTER_BITMAP_FLAG;
 import static android.graphics.drawable.AdaptiveIconDrawable.getExtraInsetFraction;
 
-import static com.android.launcher3.icons.BitmapInfo.FLAG_CLONE;
 import static com.android.launcher3.icons.BitmapInfo.FLAG_INSTANT;
-import static com.android.launcher3.icons.BitmapInfo.FLAG_PRIVATE;
-import static com.android.launcher3.icons.BitmapInfo.FLAG_WORK;
 import static com.android.launcher3.icons.ShadowGenerator.BLUR_FACTOR;
 
 import static java.lang.annotation.RetentionPolicy.SOURCE;
@@ -214,9 +211,8 @@ public class BaseIconFactory implements AutoCloseable {
     @NonNull
     public BitmapInfo createBadgedIconBitmap(@NonNull Drawable icon,
             @Nullable IconOptions options) {
-        boolean shrinkNonAdaptiveIcons = options == null || options.mShrinkNonAdaptiveIcons;
         float[] scale = new float[1];
-        icon = normalizeAndWrapToAdaptiveIcon(icon, shrinkNonAdaptiveIcons, null, scale);
+        icon = normalizeAndWrapToAdaptiveIcon(icon, null, scale);
         Bitmap bitmap = createIconBitmap(icon, scale[0],
                 options == null ? MODE_WITH_SHADOW : options.mGenerationMode);
 
@@ -302,7 +298,7 @@ public class BaseIconFactory implements AutoCloseable {
     public Bitmap createScaledBitmap(@NonNull Drawable icon, @BitmapGenerationMode int mode) {
         RectF iconBounds = new RectF();
         float[] scale = new float[1];
-        icon = normalizeAndWrapToAdaptiveIcon(icon, true, iconBounds, scale);
+        icon = normalizeAndWrapToAdaptiveIcon(icon, iconBounds, scale);
         return createIconBitmap(icon,
                 Math.min(scale[0], ShadowGenerator.getScaleForBounds(iconBounds)), mode);
     }
@@ -316,14 +312,13 @@ public class BaseIconFactory implements AutoCloseable {
 
     @Nullable
     protected Drawable normalizeAndWrapToAdaptiveIcon(@Nullable Drawable icon,
-            final boolean shrinkNonAdaptiveIcons, @Nullable final RectF outIconBounds,
-            @NonNull final float[] outScale) {
+            @Nullable final RectF outIconBounds, @NonNull final float[] outScale) {
         if (icon == null) {
             return null;
         }
 
         float scale;
-        if (shrinkNonAdaptiveIcons && !(icon instanceof AdaptiveIconDrawable)) {
+        if (!(icon instanceof AdaptiveIconDrawable)) {
             EmptyWrapper foreground = new EmptyWrapper();
             AdaptiveIconDrawable dr = new AdaptiveIconDrawable(
                     new ColorDrawable(mWrapperBackgroundColor), foreground);
@@ -512,8 +507,6 @@ public class BaseIconFactory implements AutoCloseable {
 
     public static class IconOptions {
 
-        boolean mShrinkNonAdaptiveIcons = true;
-
         boolean mIsInstantApp;
 
         @BitmapGenerationMode
@@ -526,14 +519,6 @@ public class BaseIconFactory implements AutoCloseable {
         @ColorInt
         @Nullable Integer mExtractedColor;
 
-        /**
-         * Set to false if non-adaptive icons should not be treated
-         */
-        @NonNull
-        public IconOptions setShrinkNonAdaptiveIcons(final boolean shrink) {
-            mShrinkNonAdaptiveIcons = shrink;
-            return this;
-        }
 
         /**
          * User for this icon, in case of badging
