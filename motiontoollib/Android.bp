@@ -13,6 +13,7 @@
 // limitations under the License.
 
 package {
+    default_team: "trendy_team_motion",
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
@@ -21,11 +22,11 @@ java_library {
     srcs: ["src/com/android/app/motiontool/proto/*.proto"],
     proto: {
         type: "lite",
-        local_include_dirs:[
-            "src/com/android/app/motiontool/proto"
+        local_include_dirs: [
+            "src/com/android/app/motiontool/proto",
         ],
         include_dirs: [
-            "frameworks/libs/systemui/viewcapturelib/src/com/android/app/viewcapture/proto"
+            "frameworks/libs/systemui/viewcapturelib/src/com/android/app/viewcapture/proto",
         ],
     },
     static_libs: [
@@ -49,7 +50,7 @@ android_library {
 
     srcs: [
         "src/**/*.java",
-        "src/**/*.kt"
+        "src/**/*.kt",
     ],
 }
 
@@ -65,11 +66,11 @@ android_test {
         "motion_tool_proto",
         "androidx.test.ext.junit",
         "androidx.test.rules",
-        "testables"
+        "testables",
     ],
     srcs: [
         "**/*.java",
-        "**/*.kt"
+        "**/*.kt",
     ],
     libs: [
         "android.test.runner",
@@ -77,4 +78,3 @@ android_test {
     ],
     test_suites: ["device-tests"],
 }
-
