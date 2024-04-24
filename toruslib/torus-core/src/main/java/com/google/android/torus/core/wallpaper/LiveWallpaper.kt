@@ -28,7 +28,6 @@ import android.os.Bundle
 import android.service.wallpaper.WallpaperService
 import android.view.MotionEvent
 import android.view.SurfaceHolder
-import androidx.annotation.RequiresApi
 import com.google.android.torus.core.content.ConfigurationChangeListener
 import com.google.android.torus.core.engine.TorusEngine
 import com.google.android.torus.core.engine.listener.TorusTouchListener
@@ -396,6 +395,11 @@ abstract class LiveWallpaper : WallpaperService() {
             if (wallpaperEngine is TorusTouchListener) {
                 (wallpaperEngine as TorusTouchListener).onTouchEvent(event)
             }
+        }
+
+        override fun onWallpaperFlagsChanged(which: Int) {
+            super.onWallpaperFlagsChanged(which)
+            wallpaperEngine.onWallpaperFlagsChanged(which)
         }
 
         /**

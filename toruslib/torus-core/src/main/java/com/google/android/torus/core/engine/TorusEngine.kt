@@ -16,6 +16,7 @@
 
 package com.google.android.torus.core.engine
 
+import android.app.WallpaperManager
 import com.google.android.torus.core.wallpaper.LiveWallpaper
 
 /**
@@ -59,4 +60,11 @@ interface TorusEngine {
      * @param isLastActiveInstance Whether this was the last Engine instance in our Service.
      */
     fun destroy(isLastActiveInstance: Boolean = true)
+
+    /**
+     * Called when the engine changes its destination flag. The destination indicates whether
+     * the wallpaper is drawn on home screen, lock screen, or both. It is a combination of
+     * [WallpaperManager.FLAG_LOCK] and/or [WallpaperManager.FLAG_SYSTEM]
+     */
+    fun onWallpaperFlagsChanged(which: Int) {}
 }
