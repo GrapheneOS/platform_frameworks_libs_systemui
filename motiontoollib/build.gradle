@@ -47,7 +47,7 @@ protobuf {
     plugins {
         javalite {
             // The codegen for lite comes as a separate artifact
-            artifact = "com.google.protobuf:protoc-gen-javalite:${protobuf_version}${PROTO_ARCH_SUFFIX}"
+            artifact = "com.google.protobuf:protoc-gen-javalite:${protobuf_lite_version}${PROTO_ARCH_SUFFIX}"
         }
     }
     generateProtoTasks {
