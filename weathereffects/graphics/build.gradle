@@ -16,13 +16,13 @@ android {
 
     sourceSets {
         main {
-            java.srcDirs = ["${rootDir}/graphics/src"]
-            assets.srcDirs = ["${rootDir}/graphics/assets"]
+            java.srcDirs = ["../graphics/src/main/java"]
+            assets.srcDirs = ["../graphics/assets"]
         }
 
         androidTest {
-            java.srcDirs = ["${rootDir}/graphics/tests/src"]
-            res.srcDirs = ["${rootDir}/graphics/tests/res"]
+            java.srcDirs = ["../graphics/tests/src/main/java"]
+            res.srcDirs = ["../graphics/tests/res"]
         }
     }
 
