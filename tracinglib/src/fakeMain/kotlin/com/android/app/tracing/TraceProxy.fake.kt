@@ -29,45 +29,62 @@ internal actual fun traceCounter(counterName: String, counterValue: Int) {
     traceCounters[counterName] = counterValue
 }
 
-object TraceState {
-    private val traceSections = mutableMapOf<Long, MutableList<String>>()
+private val allThreadStates = HashMap<Long, MutableList<String>>()
+
+private class FakeThreadStateLocal : ThreadLocal<MutableList<String>>() {
+    override fun initialValue(): MutableList<String> {
+        val openTraceSections = mutableListOf<String>()
+        val threadId = Thread.currentThread().id
+        synchronized(allThreadStates) { allThreadStates.put(threadId, openTraceSections) }
+        return openTraceSections
+    }
+}
+
+private val threadLocalTraceState = FakeThreadStateLocal()
+
+object FakeTraceState {
 
     fun begin(sectionName: String) {
-        synchronized(this) {
-            traceSections.getOrPut(Thread.currentThread().id) { mutableListOf() }.add(sectionName)
-        }
+        threadLocalTraceState.get().add(sectionName)
     }
 
     fun end() {
-        synchronized(this) {
-            val openSectionsOnThread = traceSections[Thread.currentThread().id]
+        threadLocalTraceState.get().let {
             assertFalse(
                 "Attempting to close trace section on thread=${Thread.currentThread().id}, " +
                     "but there are no open sections",
-                openSectionsOnThread.isNullOrEmpty()
+                it.isNullOrEmpty()
             )
             // TODO: Replace with .removeLast() once available
-            openSectionsOnThread!!.removeAt(openSectionsOnThread!!.lastIndex)
+            it.removeAt(it.lastIndex)
         }
     }
 
-    fun openSectionsOnCurrentThread(): Array<String> {
-        return synchronized(this) {
-            traceSections.getOrPut(Thread.currentThread().id) { mutableListOf() }.toTypedArray()
-        }
+    fun getOpenTraceSectionsOnCurrentThread(): Array<String> {
+        return threadLocalTraceState.get().toTypedArray()
     }
 
+    /**
+     * Helper function for debugging; use as follows:
+     * ```
+     * println(FakeThreadStateLocal)
+     * ```
+     */
     override fun toString(): String {
-        return traceSections.toString()
+        val sb = StringBuilder()
+        synchronized(allThreadStates) {
+            allThreadStates.entries.forEach { sb.appendLine("${it.key} -> ${it.value}") }
+        }
+        return sb.toString()
     }
 }
 
 internal actual fun traceBegin(methodName: String) {
-    TraceState.begin(methodName)
+    FakeTraceState.begin(methodName)
 }
 
 internal actual fun traceEnd() {
-    TraceState.end()
+    FakeTraceState.end()
 }
 
 internal actual fun asyncTraceBegin(methodName: String, cookie: Int) {}

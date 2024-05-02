@@ -16,6 +16,11 @@
 
 package com.android.systemui
 
+private var isCoroutineTracingFlagEnabledForTests = true
+
 object Flags {
-    fun coroutineTracing() = true
+    fun coroutineTracing() = isCoroutineTracingFlagEnabledForTests
+    fun disableCoroutineTracing() {
+        isCoroutineTracingFlagEnabledForTests = false
+    }
 }
