@@ -20,20 +20,21 @@ import com.android.app.tracing.FakeTraceState.getOpenTraceSectionsOnCurrentThrea
 import com.android.systemui.Flags
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors
-import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
+import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -46,69 +47,142 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.BlockJUnit4ClassRunner
 
-/**
- * Helper util for asserting that the open trace sections on the current thread equal the passed
- * list of strings.
- */
-private fun assertTraceEquals(vararg expectedOpenTraceSections: String) {
-    // Inspect trace output (e.g. fake for recording android.os.Trace API calls):
-    assertArrayEquals(expectedOpenTraceSections, getOpenTraceSectionsOnCurrentThread())
-
-    // Inspect thread-local coroutine machinery:
-    val threadLocalTraceState = CURRENT_TRACE.get()
-    if (expectedOpenTraceSections.isEmpty()) {
-        assertTrue(threadLocalTraceState == null || threadLocalTraceState.slices.isEmpty())
-        assertEquals(0, TraceData.openSliceCount.get())
-    } else {
-        assertNotNull(threadLocalTraceState)
-        assertEquals(expectedOpenTraceSections.size, TraceData.openSliceCount.get())
-        // CURRENT_TRACE is a stack, so the order is reversed.
-        // It is okay to reverse() in place since vararg is passed by value.
-        expectedOpenTraceSections.reverse()
-        assertArrayEquals(expectedOpenTraceSections, threadLocalTraceState!!.slices.toArray())
-    }
-}
-
-/** Helper util for asserting that there are no open trace sections on the current thread. */
-private fun assertTraceIsEmpty() {
-    assertTraceEquals()
-}
-
-/**
- * Helper util for calling [runTest] with a [TraceContextElement]. This is useful for formatting
- * purposes. Passing an arg to `runTest {}` directly, as in `fun testStuff() =
- * runTest(TraceContextElement()) {}` would require more indentations according to our style guide.
- */
-private fun runTestWithTraceContext(testBody: suspend TestScope.() -> Unit) =
-    runTest(context = createCoroutineTracingContext(), testBody = testBody)
-
 @RunWith(BlockJUnit4ClassRunner::class)
 class CoroutineTracingTest {
-
     @Before
     fun setup() {
         TraceData.strictModeForTesting = true
     }
 
+    @After
+    fun checkFinished() {
+        val lastEvent = eventCounter.get()
+        assertTrue(
+            "Expected `finish(${lastEvent + 1})` to be called, but the test finished",
+            lastEvent == FINAL_EVENT || lastEvent == 0,
+        )
+    }
+
     @Test
-    fun testTraceStorage() = runTest {
+    fun simpleTraceSection() = runTestWithTraceContext {
+        expect(1)
+        traceCoroutine("hello") { expect(2, "hello") }
+        finish(3)
+    }
+
+    @Test
+    fun simpleNestedTraceSection() = runTestWithTraceContext {
+        expect(1)
+        traceCoroutine("hello") {
+            expect(2, "hello")
+            traceCoroutine("world") { expect(3, "hello", "world") }
+            expect(4, "hello")
+        }
+        finish(5)
+    }
+
+    @Test
+    fun simpleLaunch() = runTestWithTraceContext {
+        expect(1)
+        traceCoroutine("hello") {
+            expect(2, "hello")
+            launch { finish(4, "hello") }
+        }
+        expect(3)
+    }
+
+    @Test
+    fun launchWithSuspendingLambda() = runTestWithTraceContext {
         val fetchData: suspend () -> String = {
-            delay(ThreadLocalRandom.current().nextLong(0, 4))
+            expect(3, "span-for-launch")
+            delay(1L)
             traceCoroutine("span-for-fetchData") {
-                assertSame(
-                    CURRENT_TRACE.get(),
-                    currentCoroutineContext()[TraceContextElement]?.traceData
-                )
-                yield()
-                assertSame(
-                    CURRENT_TRACE.get(),
-                    currentCoroutineContext()[TraceContextElement]?.traceData
-                )
-                assertTraceEquals("span-for-launch", "span-for-fetchData")
+                expect(4, "span-for-launch", "span-for-fetchData")
             }
             "stuff"
         }
-        assertNull(CURRENT_TRACE.get())
+        expect(1)
+        launch("span-for-launch") {
+            assertEquals("stuff", fetchData())
+            finish(5, "span-for-launch")
+        }
+        expect(2)
+    }
+
+    @Test
+    fun nestedUpdateAndRestoreOnSingleThread_unconfinedDispatcher() = runTestWithTraceContext {
+        traceCoroutine("parent-span") {
+            expect(1, "parent-span")
+            launch(UnconfinedTestDispatcher(scheduler = testScheduler)) {
+                // While this may appear unusual, it is actually expected behavior:
+                //   1) The parent has an open trace section called "parent-span".
+                //   2) The child launches, it inherits from its parent, and it is resumed
+                //      immediately due to its use of the unconfined dispatcher.
+                //   3) The child emits all the trace sections known to its scope. The parent
+                //      does not have an opportunity to restore its context yet.
+                traceCoroutine("child-span") {
+                    // [parent's active trace]
+                    //           \  [trace section inherited from parent]
+                    //            \                 |    [new trace section in child scope]
+                    //             \                |             /
+                    expect(2, "parent-span", "parent-span", "child-span")
+                    delay(1) // <-- delay will give parent a chance to restore its context
+                    // After a delay, the parent resumes, finishing its trace section, so we are
+                    // left with only those in the child's scope
+                    finish(4, "parent-span", "child-span")
+                }
+            }
+        }
+        expect(3)
+    }
+
+    /** @see nestedUpdateAndRestoreOnSingleThread_unconfinedDispatcher */
+    @Test
+    fun nestedUpdateAndRestoreOnSingleThread_undispatchedLaunch() = runTestWithTraceContext {
+        traceCoroutine("parent-span") {
+            launch(start = CoroutineStart.UNDISPATCHED) {
+                traceCoroutine("child-span") {
+                    expect(1, "parent-span", "parent-span", "child-span")
+                    delay(1) // <-- delay will give parent a chance to restore its context
+                    finish(3, "parent-span", "child-span")
+                }
+            }
+        }
+        expect(2)
+    }
+
+    @Test
+    fun launchOnSeparateThread_defaultDispatcher() = runTestWithTraceContext {
+        val channel = Channel<Int>()
+        val bgThread = newSingleThreadContext("thread-#1")
+        expect()
+        traceCoroutine("hello") {
+            expect(1, "hello")
+            launch(bgThread) {
+                expect(2, "hello")
+                traceCoroutine("world") {
+                    expect("hello", "world")
+                    channel.send(1)
+                    expect(3, "hello", "world")
+                }
+            }
+            expect("hello")
+        }
+        expect()
+        assertEquals(1, channel.receive())
+        finish(4)
+    }
+
+    @Test
+    fun testTraceStorage() = runTestWithTraceContext {
+        val channel = Channel<Int>()
+        val fetchData: suspend () -> String = {
+            traceCoroutine("span-for-fetchData") {
+                channel.receive()
+                expect("span-for-launch", "span-for-fetchData")
+            }
+            "stuff"
+        }
         val threadContexts =
             listOf(
                 newSingleThreadContext("thread-#1"),
@@ -116,54 +190,32 @@ class CoroutineTracingTest {
                 newSingleThreadContext("thread-#3"),
                 newSingleThreadContext("thread-#4"),
             )
-        withContext(createCoroutineTracingContext()) {
-            assertNotNull(CURRENT_TRACE.get())
-            assertSame(
-                CURRENT_TRACE.get(),
-                currentCoroutineContext()[TraceContextElement]?.traceData
-            )
-            val job = launch {
-                repeat(1000) {
-                    launch("span-for-launch", threadContexts[it % threadContexts.size]) {
-                        assertSame(
-                            CURRENT_TRACE.get(),
-                            currentCoroutineContext()[TraceContextElement]?.traceData
-                        )
-                        assertNotNull(CURRENT_TRACE.get())
-                        assertEquals("stuff", fetchData())
-                        assertTraceEquals("span-for-launch")
-                        assertNotNull(CURRENT_TRACE.get())
-                    }
-                }
-            }
-            // half the time of the max delay in fetchData(), therefore cancelling some of the
-            // outstanding jobs
-            delay(5L)
-            job.cancel()
-            assertNotNull(CURRENT_TRACE.get())
-            assertSame(
-                CURRENT_TRACE.get(),
-                currentCoroutineContext()[TraceContextElement]?.traceData
-            )
-        }
-        // Should be null again after the coroutine finished
-        assertNull(CURRENT_TRACE.get())
-    }
 
-    @Test
-    fun nestedTraceSectionsOnSingleThread() = runTestWithTraceContext {
-        val fetchData: suspend () -> String = {
-            delay(1L)
-            traceCoroutine("span-for-fetchData") {
-                assertTraceEquals("span-for-launch", "span-for-fetchData")
+        val finishedLaunches = Channel<Int>()
+
+        // Start 1000 coroutines waiting on [channel]
+        val job = launch {
+            repeat(1000) {
+                launch("span-for-launch", threadContexts[it % threadContexts.size]) {
+                    assertNotNull(traceThreadLocal.get())
+                    assertEquals("stuff", fetchData())
+                    expect("span-for-launch")
+                    assertNotNull(traceThreadLocal.get())
+                    expect("span-for-launch")
+                    finishedLaunches.send(it)
+                }
+                expect()
             }
-            "stuff"
         }
-        launch("span-for-launch") {
-            assertEquals("stuff", fetchData())
-            assertTraceEquals("span-for-launch")
+        // Resume half the coroutines that are waiting on this channel
+        repeat(500) { channel.send(1) }
+        var receivedClosures = 0
+        repeat(500) {
+            finishedLaunches.receive()
+            receivedClosures++
         }
-        assertTraceIsEmpty()
+        // ...and cancel the rest
+        job.cancel()
     }
 
     private fun CoroutineScope.testTraceSectionsMultiThreaded(
@@ -171,25 +223,25 @@ class CoroutineTracingTest {
         thread2Context: CoroutineContext
     ) {
         val fetchData1: suspend () -> String = {
-            assertTraceEquals("span-for-launch-1")
+            expect("span-for-launch-1")
             delay(1L)
             traceCoroutine("span-for-fetchData-1") {
-                assertTraceEquals("span-for-launch-1", "span-for-fetchData-1")
+                expect("span-for-launch-1", "span-for-fetchData-1")
             }
-            assertTraceEquals("span-for-launch-1")
+            expect("span-for-launch-1")
             "stuff-1"
         }
 
         val fetchData2: suspend () -> String = {
-            assertTraceEquals(
+            expect(
                 "span-for-launch-1",
                 "span-for-launch-2",
             )
             delay(1L)
             traceCoroutine("span-for-fetchData-2") {
-                assertTraceEquals("span-for-launch-1", "span-for-launch-2", "span-for-fetchData-2")
+                expect("span-for-launch-1", "span-for-launch-2", "span-for-fetchData-2")
             }
-            assertTraceEquals(
+            expect(
                 "span-for-launch-1",
                 "span-for-launch-2",
             )
@@ -201,18 +253,18 @@ class CoroutineTracingTest {
 
         launch("span-for-launch-1", thread1) {
             assertEquals("stuff-1", fetchData1())
-            assertTraceEquals("span-for-launch-1")
+            expect("span-for-launch-1")
             launch("span-for-launch-2", thread2) {
                 assertEquals("stuff-2", fetchData2())
-                assertTraceEquals("span-for-launch-1", "span-for-launch-2")
+                expect("span-for-launch-1", "span-for-launch-2")
             }
-            assertTraceEquals("span-for-launch-1")
+            expect("span-for-launch-1")
         }
-        assertTraceIsEmpty()
+        expect()
 
         // Launching without the trace extension won't result in traces
-        launch(thread1) { assertTraceIsEmpty() }
-        launch(thread2) { assertTraceIsEmpty() }
+        launch(thread1) { expect() }
+        launch(thread2) { expect() }
     }
 
     @Test
@@ -229,7 +281,7 @@ class CoroutineTracingTest {
         // Thread-#2 inherits the TraceContextElement from Thread-#1. The test's CoroutineContext
         // does not need a TraceContextElement because it does not do any tracing.
         testTraceSectionsMultiThreaded(
-            thread1Context = createCoroutineTracingContext(),
+            thread1Context = TraceContextElement(TraceData()),
             thread2Context = EmptyCoroutineContext
         )
     }
@@ -240,8 +292,8 @@ class CoroutineTracingTest {
         // should be fine; it is essentially a no-op. The test's CoroutineContext does not need the
         // trace context because it does not do any tracing.
         testTraceSectionsMultiThreaded(
-            thread1Context = createCoroutineTracingContext(),
-            thread2Context = createCoroutineTracingContext()
+            thread1Context = TraceContextElement(TraceData()),
+            thread2Context = TraceContextElement(TraceData())
         )
     }
 
@@ -250,54 +302,58 @@ class CoroutineTracingTest {
         // TraceContextElement is merged on each context switch, which should have no effect on the
         // trace results.
         testTraceSectionsMultiThreaded(
-            thread1Context = createCoroutineTracingContext(),
-            thread2Context = createCoroutineTracingContext()
+            thread1Context = TraceContextElement(TraceData()),
+            thread2Context = TraceContextElement(TraceData())
         )
     }
 
     @Test
     fun missingTraceContextObjects() = runTest {
+        val channel = Channel<Int>()
         // Thread-#1 is missing a TraceContextElement, so some of the trace sections get dropped.
         // The resulting trace sections will be different than the 4 tests above.
         val fetchData1: suspend () -> String = {
-            assertTraceIsEmpty()
-            delay(1L)
-            traceCoroutine("span-for-fetchData-1") { assertTraceIsEmpty() }
-            assertTraceIsEmpty()
+            expect()
+            channel.receive()
+            traceCoroutine("span-for-fetchData-1") { expect() }
+            expect()
             "stuff-1"
         }
 
         val fetchData2: suspend () -> String = {
-            assertTraceEquals(
+            expect(
                 "span-for-launch-2",
             )
-            delay(1L)
+            channel.receive()
             traceCoroutine("span-for-fetchData-2") {
-                assertTraceEquals("span-for-launch-2", "span-for-fetchData-2")
+                expect("span-for-launch-2", "span-for-fetchData-2")
             }
-            assertTraceEquals(
+            expect(
                 "span-for-launch-2",
             )
             "stuff-2"
         }
 
         val thread1 = newSingleThreadContext("thread-#1")
-        val thread2 = newSingleThreadContext("thread-#2") + createCoroutineTracingContext()
+        val thread2 = newSingleThreadContext("thread-#2") + TraceContextElement(TraceData())
 
         launch("span-for-launch-1", thread1) {
             assertEquals("stuff-1", fetchData1())
-            assertTraceIsEmpty()
+            expect()
             launch("span-for-launch-2", thread2) {
                 assertEquals("stuff-2", fetchData2())
-                assertTraceEquals("span-for-launch-2")
+                expect("span-for-launch-2")
             }
-            assertTraceIsEmpty()
+            expect()
         }
-        assertTraceIsEmpty()
+        expect()
+
+        channel.send(1)
+        channel.send(2)
 
         // Launching without the trace extension won't result in traces
-        launch(thread1) { assertTraceIsEmpty() }
-        launch(thread2) { assertTraceIsEmpty() }
+        launch(thread1) { expect() }
+        launch(thread2) { expect() }
     }
 
     /**
@@ -327,9 +383,9 @@ class CoroutineTracingTest {
      */
     @Test
     fun coroutineMachinery() {
-        assertNull(CURRENT_TRACE.get())
+        assertNull(traceThreadLocal.get())
         val traceContext = TraceContextElement()
-        assertNull(CURRENT_TRACE.get())
+        assertNull(traceThreadLocal.get())
 
         val thread1ResumptionPoint = CyclicBarrier(2)
         val thread1SuspensionPoint = CyclicBarrier(2)
@@ -345,18 +401,18 @@ class CoroutineTracingTest {
         thread1.execute {
             try {
                 slicesForThread1.forEachIndexed { index, sliceName ->
-                    assertNull(CURRENT_TRACE.get())
+                    assertNull(traceThreadLocal.get())
                     val oldTrace = traceContext.updateThreadContext(EmptyCoroutineContext)
                     // await() AFTER updateThreadContext, thus thread #1 always resumes the
                     // coroutine before thread #2
-                    assertSame(CURRENT_TRACE.get(), traceContext.traceData)
+                    assertSame(traceThreadLocal.get(), traceContext.traceData)
 
                     // coroutine body start {
-                    CURRENT_TRACE.get()?.beginSpan("1:$sliceName")
+                    traceThreadLocal.get()?.beginSpan("1:$sliceName")
 
                     // At the end, verify the interleaved trace sections look correct:
                     if (index == slicesForThread1.size - 1) {
-                        assertTraceEquals(*expectedTraceForThread1)
+                        expect(*expectedTraceForThread1)
                     }
 
                     // simulate a slow thread, wait to call restoreThreadContext until after thread
@@ -368,7 +424,7 @@ class CoroutineTracingTest {
 
                     traceContext.restoreThreadContext(EmptyCoroutineContext, oldTrace)
                     thread1ResumptionPoint.await(3, TimeUnit.SECONDS)
-                    assertNull(CURRENT_TRACE.get())
+                    assertNull(traceThreadLocal.get())
                 }
             } catch (e: Error) {
                 failureOnThread1 = e
@@ -380,24 +436,24 @@ class CoroutineTracingTest {
         thread2.execute {
             try {
                 slicesForThread2.forEachIndexed { i, n ->
-                    assertNull(CURRENT_TRACE.get())
+                    assertNull(traceThreadLocal.get())
                     thread1SuspensionPoint.await(3, TimeUnit.SECONDS)
 
                     val oldTrace: TraceData? =
                         traceContext.updateThreadContext(EmptyCoroutineContext)
 
                     // coroutine body start {
-                    CURRENT_TRACE.get()?.beginSpan("2:$n")
+                    traceThreadLocal.get()?.beginSpan("2:$n")
 
                     // At the end, verify the interleaved trace sections look correct:
                     if (i == slicesForThread2.size - 1) {
-                        assertTraceEquals(*expectedTraceForThread2)
+                        expect(*expectedTraceForThread2)
                     }
                     // } coroutine body end
 
                     traceContext.restoreThreadContext(EmptyCoroutineContext, oldTrace)
                     thread1ResumptionPoint.await(3, TimeUnit.SECONDS)
-                    assertNull(CURRENT_TRACE.get())
+                    assertNull(traceThreadLocal.get())
                 }
             } catch (e: Error) {
                 failureOnThread2 = e
@@ -414,43 +470,133 @@ class CoroutineTracingTest {
     }
 
     @Test
-    fun simpleTrace() = runTest {
-        assertTraceIsEmpty()
+    fun scopeReentry_withContextFastPath() = runTestWithTraceContext {
+        val channel = Channel<Int>()
+        val bgThread = newSingleThreadContext("bg-thread #1")
+        val job =
+            launch("#1", bgThread) {
+                expect("#1")
+                var i = 0
+                while (true) {
+                    expect("#1")
+                    channel.send(i++)
+                    expect("#1")
+                    // when withContext is passed the same scope, it takes a fast path, dispatching
+                    // immediately. This means that in subsequent loops, if we do not handle reentry
+                    // correctly in TraceContextElement, the trace may become deeply nested:
+                    // "#1", "#1", "#1", ... "#2"
+                    withContext(bgThread) {
+                        expect("#1")
+                        traceCoroutine("#2") {
+                            expect("#1", "#2")
+                            channel.send(i++)
+                            expect("#1", "#2")
+                        }
+                        expect("#1")
+                    }
+                }
+            }
+        repeat(1000) {
+            expect()
+            traceCoroutine("receive") {
+                expect("receive")
+                val receivedVal = channel.receive()
+                assertEquals(it, receivedVal)
+                expect("receive")
+            }
+            expect()
+        }
+        job.cancel()
+    }
+
+    @Test
+    fun traceContextIsCopied() = runTest {
+        expect()
         val traceContext = TraceContextElement()
-        assertTraceIsEmpty()
+        expect()
         withContext(traceContext) {
             // Not the same object because it should be copied into the current context
-            assertNotSame(CURRENT_TRACE.get(), traceContext.traceData)
-            assertNotSame(CURRENT_TRACE.get()?.slices, traceContext.traceData.slices)
-            assertTraceIsEmpty()
+            assertNotSame(traceThreadLocal.get(), traceContext.traceData)
+            assertNotSame(traceThreadLocal.get()?.slices, traceContext.traceData?.slices)
+            expect()
             traceCoroutine("hello") {
-                assertNotSame(CURRENT_TRACE.get(), traceContext.traceData)
-                assertNotSame(CURRENT_TRACE.get()?.slices, traceContext.traceData.slices)
-                assertArrayEquals(arrayOf("hello"), CURRENT_TRACE.get()?.slices?.toArray())
+                assertNotSame(traceThreadLocal.get(), traceContext.traceData)
+                assertNotSame(traceThreadLocal.get()?.slices, traceContext.traceData?.slices)
+                assertArrayEquals(arrayOf("hello"), traceThreadLocal.get()?.slices?.toArray())
             }
-            assertNotSame(CURRENT_TRACE.get(), traceContext.traceData)
-            assertNotSame(CURRENT_TRACE.get()?.slices, traceContext.traceData.slices)
-            assertTraceIsEmpty()
+            assertNotSame(traceThreadLocal.get(), traceContext.traceData)
+            assertNotSame(traceThreadLocal.get()?.slices, traceContext.traceData?.slices)
+            expect()
         }
-        assertTraceIsEmpty()
-        runBlocking(traceContext) {
-            // Again, not the same object because it was copied
-            assertNotSame(CURRENT_TRACE.get(), traceContext.traceData)
-            assertNotSame(CURRENT_TRACE.get()?.slices, traceContext.traceData.slices)
-            assertTraceIsEmpty()
-        }
-        assertTraceIsEmpty()
+        expect()
     }
 
     @Test
     fun tracingDisabled() = runTest {
         Flags.disableCoroutineTracing()
-        assertNull(CURRENT_TRACE.get())
+        assertNull(traceThreadLocal.get())
         withContext(createCoroutineTracingContext()) {
-            assertNull(CURRENT_TRACE.get())
+            assertNull(traceThreadLocal.get())
             traceCoroutine("hello") { // should not crash
-                assertNull(CURRENT_TRACE.get())
+                assertNull(traceThreadLocal.get())
             }
         }
     }
+
+    private fun expect(vararg expectedOpenTraceSections: String) {
+        expect(null, *expectedOpenTraceSections)
+    }
+
+    /**
+     * Checks the currently active trace sections on the current thread, and optionally checks the
+     * order of operations if [expectedEvent] is not null.
+     */
+    private fun expect(expectedEvent: Int? = null, vararg expectedOpenTraceSections: String) {
+        if (expectedEvent != null) {
+            val previousEvent = eventCounter.getAndAdd(1)
+            val currentEvent = previousEvent + 1
+            check(expectedEvent == currentEvent) {
+                if (previousEvent == FINAL_EVENT) {
+                    "Expected event=$expectedEvent, but finish() was already called"
+                } else {
+                    "Expected event=$expectedEvent," +
+                        " but the event counter is currently at $currentEvent"
+                }
+            }
+        }
+
+        // Inspect trace output to the fake used for recording android.os.Trace API calls:
+        assertArrayEquals(expectedOpenTraceSections, getOpenTraceSectionsOnCurrentThread())
+    }
+
+    /** Same as [expect], except that no more [expect] statements can be called after it. */
+    private fun finish(expectedEvent: Int, vararg expectedOpenTraceSections: String) {
+        val previousEvent = eventCounter.getAndSet(FINAL_EVENT)
+        val currentEvent = previousEvent + 1
+        check(expectedEvent == currentEvent) {
+            if (previousEvent == FINAL_EVENT) {
+                "finish() was called more than once"
+            } else {
+                "Finished with event=$expectedEvent," +
+                    " but the event counter is currently $currentEvent"
+            }
+        }
+
+        // Inspect trace output to the fake used for recording android.os.Trace API calls:
+        assertArrayEquals(expectedOpenTraceSections, getOpenTraceSectionsOnCurrentThread())
+    }
+
+    private val eventCounter = AtomicInteger(0)
+
+    companion object {
+        const val FINAL_EVENT = Int.MIN_VALUE
+    }
 }
+
+/**
+ * Helper util for calling [runTest] with a [TraceContextElement]. This is useful for formatting
+ * purposes. Passing an arg to `runTest {}` directly, as in `fun testStuff() =
+ * runTestWithTraceContext {}` would require more indentations according to our style guide.
+ */
+private fun runTestWithTraceContext(testBody: suspend TestScope.() -> Unit) =
+    runTest(context = TraceContextElement(TraceData()), testBody = testBody)

@@ -20,36 +20,35 @@ import com.android.systemui.Flags.coroutineTracing
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CopyableThreadContextElement
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineName
+
+private const val DEBUG = false
+
+/** Log a message with a tag indicating the current thread ID */
+private inline fun debug(message: () -> String) {
+    if (DEBUG) println("Thread #${Thread.currentThread().id}: ${message()}")
+}
 
 /** Use a final subclass to avoid virtual calls (b/316642146). */
-@PublishedApi internal class ThreadStateLocal : ThreadLocal<TraceData?>()
+@PublishedApi internal class TraceDataThreadLocal : ThreadLocal<TraceData?>()
 
 /**
  * Thread-local storage for giving each thread a unique [TraceData]. It can only be used when paired
  * with a [TraceContextElement].
  *
- * [CURRENT_TRACE] will be `null` if either 1) we aren't in a coroutine, or 2) the current coroutine
- * context does not have [TraceContextElement]. In both cases, writing to this thread-local would be
- * undefined behavior if it were not null, which is why we use null as the default value rather than
- * an empty TraceData.
+ * [traceThreadLocal] will be `null` if either 1) we aren't in a coroutine, or 2) the current
+ * coroutine context does not have [TraceContextElement]. In both cases, writing to this
+ * thread-local would be undefined behavior if it were not null, which is why we use null as the
+ * default value rather than an empty TraceData.
  *
  * @see traceCoroutine
  */
-@PublishedApi internal val CURRENT_TRACE = ThreadStateLocal()
+@PublishedApi internal val traceThreadLocal = TraceDataThreadLocal()
 
 /**
  * Returns a new [CoroutineContext] used for tracing. Used to hide internal implementation details.
  */
 fun createCoroutineTracingContext(): CoroutineContext {
-    return if (coroutineTracing()) TraceContextElement() else EmptyCoroutineContext
-}
-
-private fun CoroutineContext.nameForTrace(): String {
-    val dispatcherStr = "${this[CoroutineDispatcher]}"
-    val nameStr = "${this[CoroutineName]?.name}"
-    return "CoroutineDispatcher: $dispatcherStr; CoroutineName: $nameStr"
+    return if (coroutineTracing()) TraceContextElement(TraceData()) else EmptyCoroutineContext
 }
 
 /**
@@ -60,13 +59,17 @@ private fun CoroutineContext.nameForTrace(): String {
  *
  * @see traceCoroutine
  */
-internal class TraceContextElement(@PublishedApi internal val traceData: TraceData = TraceData()) :
+internal class TraceContextElement(internal val traceData: TraceData? = TraceData()) :
     CopyableThreadContextElement<TraceData?> {
 
-    @PublishedApi internal companion object Key : CoroutineContext.Key<TraceContextElement>
+    internal companion object Key : CoroutineContext.Key<TraceContextElement>
 
     override val key: CoroutineContext.Key<*>
         get() = Key
+
+    init {
+        debug { "$this #init" }
+    }
 
     /**
      * This function is invoked before the coroutine is resumed on the current thread. When a
@@ -84,13 +87,16 @@ internal class TraceContextElement(@PublishedApi internal val traceData: TraceDa
      * `^` is a suspension point)
      */
     override fun updateThreadContext(context: CoroutineContext): TraceData? {
-        val oldState = CURRENT_TRACE.get()
-        CURRENT_TRACE.set(traceData)
-        // Calls to `updateThreadContext` will not happen in parallel on the same context, and
-        // they cannot happen before the prior suspension point. Additionally,
-        // `restoreThreadContext` does not modify `traceData`, so it is safe to iterate over the
-        // collection here:
-        traceData.beginAllOnThread()
+        val oldState = traceThreadLocal.get()
+        debug { "$this #updateThreadContext oldState=$oldState" }
+        if (oldState !== traceData) {
+            traceThreadLocal.set(traceData)
+            // Calls to `updateThreadContext` will not happen in parallel on the same context, and
+            // they cannot happen before the prior suspension point. Additionally,
+            // `restoreThreadContext` does not modify `traceData`, so it is safe to iterate over the
+            // collection here:
+            traceData?.beginAllOnThread()
+        }
         return oldState
     }
 
@@ -111,9 +117,9 @@ internal class TraceContextElement(@PublishedApi internal val traceData: TraceDa
      * OR
      *
      * ```
-     * Thread #1 |                                   [restoreThreadContext]
+     * Thread #1 |                                 [restoreThreadContext]
      * --------------------------------------------------------------------------------------------
-     * Thread #2 |     [updateThreadContext]...x.......^[restoreThreadContext]
+     * Thread #2 |     [updateThreadContext]...x....x..^[restoreThreadContext]
      * ```
      *
      * (`...` indicate coroutine body is running; whitespace indicates the thread is not scheduled;
@@ -122,20 +128,30 @@ internal class TraceContextElement(@PublishedApi internal val traceData: TraceDa
      * ```
      */
     override fun restoreThreadContext(context: CoroutineContext, oldState: TraceData?) {
-        // We should normally should not use the `TraceData` object here because it may have been
-        // modified on another thread after the last suspension point, but `endAllOnThread()` uses a
-        // `ThreadLocal` internally and is thread-safe:
-        CURRENT_TRACE.get()?.endAllOnThread()
-        CURRENT_TRACE.set(oldState)
+        debug { "$this#restoreThreadContext restoring=$oldState" }
+        // We not use the `TraceData` object here because it may have been modified on another
+        // thread after the last suspension point. This is why we use a [TraceStateHolder]:
+        // so we can end the correct number of trace sections, restoring the thread to its state
+        // prior to the last call to [updateThreadContext].
+        if (oldState !== traceThreadLocal.get()) {
+            traceData?.endAllOnThread()
+            traceThreadLocal.set(oldState)
+        }
     }
 
     override fun copyForChild(): CopyableThreadContextElement<TraceData?> {
-        return TraceContextElement(CURRENT_TRACE.get()?.clone() ?: TraceData())
+        debug { "$this #copyForChild" }
+        return TraceContextElement(traceData?.clone())
     }
 
     override fun mergeForChild(overwritingElement: CoroutineContext.Element): CoroutineContext {
+        debug { "$this #mergeForChild" }
         // For our use-case, we always give precedence to the parent trace context, and the
-        // child context is ignored
-        return TraceContextElement(CURRENT_TRACE.get()?.clone() ?: TraceData())
+        // child context (overwritingElement) is ignored
+        return TraceContextElement(traceData?.clone())
+    }
+
+    override fun toString(): String {
+        return "TraceContextElement@${hashCode().toHexString()}[$traceData]"
     }
 }

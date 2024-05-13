@@ -46,24 +46,15 @@ internal class TraceData(
     internal val slices: ArrayDeque<TraceSection> = ArrayDeque(),
 ) : Cloneable {
 
-    companion object {
-        /**
-         * ThreadLocal counter for how many open trace sections there are. This is needed because it
-         * is possible that on a multi-threaded dispatcher, one of the threads could be slow, and
-         * `restoreThreadContext` might be invoked _after_ the coroutine has already resumed and
-         * modified TraceData - either adding or removing trace sections and changing the count. If
-         * we did not store this thread-locally, then we would incorrectly end too many or too few
-         * trace sections.
-         */
-        @PublishedApi internal val openSliceCount = TraceCountThreadLocal()
-
-        /**
-         * Whether to add additional checks to the coroutine machinery, throwing a
-         * `ConcurrentModificationException` if TraceData is modified from the wrong thread. This
-         * should only be set for testing.
-         */
-        internal var strictModeForTesting: Boolean = false
-    }
+    /**
+     * ThreadLocal counter for how many open trace sections there are. This is needed because it is
+     * possible that on a multi-threaded dispatcher, one of the threads could be slow, and
+     * `restoreThreadContext` might be invoked _after_ the coroutine has already resumed and
+     * modified TraceData - either adding or removing trace sections and changing the count. If we
+     * did not store this thread-locally, then we would incorrectly end too many or too few trace
+     * sections.
+     */
+    private val openSliceCount = TraceCountThreadLocal()
 
     /** Adds current trace slices back to the current thread. Called when coroutine is resumed. */
     internal fun beginAllOnThread() {
@@ -108,6 +99,8 @@ internal class TraceData(
             slices.pop()
             openSliceCount.set(slices.size)
             endSlice()
+        } else if (strictModeForTesting) {
+            throw IllegalStateException(INVALID_SPAN_END_CALL_ERROR_MESSAGE)
         }
     }
 
@@ -116,18 +109,33 @@ internal class TraceData(
      * state is isolated from the parent.
      */
     public override fun clone(): TraceData {
-        strictModeCheck()
         return TraceData(slices.clone())
     }
 
+    override fun toString(): String {
+        return "TraceData@${hashCode().toHexString()}-size=${slices.size}"
+    }
+
     private fun strictModeCheck() {
-        if (strictModeForTesting && CURRENT_TRACE.get() !== this) {
-            throw ConcurrentModificationException(strictModeErrorMessage)
+        if (strictModeForTesting && traceThreadLocal.get() !== this) {
+            throw ConcurrentModificationException(STRICT_MODE_ERROR_MESSAGE)
         }
+    }
+
+    companion object {
+        /**
+         * Whether to add additional checks to the coroutine machinery, throwing a
+         * `ConcurrentModificationException` if TraceData is modified from the wrong thread. This
+         * should only be set for testing.
+         */
+        internal var strictModeForTesting: Boolean = false
     }
 }
 
-private const val strictModeErrorMessage =
+private const val INVALID_SPAN_END_CALL_ERROR_MESSAGE =
+    "TraceData#endSpan called when there were no active trace sections."
+
+private const val STRICT_MODE_ERROR_MESSAGE =
     "TraceData should only be accessed using " +
         "the ThreadLocal: CURRENT_TRACE.get(). Accessing TraceData by other means, such as " +
         "through the TraceContextElement's property may lead to concurrent modification."
