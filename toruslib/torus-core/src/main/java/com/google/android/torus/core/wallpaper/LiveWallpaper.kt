@@ -216,6 +216,10 @@ abstract class LiveWallpaper : WallpaperService() {
             return WALLPAPER_FLAG_NOT_FOUND
         }
 
+        fun setOffsetNotificationsEnabled(enabled: Boolean) {
+            this.wallpaperServiceEngine?.setOffsetNotificationsEnabled(enabled)
+        }
+
         internal fun setServiceEngineReference(wallpaperServiceEngine: WallpaperService.Engine) {
             this.wallpaperServiceEngine = wallpaperServiceEngine
         }
