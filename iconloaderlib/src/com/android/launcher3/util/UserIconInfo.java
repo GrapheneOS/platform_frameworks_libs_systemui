@@ -47,7 +47,7 @@ public class UserIconInfo {
     public final long userSerial;
 
     public UserIconInfo(UserHandle user, @UserType int type) {
-        this(user, type, 0);
+        this(user, type, user != null ? user.hashCode() : 0);
     }
 
     public UserIconInfo(UserHandle user, @UserType int type, long userSerial) {

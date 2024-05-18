@@ -1,4 +1,4 @@
-// Copyright (C) 2023 The Android Open Source Project
+// Copyright (C) 2024 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ java_library {
         "kotlinx_coroutines_android",
         "com_android_systemui_flags_lib",
     ],
-    srcs: ["src/androidPlatformApi/kotlin/**/*.kt"],
+    srcs: ["android/src-platform-api/**/*.kt"],
 }
 
 java_library {
@@ -34,7 +34,7 @@ java_library {
         "com_android_systemui_flags_lib",
         "androidx.tracing_tracing",
     ],
-    srcs: ["src/androidMinApi19/kotlin/**/*.kt"],
+    srcs: ["android/src-public-api/**/*.kt"],
     sdk_version: "31",
     min_sdk_version: "19",
     java_version: "17",
@@ -44,8 +44,8 @@ java_test_host {
     name: "tracinglib-host-test",
     defaults: ["tracinglib-defaults"],
     srcs: [
-        "src/fakeMain/kotlin/**/*.kt",
-        "src/fakeTest/kotlin/**/*.kt",
+        "host/src-fake/**/*.kt",
+        "host/test/**/*.kt",
     ],
     static_libs: [
         "kotlinx_coroutines",
@@ -56,34 +56,9 @@ java_test_host {
     ],
 }
 
-android_app {
-    name: "TracingLibTestApp",
-    platform_apis: true,
-    manifest: "empty-manifest.xml",
-    use_resource_processor: true,
-}
-
-android_robolectric_test {
-    enabled: true,
-    name: "tracinglib-robolectric-test",
-    defaults: ["tracinglib-defaults"],
-    srcs: ["src/androidRoboTest/kotlin/**/*.kt"],
-    java_resource_dirs: ["test_config"],
-    static_libs: [
-        "kotlinx_coroutines",
-        "kotlinx_coroutines_test",
-    ],
-    libs: [
-        "androidx.test.core",
-        "androidx.test.runner",
-    ],
-    instrumentation_for: "TracingLibTestApp",
-    upstream: true,
-}
-
 java_defaults {
     name: "tracinglib-defaults",
-    common_srcs: ["src/commonMain/kotlin/**/*.kt"],
+    common_srcs: ["common/src/**/*.kt"],
     kotlincflags: [
         "-Xjvm-default=all",
         "-Xmulti-platform",
