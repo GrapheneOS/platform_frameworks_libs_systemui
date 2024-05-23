@@ -212,18 +212,18 @@ public class BaseIconFactory implements AutoCloseable {
     public BitmapInfo createBadgedIconBitmap(@NonNull Drawable icon,
             @Nullable IconOptions options) {
         float[] scale = new float[1];
-        icon = normalizeAndWrapToAdaptiveIcon(icon, null, scale);
-        Bitmap bitmap = createIconBitmap(icon, scale[0],
+        AdaptiveIconDrawable adaptiveIcon = normalizeAndWrapToAdaptiveIcon(icon, null, scale);
+        Bitmap bitmap = createIconBitmap(adaptiveIcon, scale[0],
                 options == null ? MODE_WITH_SHADOW : options.mGenerationMode);
 
         int color = (options != null && options.mExtractedColor != null)
                 ? options.mExtractedColor : mColorExtractor.findDominantColorByHue(bitmap);
         BitmapInfo info = BitmapInfo.of(bitmap, color);
 
-        if (icon instanceof BitmapInfo.Extender) {
-            info = ((BitmapInfo.Extender) icon).getExtendedInfo(bitmap, color, this, scale[0]);
+        if (adaptiveIcon instanceof BitmapInfo.Extender extender) {
+            info = extender.getExtendedInfo(bitmap, color, this, scale[0]);
         } else if (IconProvider.ATLEAST_T && mMonoIconEnabled) {
-            Drawable mono = getMonochromeDrawable(icon);
+            Drawable mono = getMonochromeDrawable(adaptiveIcon);
             if (mono != null) {
                 info.setMonoIcon(createIconBitmap(mono, scale[0], MODE_ALPHA), this);
             }
@@ -238,12 +238,10 @@ public class BaseIconFactory implements AutoCloseable {
      * @param base the original icon
      */
     @TargetApi(Build.VERSION_CODES.TIRAMISU)
-    protected Drawable getMonochromeDrawable(Drawable base) {
-        if (base instanceof AdaptiveIconDrawable) {
-            Drawable mono = ((AdaptiveIconDrawable) base).getMonochrome();
-            if (mono != null) {
-                return new ClippedMonoDrawable(mono);
-            }
+    protected Drawable getMonochromeDrawable(AdaptiveIconDrawable base) {
+        Drawable mono = base.getMonochrome();
+        if (mono != null) {
+            return new ClippedMonoDrawable(mono);
         }
         return null;
     }
