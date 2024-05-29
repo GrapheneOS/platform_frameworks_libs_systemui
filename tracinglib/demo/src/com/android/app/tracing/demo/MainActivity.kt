@@ -65,7 +65,7 @@ class MainActivity : Activity() {
                 trace("$className#onClick") {
                     job?.let { trace("cancel") { it.cancel("Cancelled due to click") } }
                     trace("launch") { job = buttonCoroutineScope.launch { demo.run() } }
-                    trace("toast") { appendLine(experimentName) }
+                    trace("toast") { appendLine("$experimentName started") }
                     job?.let {
                         Trace.asyncTraceForTrackBegin(
                             Trace.TRACE_TAG_APP,

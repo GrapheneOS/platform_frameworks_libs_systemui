@@ -17,7 +17,6 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-
 android_library {
     name: "animationlib",
     manifest: "AndroidManifest.xml",
@@ -30,10 +29,10 @@ android_library {
     ],
     srcs: [
         "src/**/*.java",
-        "src/**/*.kt"
+        "src/**/*.kt",
     ],
     resource_dirs: [
-        "res"
+        "res",
     ],
     kotlincflags: ["-Xjvm-default=all"],
 }
@@ -49,7 +48,7 @@ android_library {
         "androidx.test.ext.junit",
         "androidx.test.rules",
         "testables",
-    ]
+    ],
 }
 
 android_app {
@@ -57,7 +56,7 @@ android_app {
     platform_apis: true,
     static_libs: [
         "animationlib-tests-base",
-    ]
+    ],
 }
 
 android_robolectric_test {
@@ -65,11 +64,12 @@ android_robolectric_test {
     name: "animationlib_robo_tests",
     srcs: [
         "tests/src/**/*.kt",
-        "tests/robolectric/src/**/*.kt"
+        "tests/robolectric/src/**/*.kt",
     ],
     java_resource_dirs: ["tests/robolectric/config"],
     instrumentation_for: "TestAnimationLibApp",
     upstream: true,
+    strict_mode: false,
 }
 
 android_test {
@@ -81,9 +81,8 @@ android_test {
     ],
     srcs: [
         "tests/src/**/*.java",
-        "tests/src/**/*.kt"
+        "tests/src/**/*.kt",
     ],
     kotlincflags: ["-Xjvm-default=all"],
     test_suites: ["general-tests"],
 }
-

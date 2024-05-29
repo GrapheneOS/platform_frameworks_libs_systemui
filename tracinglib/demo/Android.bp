@@ -20,6 +20,8 @@ android_app {
     name: "CoroutineTracingDemoApp",
     platform_apis: true,
     certificate: "platform",
+    min_sdk_version: "34",
+    target_sdk_version: "34",
     use_resource_processor: true,
     srcs: ["src/**/*.kt"],
     manifest: "app-manifest.xml",
