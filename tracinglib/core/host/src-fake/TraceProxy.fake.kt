@@ -39,6 +39,7 @@ internal actual fun traceCounter(counterName: String, counterValue: Int) {
 object FakeTraceState {
 
     private val allThreadStates = hashMapOf<Long, MutableList<String>>()
+
     fun begin(sectionName: String) {
         val threadId = Thread.currentThread().id
         synchronized(allThreadStates) {

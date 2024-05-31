@@ -19,10 +19,16 @@ package android.util
 @Suppress("UNUSED_PARAMETER")
 object Log {
     const val VERBOSE: Int = 2
+
     fun v(tag: String, msg: String) {}
+
     fun d(tag: String, msg: String) {}
+
     fun i(tag: String, msg: String) {}
+
     fun w(tag: String, msg: String) {}
+
     fun e(tag: String, msg: String) {}
+
     fun isLoggable(tag: String, level: Int) = true
 }

@@ -20,6 +20,7 @@ private var isCoroutineTracingFlagEnabledForTests = true
 
 object Flags {
     fun coroutineTracing() = isCoroutineTracingFlagEnabledForTests
+
     fun disableCoroutineTracing() {
         isCoroutineTracingFlagEnabledForTests = false
     }

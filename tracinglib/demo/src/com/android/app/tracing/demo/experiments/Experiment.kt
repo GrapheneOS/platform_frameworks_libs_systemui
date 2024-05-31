@@ -22,5 +22,6 @@ interface Experiment {
         get() = "Experiment:${this::class.simpleName}"
 
     fun getDescription(): String
+
     suspend fun run()
 }
