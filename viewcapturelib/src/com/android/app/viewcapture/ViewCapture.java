@@ -229,6 +229,10 @@ public abstract class ViewCapture {
                 mBgExecutor);
     }
 
+    @WorkerThread
+    protected void onCapturedViewPropertiesBg(long elapsedRealtimeNanos, String windowName,
+            ViewPropertyRef startFlattenedViewTree) {
+    }
 
     /**
      * Once this window listener is attached to a window's root view, it traverses the entire
@@ -302,7 +306,7 @@ public abstract class ViewCapture {
          */
         @Override
         public void onDraw() {
-            Trace.beginSection("view_capture");
+            Trace.beginSection("vc#onDraw");
             captureViewTree(mRoot, mViewRef);
             ViewRef captured = mViewRef.next;
             if (captured != null) {
@@ -320,6 +324,8 @@ public abstract class ViewCapture {
          */
         @WorkerThread
         private void captureViewPropertiesBg(ViewRef viewRefStart) {
+            Trace.beginSection("vc#captureViewPropertiesBg");
+
             long elapsedRealtimeNanos = viewRefStart.elapsedRealtimeNanos;
             mFrameIndexBg++;
             if (mFrameIndexBg >= mMemorySize) {
@@ -388,6 +394,10 @@ public abstract class ViewCapture {
                 viewRefEnd = viewRefEnd.next;
             }
             mNodesBg[mFrameIndexBg] = resultStart;
+
+            onCapturedViewPropertiesBg(elapsedRealtimeNanos, name, resultStart);
+
+            Trace.endSection();
         }
 
         private @Nullable ViewPropertyRef findInLastFrame(int hashCode) {
@@ -508,7 +518,7 @@ public abstract class ViewCapture {
         }
     }
 
-    private static class ViewPropertyRef {
+    protected static class ViewPropertyRef {
         // We store reference in memory to avoid generating and storing too many strings
         public Class clazz;
         public int hashCode;
@@ -639,7 +649,7 @@ public abstract class ViewCapture {
         }
     }
 
-    private static final class ViewIdProvider {
+    protected static final class ViewIdProvider {
 
         private final SparseArray<String> mNames = new SparseArray<>();
         private final Resources mRes;

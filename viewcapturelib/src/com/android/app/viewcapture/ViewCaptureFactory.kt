@@ -19,6 +19,7 @@ package com.android.app.viewcapture
 import android.content.Context
 import android.os.Looper
 import android.os.Process
+import android.tracing.Flags
 import android.util.Log
 
 /**
@@ -45,12 +46,22 @@ class ViewCaptureFactory {
                     Log.i(TAG, "instantiating ${NoOpViewCapture::class.java.simpleName}")
                     NoOpViewCapture()
                 }
-                else -> {
+                !Flags.perfettoViewCaptureTracing() -> {
                     Log.i(TAG, "instantiating ${SettingsAwareViewCapture::class.java.simpleName}")
                     SettingsAwareViewCapture(
                         context.applicationContext,
                         ViewCapture.createAndStartNewLooperExecutor(
                             "SAViewCapture",
+                            Process.THREAD_PRIORITY_FOREGROUND
+                        )
+                    )
+                }
+                else -> {
+                    Log.i(TAG, "instantiating ${PerfettoViewCapture::class.java.simpleName}")
+                    PerfettoViewCapture(
+                        context.applicationContext,
+                        ViewCapture.createAndStartNewLooperExecutor(
+                            "PerfettoViewCapture",
                             Process.THREAD_PRIORITY_FOREGROUND
                         )
                     )
