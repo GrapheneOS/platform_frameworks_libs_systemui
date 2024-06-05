@@ -32,5 +32,6 @@ vec4 main(float2 fragCoord) {
     half outline = smoothstep(0.1, 1.8, dY * 5.0);
 
     // Return the results in the R channel.
-    return vec4(outline, 0., 0., 0.);
+    // Also return alpha 1 avoid visual artifacts when it is used standalone.
+    return vec4(outline, 0., 0., 1.);
 }

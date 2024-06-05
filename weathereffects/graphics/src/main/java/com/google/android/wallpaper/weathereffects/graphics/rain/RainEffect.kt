@@ -18,6 +18,7 @@ package com.google.android.wallpaper.weathereffects.graphics.rain
 
 import android.graphics.BitmapShader
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RenderEffect
 import android.graphics.Shader
@@ -26,6 +27,7 @@ import com.google.android.wallpaper.weathereffects.graphics.FrameBuffer
 import com.google.android.wallpaper.weathereffects.graphics.WeatherEffect
 import com.google.android.wallpaper.weathereffects.graphics.utils.GraphicsUtils
 import com.google.android.wallpaper.weathereffects.graphics.utils.ImageCrop
+import com.google.android.wallpaper.weathereffects.graphics.utils.SolidColorShader
 import java.util.concurrent.Executor
 import kotlin.random.Random
 
@@ -177,6 +179,8 @@ class RainEffect(
     }
 
     private fun prepareColorGrading() {
+        // Initialize the buffer with black, so that we don't ever draw garbage buffer.
+        rainConfig.glassRainShader.setInputShader("texture", SolidColorShader(Color.BLACK))
         rainConfig.colorGradingShader.setInputShader("texture", rainConfig.glassRainShader)
         rainConfig.lut?.let {
             rainConfig.colorGradingShader.setInputShader(
