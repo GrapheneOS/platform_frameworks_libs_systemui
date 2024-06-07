@@ -38,12 +38,7 @@ internal class PerfettoViewCapture
 internal constructor(private val context: Context, executor: Executor) :
     ViewCapture(RING_BUFFER_SIZE, DEFAULT_INIT_POOL_SIZE, executor) {
 
-    private val mDataSource =
-        ViewCaptureDataSource(
-            { mActiveSessions.incrementAndGet() },
-            {},
-            { mActiveSessions.decrementAndGet() }
-        )
+    private val mDataSource = ViewCaptureDataSource({ onStart() }, {}, { onStop() })
 
     private val mActiveSessions = AtomicInteger(0)
 
@@ -60,8 +55,11 @@ internal constructor(private val context: Context, executor: Executor) :
     }
 
     init {
+        enableOrDisableWindowListeners(false)
+
         Producer.init(InitArguments.DEFAULTS)
-        val params =
+
+        val dataSourceParams =
             DataSourceParams.Builder()
                 .setBufferExhaustedPolicy(
                     DataSourceParams.PERFETTO_DS_BUFFER_EXHAUSTED_POLICY_STALL_AND_ABORT
@@ -69,7 +67,19 @@ internal constructor(private val context: Context, executor: Executor) :
                 .setNoFlush(true)
                 .setWillNotifyOnStop(false)
                 .build()
-        mDataSource.register(params)
+        mDataSource.register(dataSourceParams)
+    }
+
+    fun onStart() {
+        if (mActiveSessions.incrementAndGet() == 1) {
+            enableOrDisableWindowListeners(true)
+        }
+    }
+
+    fun onStop() {
+        if (mActiveSessions.decrementAndGet() == 0) {
+            enableOrDisableWindowListeners(false)
+        }
     }
 
     @WorkerThread
