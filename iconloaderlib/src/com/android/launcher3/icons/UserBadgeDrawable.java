@@ -30,9 +30,11 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.DrawableWrapper;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import androidx.core.graphics.ColorUtils;
 
 /**
  * A drawable used for drawing user badge. It draws a circle around the actual badge,
@@ -47,7 +49,8 @@ public class UserBadgeDrawable extends DrawableWrapper {
     private static final float SHADOW_RADIUS = 11.5f;
     private static final float SHADOW_OFFSET_Y = 0.25f;
 
-    private static final int SHADOW_COLOR = 0x11000000;
+    @VisibleForTesting
+    static final int SHADOW_COLOR = 0x11000000;
 
     private final Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
@@ -90,15 +93,20 @@ public class UserBadgeDrawable extends DrawableWrapper {
             canvas.translate(b.left, b.top);
             canvas.scale(b.width() / VIEWPORT_SIZE, b.height() / VIEWPORT_SIZE);
 
-            mPaint.setColor(SHADOW_COLOR);
+            mPaint.setColor(blendDrawableAlpha(SHADOW_COLOR));
             canvas.drawCircle(CENTER, CENTER + SHADOW_OFFSET_Y, SHADOW_RADIUS, mPaint);
 
-            mPaint.setColor(mBgColor);
+            mPaint.setColor(blendDrawableAlpha(mBgColor));
             canvas.drawCircle(CENTER, CENTER, BG_RADIUS, mPaint);
 
             canvas.restoreToCount(saveCount);
         }
         super.draw(canvas);
+    }
+
+    private @ColorInt int blendDrawableAlpha(@ColorInt int color) {
+        int alpha = (int) (Color.valueOf(color).alpha() * getAlpha());
+        return ColorUtils.setAlphaComponent(color, alpha);
     }
 
     @Override
