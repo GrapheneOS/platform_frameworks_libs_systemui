@@ -51,14 +51,16 @@ internal constructor(private val context: Context, executor: Executor) :
 
     init {
         enableOrDisableWindowListeners()
-        context.contentResolver.registerContentObserver(
-                Settings.Global.getUriFor(VIEW_CAPTURE_ENABLED),
-                false,
-                object : ContentObserver(Handler()) {
-                    override fun onChange(selfChange: Boolean) {
-                        enableOrDisableWindowListeners()
-                    }
-                })
+        mBgExecutor.execute {
+            context.contentResolver.registerContentObserver(
+                    Settings.Global.getUriFor(VIEW_CAPTURE_ENABLED),
+                    false,
+                    object : ContentObserver(Handler()) {
+                        override fun onChange(selfChange: Boolean) {
+                            enableOrDisableWindowListeners()
+                        }
+                    })
+        }
     }
 
     @AnyThread
