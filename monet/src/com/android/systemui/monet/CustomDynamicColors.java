@@ -47,7 +47,7 @@ class CustomDynamicColors {
         return new DynamicColor(
                 /* name= */ "clock_hour",
                 /* palette= */ (s) -> s.secondaryPalette,
-                /* tone= */ (s) -> s.isDark ? 30.0 : 60.0,
+                /* tone= */ (s) -> s.isDark ? 60.0 : 30.0,
                 /* isBackground= */ false,
                 /* background= */ (s) -> widgetBackground(),
                 /* secondBackground= */ null,
@@ -61,7 +61,7 @@ class CustomDynamicColors {
         return new DynamicColor(
                 /* name= */ "clock_minute",
                 /* palette= */ (s) -> s.primaryPalette,
-                /* tone= */ (s) -> s.isDark ? 40.0 : 90.0,
+                /* tone= */ (s) -> s.isDark ? 90.0 : 40.0,
                 /* isBackground= */ false,
                 /* background= */ (s) -> widgetBackground(),
                 /* secondBackground= */ null,
@@ -73,7 +73,7 @@ class CustomDynamicColors {
         return new DynamicColor(
                 /* name= */ "clock_second",
                 /* palette= */ (s) -> s.tertiaryPalette,
-                /* tone= */ (s) -> s.isDark ? 40.0 : 90.0,
+                /* tone= */ (s) -> s.isDark ? 90.0 : 40.0,
                 /* isBackground= */ false,
                 /* background= */ (s) -> widgetBackground(),
                 /* secondBackground= */ null,
@@ -83,9 +83,9 @@ class CustomDynamicColors {
 
     public DynamicColor weatherTemp() {
         return new DynamicColor(
-                /* name= */ "clock_second",
+                /* name= */ "weather_temp",
                 /* palette= */ (s) -> s.primaryPalette,
-                /* tone= */ (s) -> s.isDark ? 55.0 : 80.0,
+                /* tone= */ (s) -> s.isDark ? 80.0 : 55.0,
                 /* isBackground= */ false,
                 /* background= */ (s) -> widgetBackground(),
                 /* secondBackground= */ null,
@@ -99,7 +99,7 @@ class CustomDynamicColors {
         return new DynamicColor(
                 /* name= */ "theme_app",
                 /* palette= */ (s) -> s.primaryPalette,
-                /* tone= */ (s) -> s.isDark ? 90.0 : 30.0, // Adjusted values
+                /* tone= */ (s) -> s.isDark ? 30.0 : 90.0, // Adjusted values
                 /* isBackground= */ true,
                 /* background= */ null,
                 /* secondBackground= */ null,
@@ -111,7 +111,7 @@ class CustomDynamicColors {
         return new DynamicColor(
                 /* name= */ "on_theme_app",
                 /* palette= */ (s) -> s.primaryPalette,
-                /* tone= */ (s) -> s.isDark ? 40.0 : 80.0, // Adjusted values
+                /* tone= */ (s) -> s.isDark ? 80.0 : 40.0, // Adjusted values
                 /* isBackground= */ false,
                 /* background= */ (s) -> themeApp(),
                 /* secondBackground= */ null,
@@ -135,7 +135,7 @@ class CustomDynamicColors {
         return new DynamicColor(
                 /* name= */ "theme_notif",
                 /* palette= */ (s) -> s.tertiaryPalette,
-                /* tone= */ (s) -> s.isDark ? 80.0 : 90.0,
+                /* tone= */ (s) -> s.isDark ? 90.0 : 80.0,
                 /* isBackground= */ false,
                 /* background= */ (s) -> themeAppRing(),
                 /* secondBackground= */ null,
@@ -151,7 +151,7 @@ class CustomDynamicColors {
         return new DynamicColor(
                 /* name= */ "brand_a",
                 /* palette= */ (s) -> s.primaryPalette,
-                /* tone= */ (s) -> s.isDark ? 40.0 : 80.0,
+                /* tone= */ (s) -> s.isDark ? 80.0 : 40.0,
                 /* isBackground= */ true,
                 /* background= */ (s) -> mMdc.surfaceContainerLow(),
                 /* secondBackground= */ null,
@@ -164,7 +164,7 @@ class CustomDynamicColors {
         return new DynamicColor(
                 /* name= */ "brand_b",
                 /* palette= */ (s) -> s.secondaryPalette,
-                /* tone= */ (s) -> s.isDark ? 70.0 : 98.0,
+                /* tone= */ (s) -> s.isDark ? 98.0 : 70.0,
                 /* isBackground= */ true,
                 /* background= */ (s) -> mMdc.surfaceContainerLow(),
                 /* secondBackground= */ null,
@@ -177,7 +177,7 @@ class CustomDynamicColors {
         return new DynamicColor(
                 /* name= */ "brand_c",
                 /* palette= */ (s) -> s.primaryPalette,
-                /* tone= */ (s) -> s.isDark ? 50.0 : 60.0,
+                /* tone= */ (s) -> s.isDark ? 60.0 : 50.0,
                 /* isBackground= */ false,
                 /* background= */ (s) -> mMdc.surfaceContainerLow(),
                 /* secondBackground= */ null,
@@ -190,7 +190,7 @@ class CustomDynamicColors {
         return new DynamicColor(
                 /* name= */ "brand_d",
                 /* palette= */ (s) -> s.tertiaryPalette,
-                /* tone= */ (s) -> s.isDark ? 59.0 : 90.0,
+                /* tone= */ (s) -> s.isDark ? 90.0 : 59.0,
                 /* isBackground= */ false,
                 /* background= */ (s) -> mMdc.surfaceContainerLow(),
                 /* secondBackground= */ null,
@@ -312,7 +312,7 @@ class CustomDynamicColors {
         return new DynamicColor(
                 /* name= */ "overview_background",
                 /* palette= */ (s) -> s.neutralVariantPalette,
-                /* tone= */ (s) -> s.isDark ? 80.0 : 35.0,
+                /* tone= */ (s) -> s.isDark ? 35.0 : 80.0,
                 /* isBackground= */ true,
                 /* background= */ null,
                 /* secondBackground= */ null,

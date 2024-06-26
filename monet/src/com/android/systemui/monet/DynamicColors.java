@@ -130,7 +130,7 @@ public class DynamicColors {
         list.add(Pair.create("theme_app", customMdc.themeApp()));
         list.add(Pair.create("on_theme_app", customMdc.onThemeApp()));
         list.add(Pair.create("theme_app_ring", customMdc.themeAppRing()));
-        list.add(Pair.create("on_theme_app_ring", customMdc.themeNotif()));
+        list.add(Pair.create("theme_notif", customMdc.themeNotif()));
         list.add(Pair.create("brand_a", customMdc.brandA()));
         list.add(Pair.create("brand_b", customMdc.brandB()));
         list.add(Pair.create("brand_c", customMdc.brandC()));
