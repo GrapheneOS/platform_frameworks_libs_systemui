@@ -89,7 +89,7 @@ public abstract class ViewCapture {
     protected final Executor mBgExecutor;
 
     // Pool used for capturing view tree on the UI thread.
-    private ViewRef mPool = new ViewRef();
+    private ViewPropertyRef mPool = new ViewPropertyRef();
     private boolean mIsEnabled = true;
 
     protected ViewCapture(int memorySize, int initPoolSize, Executor bgExecutor) {
@@ -105,22 +105,22 @@ public abstract class ViewCapture {
     }
 
     @UiThread
-    private void addToPool(ViewRef start, ViewRef end) {
+    private void addToPool(ViewPropertyRef start, ViewPropertyRef end) {
         end.next = mPool;
         mPool = start;
     }
 
     @WorkerThread
     private void initPool(int initPoolSize) {
-        ViewRef start = new ViewRef();
-        ViewRef current = start;
+        ViewPropertyRef start = new ViewPropertyRef();
+        ViewPropertyRef current = start;
 
         for (int i = 0; i < initPoolSize; i++) {
-            current.next = new ViewRef();
+            current.next = new ViewPropertyRef();
             current = current.next;
         }
 
-        ViewRef finalCurrent = current;
+        ViewPropertyRef finalCurrent = current;
         MAIN_EXECUTOR.execute(() -> addToPool(start, finalCurrent));
     }
 
@@ -241,11 +241,11 @@ public abstract class ViewCapture {
      * background thread, and prepared for being dumped into a bugreport.
      * <p>
      * Since some of the work needs to be done on the main thread after every draw, this piece of
-     * code needs to be hyper optimized. That is why we are recycling ViewRef and ViewPropertyRef
-     * objects and storing the list of nodes as a flat LinkedList, rather than as a tree. This data
+     * code needs to be hyper optimized. That is why we are recycling ViewPropertyRef objects
+     * and storing the list of nodes as a flat LinkedList, rather than as a tree. This data
      * structure allows recycling to happen in O(1) time via pointer assignment. Without this
-     * optimization, a lot of time is wasted creating ViewRef objects, or finding ViewRef objects to
-     * recycle.
+     * optimization, a lot of time is wasted creating ViewPropertyRef objects, or finding
+     * ViewPropertyRef objects to recycle.
      * <p>
      * Another optimization is to only traverse view nodes on the main thread that have potentially
      * changed since the last frame was drawn. This can be determined via a combination of private
@@ -265,7 +265,7 @@ public abstract class ViewCapture {
      * TODO: b/262585897: Another memory optimization could be to store all integer, float, and
      * boolean information via single integer values via the Chinese remainder theorem, or a similar
      * algorithm, which enables multiple numerical values to be stored inside 1 number. Doing this
-     * would allow each ViewProperty / ViewRef to slim down its memory footprint significantly.
+     * would allow each ViewPropertyRef to slim down its memory footprint significantly.
      * <p>
      * One important thing to remember is that bugs related to recycling will usually only appear
      * after at least 2000 frames have been rendered. If that code is changed, the tester can
@@ -283,7 +283,7 @@ public abstract class ViewCapture {
         public View mRoot;
         public final String name;
 
-        private final ViewRef mViewRef = new ViewRef();
+        private final ViewPropertyRef mViewPropertyRef = new ViewPropertyRef();
 
         private int mFrameIndexBg = -1;
         private boolean mIsFirstFrame = true;
@@ -291,7 +291,8 @@ public abstract class ViewCapture {
         private ViewPropertyRef[] mNodesBg = new ViewPropertyRef[mMemorySize];
 
         private boolean mIsActive = true;
-        private final Consumer<ViewRef> mCaptureCallback = this::captureViewPropertiesBg;
+        private final Consumer<ViewPropertyRef> mCaptureCallback =
+                this::copyCleanViewsFromLastFrameBg;
 
         WindowListener(View view, String name) {
             mRoot = view;
@@ -307,8 +308,8 @@ public abstract class ViewCapture {
         @Override
         public void onDraw() {
             Trace.beginSection("vc#onDraw");
-            captureViewTree(mRoot, mViewRef);
-            ViewRef captured = mViewRef.next;
+            captureViewTree(mRoot, mViewPropertyRef);
+            ViewPropertyRef captured = mViewPropertyRef.next;
             if (captured != null) {
                 captured.callback = mCaptureCallback;
                 captured.elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos();
@@ -319,14 +320,15 @@ public abstract class ViewCapture {
         }
 
         /**
-         * Captures the View property on the background thread, and transfer all the ViewRef objects
-         * back to the pool
+         * Copy clean views from the last frame on the background thread. Clean views are
+         * the remaining part of the view hierarchy that was not already copied by the UI thread.
+         * Then transfer the received ViewPropertyRef objects back to the UI thread's pool.
          */
         @WorkerThread
-        private void captureViewPropertiesBg(ViewRef viewRefStart) {
-            Trace.beginSection("vc#captureViewPropertiesBg");
+        private void copyCleanViewsFromLastFrameBg(ViewPropertyRef start) {
+            Trace.beginSection("vc#copyCleanViewsFromLastFrameBg");
 
-            long elapsedRealtimeNanos = viewRefStart.elapsedRealtimeNanos;
+            long elapsedRealtimeNanos = start.elapsedRealtimeNanos;
             mFrameIndexBg++;
             if (mFrameIndexBg >= mMemorySize) {
                 mFrameIndexBg = 0;
@@ -338,8 +340,11 @@ public abstract class ViewCapture {
             ViewPropertyRef resultStart = null;
             ViewPropertyRef resultEnd = null;
 
-            ViewRef viewRefEnd = viewRefStart;
-            while (viewRefEnd != null) {
+            ViewPropertyRef end = start;
+
+            while (end != null) {
+                end.completeTransferFromViewBg();
+
                 ViewPropertyRef propertyRef = recycle;
                 if (propertyRef == null) {
                     propertyRef = new ViewPropertyRef();
@@ -349,11 +354,15 @@ public abstract class ViewCapture {
                 }
 
                 ViewPropertyRef copy = null;
-                if (viewRefEnd.childCount < 0) {
-                    copy = findInLastFrame(viewRefEnd.view.hashCode());
-                    viewRefEnd.childCount = (copy != null) ? copy.childCount : 0;
+                if (end.childCount < 0) {
+                    copy = findInLastFrame(end.hashCode);
+                    if (copy != null) {
+                        copy.transferTo(end);
+                    } else {
+                        end.childCount = 0;
+                    }
                 }
-                viewRefEnd.transferTo(propertyRef);
+                end.transferTo(propertyRef);
 
                 if (resultStart == null) {
                     resultStart = propertyRef;
@@ -384,14 +393,14 @@ public abstract class ViewCapture {
                     }
                 }
 
-                if (viewRefEnd.next == null) {
+                if (end.next == null) {
                     // The compiler will complain about using a non-final variable from
-                    // an outer class in a lambda if we pass in viewRefEnd directly.
-                    final ViewRef finalViewRefEnd = viewRefEnd;
-                    MAIN_EXECUTOR.execute(() -> addToPool(viewRefStart, finalViewRefEnd));
+                    // an outer class in a lambda if we pass in 'end' directly.
+                    final ViewPropertyRef finalEnd = end;
+                    MAIN_EXECUTOR.execute(() -> addToPool(start, finalEnd));
                     break;
                 }
-                viewRefEnd = viewRefEnd.next;
+                end = end.next;
             }
             mNodesBg[mFrameIndexBg] = resultStart;
 
@@ -461,16 +470,15 @@ public abstract class ViewCapture {
             return builder.build();
         }
 
-        private ViewRef captureViewTree(View view, ViewRef start) {
-            ViewRef ref;
+        private ViewPropertyRef captureViewTree(View view, ViewPropertyRef start) {
+            ViewPropertyRef ref;
             if (mPool != null) {
                 ref = mPool;
                 mPool = mPool.next;
                 ref.next = null;
             } else {
-                ref = new ViewRef();
+                ref = new ViewPropertyRef();
             }
-            ref.view = view;
             start.next = ref;
             if (view instanceof ViewGroup) {
                 ViewGroup parent = (ViewGroup) view;
@@ -479,17 +487,20 @@ public abstract class ViewCapture {
                 if ((view.mPrivateFlags & (PFLAG_INVALIDATED | PFLAG_DIRTY_MASK)) == 0
                         && !mIsFirstFrame) {
                     // A negative child count is the signal to copy this view from the last frame.
-                    ref.childCount = -parent.getChildCount();
+                    ref.childCount = -1;
+                    ref.view = view;
                     return ref;
                 }
-                ViewRef result = ref;
+                ViewPropertyRef result = ref;
                 int childCount = ref.childCount = parent.getChildCount();
+                ref.transferFrom(view);
                 for (int i = 0; i < childCount; i++) {
                     result = captureViewTree(parent.getChildAt(i), result);
                 }
                 return result;
             } else {
                 ref.childCount = 0;
+                ref.transferFrom(view);
                 return ref;
             }
         }
@@ -518,11 +529,12 @@ public abstract class ViewCapture {
         }
     }
 
-    protected static class ViewPropertyRef {
+    protected static class ViewPropertyRef implements Runnable {
+        public View view;
+
         // We store reference in memory to avoid generating and storing too many strings
         public Class clazz;
         public int hashCode;
-        public int childCount = 0;
 
         public int id;
         public int left, top, right, bottom;
@@ -536,8 +548,44 @@ public abstract class ViewCapture {
         public int visibility;
         public boolean willNotDraw;
         public boolean clipChildren;
+        public int childCount = 0;
 
         public ViewPropertyRef next;
+
+        public Consumer<ViewPropertyRef> callback = null;
+        public long elapsedRealtimeNanos = 0;
+
+
+        public void transferFrom(View in) {
+            view = in;
+
+            left = in.getLeft();
+            top = in.getTop();
+            right = in.getRight();
+            bottom = in.getBottom();
+            scrollX = in.getScrollX();
+            scrollY = in.getScrollY();
+
+            translateX = in.getTranslationX();
+            translateY = in.getTranslationY();
+            scaleX = in.getScaleX();
+            scaleY = in.getScaleY();
+            alpha = in.getAlpha();
+            elevation = in.getElevation();
+
+            visibility = in.getVisibility();
+            willNotDraw = in.willNotDraw();
+        }
+
+        /**
+         * Transfer in backgroup thread view properties that remain unchanged between frames.
+         */
+        public void completeTransferFromViewBg() {
+            clazz = view.getClass();
+            hashCode = view.hashCode();
+            id = view.getId();
+            view = null;
+        }
 
         public void transferTo(ViewPropertyRef out) {
             out.clazz = this.clazz;
@@ -600,48 +648,10 @@ public abstract class ViewCapture {
             }
             return result;
         }
-    }
-
-
-    private static class ViewRef implements Runnable {
-        public View view;
-        public int childCount = 0;
-        @Nullable
-        public ViewRef next;
-
-        public Consumer<ViewRef> callback = null;
-        public long elapsedRealtimeNanos = 0;
-
-        public void transferTo(ViewPropertyRef out) {
-            out.childCount = this.childCount;
-
-            View view = this.view;
-            this.view = null;
-
-            out.clazz = view.getClass();
-            out.hashCode = view.hashCode();
-            out.id = view.getId();
-            out.left = view.getLeft();
-            out.top = view.getTop();
-            out.right = view.getRight();
-            out.bottom = view.getBottom();
-            out.scrollX = view.getScrollX();
-            out.scrollY = view.getScrollY();
-
-            out.translateX = view.getTranslationX();
-            out.translateY = view.getTranslationY();
-            out.scaleX = view.getScaleX();
-            out.scaleY = view.getScaleY();
-            out.alpha = view.getAlpha();
-            out.elevation = view.getElevation();
-
-            out.visibility = view.getVisibility();
-            out.willNotDraw = view.willNotDraw();
-        }
 
         @Override
         public void run() {
-            Consumer<ViewRef> oldCallback = callback;
+            Consumer<ViewPropertyRef> oldCallback = callback;
             callback = null;
             if (oldCallback != null) {
                 oldCallback.accept(this);

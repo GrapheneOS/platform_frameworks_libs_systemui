@@ -22,6 +22,7 @@ java_library {
     static_libs: [
         "kotlinx_coroutines_android",
         "com_android_systemui_flags_lib",
+        "//frameworks/libs/systemui:compilelib",
     ],
     srcs: ["android/src-platform-api/**/*.kt"],
 }
@@ -32,6 +33,7 @@ java_library {
     static_libs: [
         "kotlinx_coroutines_android",
         "com_android_systemui_flags_lib",
+        "//frameworks/libs/systemui:compilelib",
         "androidx.tracing_tracing",
     ],
     srcs: ["android/src-public-api/**/*.kt"],

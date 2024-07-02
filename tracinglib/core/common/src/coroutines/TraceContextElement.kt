@@ -17,6 +17,7 @@
 package com.android.app.tracing.coroutines
 
 import com.android.systemui.Flags.coroutineTracing
+import com.android.systemui.util.Compile
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CopyableThreadContextElement
@@ -47,9 +48,12 @@ private inline fun debug(message: () -> String) {
 /**
  * Returns a new [CoroutineContext] used for tracing. Used to hide internal implementation details.
  */
-fun createCoroutineTracingContext(): CoroutineContext {
-    return if (coroutineTracing()) TraceContextElement(TraceData()) else EmptyCoroutineContext
-}
+fun createCoroutineTracingContext(): CoroutineContext =
+    if (Compile.IS_DEBUG && coroutineTracing()) {
+        TraceContextElement(TraceData())
+    } else {
+        EmptyCoroutineContext
+    }
 
 /**
  * Used for safely persisting [TraceData] state when coroutines are suspended and resumed.
