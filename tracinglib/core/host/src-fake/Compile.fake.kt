@@ -16,7 +16,13 @@
 
 package com.android.systemui.util
 
-@Suppress("UNUSED_PARAMETER")
 object Compile {
-    const val IS_DEBUG = true
+    private var _isDebug = true
+
+    val IS_DEBUG: Boolean
+        get() = _isDebug
+
+    fun setIsDebug(isDebug: Boolean) {
+        _isDebug = isDebug
+    }
 }

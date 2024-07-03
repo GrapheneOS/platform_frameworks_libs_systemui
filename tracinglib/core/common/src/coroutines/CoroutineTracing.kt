@@ -19,6 +19,7 @@ package com.android.app.tracing.coroutines
 import com.android.app.tracing.asyncTraceForTrackBegin
 import com.android.app.tracing.asyncTraceForTrackEnd
 import com.android.app.tracing.isEnabled
+import com.android.systemui.util.Compile
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -176,10 +177,9 @@ inline fun <T> traceCoroutine(spanName: () -> String, block: () -> T): T {
     // For coroutine tracing to work, trace spans must be added and removed even when
     // tracing is not active (i.e. when TRACE_TAG_APP is disabled). Otherwise, when the
     // coroutine resumes when tracing is active, we won't know its name.
-    val traceData = traceThreadLocal.get()
+    val traceData = if (Compile.IS_DEBUG) traceThreadLocal.get() else null
     val asyncTracingEnabled = isEnabled()
     val spanString = if (traceData != null || asyncTracingEnabled) spanName() else "<none>"
-
     traceData?.beginSpan(spanString)
 
     // Also trace to the "Coroutines" async track. This makes it easy to see the duration of

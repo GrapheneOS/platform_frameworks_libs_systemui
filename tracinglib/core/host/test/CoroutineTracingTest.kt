@@ -17,7 +17,9 @@
 package com.android.app.tracing.coroutines
 
 import com.android.app.tracing.FakeTraceState.getOpenTraceSectionsOnCurrentThread
+import com.android.app.tracing.setAndroidSystemTracingEnabled
 import com.android.systemui.Flags
+import com.android.systemui.util.Compile
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -42,6 +44,7 @@ import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,6 +55,9 @@ class CoroutineTracingTest {
     @Before
     fun setup() {
         TraceData.strictModeForTesting = true
+        Compile.setIsDebug(true)
+        Flags.setCoroutineTracingEnabled(true)
+        setAndroidSystemTracingEnabled(true)
     }
 
     @After
@@ -281,7 +287,7 @@ class CoroutineTracingTest {
         // Thread-#2 inherits the TraceContextElement from Thread-#1. The test's CoroutineContext
         // does not need a TraceContextElement because it does not do any tracing.
         testTraceSectionsMultiThreaded(
-            thread1Context = TraceContextElement(TraceData()),
+            thread1Context = TraceContextElement(),
             thread2Context = EmptyCoroutineContext
         )
     }
@@ -292,8 +298,8 @@ class CoroutineTracingTest {
         // should be fine; it is essentially a no-op. The test's CoroutineContext does not need the
         // trace context because it does not do any tracing.
         testTraceSectionsMultiThreaded(
-            thread1Context = TraceContextElement(TraceData()),
-            thread2Context = TraceContextElement(TraceData())
+            thread1Context = TraceContextElement(),
+            thread2Context = TraceContextElement()
         )
     }
 
@@ -302,8 +308,8 @@ class CoroutineTracingTest {
         // TraceContextElement is merged on each context switch, which should have no effect on the
         // trace results.
         testTraceSectionsMultiThreaded(
-            thread1Context = TraceContextElement(TraceData()),
-            thread2Context = TraceContextElement(TraceData())
+            thread1Context = TraceContextElement(),
+            thread2Context = TraceContextElement()
         )
     }
 
@@ -335,7 +341,7 @@ class CoroutineTracingTest {
         }
 
         val thread1 = newSingleThreadContext("thread-#1")
-        val thread2 = newSingleThreadContext("thread-#2") + TraceContextElement(TraceData())
+        val thread2 = newSingleThreadContext("thread-#2") + TraceContextElement()
 
         launch("span-for-launch-1", thread1) {
             assertEquals("stuff-1", fetchData1())
@@ -532,12 +538,69 @@ class CoroutineTracingTest {
     }
 
     @Test
-    fun tracingDisabled() = runTest {
-        Flags.disableCoroutineTracing()
+    fun tracingDisabledWhenFlagIsOff() = runTest {
+        Flags.setCoroutineTracingEnabled(false)
+        assertNull(traceThreadLocal.get())
+        withContext(createCoroutineTracingContext()) {
+            assertNull(traceThreadLocal.get())
+            traceCoroutine("hello") { assertNull(traceThreadLocal.get()) }
+        }
+    }
+
+    @Test
+    fun lazyStringIsAlwaysCalledOnDebugBuilds() = runTest {
+        setAndroidSystemTracingEnabled(false)
+        assertNull(traceThreadLocal.get())
+        withContext(createCoroutineTracingContext()) {
+            assertNotNull(traceThreadLocal.get())
+
+            // When Compile.IS_DEBUG=true, it is expected that the lazy-String is called even when
+            // tracing is disabled, because otherwise the coroutine resumption points would be
+            // missing their names.
+            var lazyStringCalled = false
+            traceCoroutine({
+                lazyStringCalled = true
+                "hello"
+            }) {
+                assertTrue(
+                    "Lazy string should have been called when Compile.IS_DEBUG=true, " +
+                        "even when Trace.isEnabled()=false",
+                    lazyStringCalled
+                )
+                val traceData = traceThreadLocal.get()
+                assertNotNull(traceData)
+                assertEquals(traceData?.slices?.size, 1)
+            }
+        }
+    }
+
+    @Test
+    fun tracingDisabledForNonDebugBuild() = runTest {
+        Compile.setIsDebug(false)
         assertNull(traceThreadLocal.get())
         withContext(createCoroutineTracingContext()) {
             assertNull(traceThreadLocal.get())
             traceCoroutine("hello") { // should not crash
+                assertNull(traceThreadLocal.get())
+            }
+        }
+        withContext(TraceContextElement()) {
+            assertNull(traceThreadLocal.get())
+
+            // Change Trace.isEnabled() to false so that the lazy-String is not called for async
+            // tracing, which would be expected even when coroutine tracing is disabled.
+            setAndroidSystemTracingEnabled(false)
+
+            // Verify that the lazy-String is not called when tracing is disabled and
+            // Compile.IS_DEBUG=false.
+            traceCoroutine({
+                fail("Lazy string should not be called when Compile.IS_DEBUG=false")
+                "error"
+            }) {
+                // This should edge-case should never happen because TraceContextElement is internal
+                // and can only be created through createCoroutineTracingContext(), which checks for
+                // Compile.IS_DEBUG=true. However, we want to be certain that even if a
+                // TraceContextElement is somehow used, it is unused when IS_DEBUG=false.
                 assertNull(traceThreadLocal.get())
             }
         }
@@ -599,4 +662,4 @@ class CoroutineTracingTest {
  * runTestWithTraceContext {}` would require more indentations according to our style guide.
  */
 private fun runTestWithTraceContext(testBody: suspend TestScope.() -> Unit) =
-    runTest(context = TraceContextElement(TraceData()), testBody = testBody)
+    runTest(context = TraceContextElement(), testBody = testBody)

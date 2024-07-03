@@ -60,6 +60,7 @@ android_test {
         "androidx.test.ext.junit",
         "androidx.test.rules",
         "testables",
+        "mockito-kotlin2",
         "mockito-target-extended-minus-junit4",
     ],
     srcs: [
@@ -70,6 +71,9 @@ android_test {
         "android.test.runner",
         "android.test.base",
         "android.test.mock",
+    ],
+    jni_libs: [
+        "libdexmakerjvmtiagent",
     ],
     test_suites: ["device-tests"],
 }

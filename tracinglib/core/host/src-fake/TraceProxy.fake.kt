@@ -25,9 +25,15 @@ private fun debug(message: String) {
     if (DEBUG) println("Thread #${Thread.currentThread().id}: $message")
 }
 
+private var isTracingEnabled = true
+
+internal fun setAndroidSystemTracingEnabled(enabled: Boolean) {
+    isTracingEnabled = enabled
+}
+
 @PublishedApi
 internal actual fun isEnabled(): Boolean {
-    return true
+    return isTracingEnabled
 }
 
 val traceCounters = mutableMapOf<String, Int>()

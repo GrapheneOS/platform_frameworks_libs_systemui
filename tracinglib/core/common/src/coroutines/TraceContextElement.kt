@@ -50,7 +50,7 @@ private inline fun debug(message: () -> String) {
  */
 fun createCoroutineTracingContext(): CoroutineContext =
     if (Compile.IS_DEBUG && coroutineTracing()) {
-        TraceContextElement(TraceData())
+        TraceContextElement()
     } else {
         EmptyCoroutineContext
     }
@@ -63,10 +63,12 @@ fun createCoroutineTracingContext(): CoroutineContext =
  *
  * @see traceCoroutine
  */
-internal class TraceContextElement(internal val traceData: TraceData? = TraceData()) :
+internal class TraceContextElement private constructor(internal val traceData: TraceData?) :
     CopyableThreadContextElement<TraceData?> {
 
     internal companion object Key : CoroutineContext.Key<TraceContextElement>
+
+    internal constructor() : this(if (Compile.IS_DEBUG) TraceData() else null)
 
     override val key: CoroutineContext.Key<*>
         get() = Key
@@ -91,6 +93,7 @@ internal class TraceContextElement(internal val traceData: TraceData? = TraceDat
      * `^` is a suspension point)
      */
     override fun updateThreadContext(context: CoroutineContext): TraceData? {
+        if (!Compile.IS_DEBUG) return null
         val oldState = traceThreadLocal.get()
         debug { "$this #updateThreadContext oldState=$oldState" }
         if (oldState !== traceData) {
@@ -132,6 +135,7 @@ internal class TraceContextElement(internal val traceData: TraceData? = TraceDat
      * ```
      */
     override fun restoreThreadContext(context: CoroutineContext, oldState: TraceData?) {
+        if (!Compile.IS_DEBUG) return
         debug { "$this#restoreThreadContext restoring=$oldState" }
         // We not use the `TraceData` object here because it may have been modified on another
         // thread after the last suspension point. This is why we use a [TraceStateHolder]:
@@ -144,11 +148,13 @@ internal class TraceContextElement(internal val traceData: TraceData? = TraceDat
     }
 
     override fun copyForChild(): CopyableThreadContextElement<TraceData?> {
+        if (!Compile.IS_DEBUG) return TraceContextElement(null)
         debug { "$this #copyForChild" }
         return TraceContextElement(traceData?.clone())
     }
 
     override fun mergeForChild(overwritingElement: CoroutineContext.Element): CoroutineContext {
+        if (!Compile.IS_DEBUG) return EmptyCoroutineContext
         debug { "$this #mergeForChild" }
         // For our use-case, we always give precedence to the parent trace context, and the
         // child context (overwritingElement) is ignored
