@@ -146,6 +146,32 @@ object TraceUtils {
     inline fun <T> traceAsync(method: String, block: () -> T): T =
         traceAsync(DEFAULT_TRACK_NAME, method, block)
 
+    /** Creates an async slice in the default track. */
+    @JvmStatic
+    inline fun <T> traceAsync(tag: () -> String, block: () -> T): T {
+        val tracingEnabled = isEnabled()
+        return if (tracingEnabled) {
+            traceAsync(DEFAULT_TRACK_NAME, tag(), block)
+        } else {
+            block()
+        }
+    }
+
+    /**
+     * Creates an async slice in the default track.
+     *
+     * The [tag] is computed only if tracing is enabled. See [traceAsync].
+     */
+    @JvmStatic
+    inline fun <T> traceAsync(trackName: String, tag: () -> String, block: () -> T): T {
+        val tracingEnabled = isEnabled()
+        return if (tracingEnabled) {
+            traceAsync(trackName, tag(), block)
+        } else {
+            block()
+        }
+    }
+
     /**
      * Creates an async slice in a track with [trackName] while [block] runs.
      *
