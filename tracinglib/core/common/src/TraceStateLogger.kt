@@ -34,7 +34,9 @@ import android.util.Log
  * This creates a new slice in a perfetto trace only if the state is different than the previous
  * one.
  */
-class TraceStateLogger(
+class TraceStateLogger
+@JvmOverloads
+constructor(
     private val trackName: String,
     private val logOnlyIfDifferent: Boolean = true,
     private val instantEvent: Boolean = true,
