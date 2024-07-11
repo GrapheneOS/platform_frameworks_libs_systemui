@@ -31,7 +31,7 @@ class WeatherEffectsRepository @Inject constructor(
     private val context: Context,
 ) {
     private val _wallpaperImage = MutableStateFlow<WallpaperImageModel?>(null)
-    val wallpaperImage: StateFlow<WallpaperImageModel?>  = _wallpaperImage.asStateFlow()
+    val wallpaperImage: StateFlow<WallpaperImageModel?> = _wallpaperImage.asStateFlow()
 
     /**
      * Generates or updates a wallpaper from the provided [wallpaperFileModel].
@@ -61,10 +61,32 @@ class WeatherEffectsRepository @Inject constructor(
 
             val foreground = fgBitmap!!
             val background = bgBitmap!!
+
+            var success = true
+            // TODO: Only persist assets when the wallpaper is applied.
+            success = success and WallpaperFileUtils.exportBitmap(
+                context,
+                WallpaperFileUtils.FG_FILE_NAME,
+                foreground,
+            )
+            success = success and WallpaperFileUtils.exportBitmap(
+                context,
+                WallpaperFileUtils.BG_FILE_NAME,
+                background,
+            )
+            if (!success) {
+                Log.e(TAG, "Failed to export assets during wallpaper generation")
+                return
+            }
+
+            // We always respect the new weather.
+            val weather = wallpaperFileModel.weatherEffect
+            if (weather != null) WallpaperFileUtils.exportLastKnownWeather(weather, context)
+
             _wallpaperImage.value = WallpaperImageModel(
                 foreground,
                 background,
-                wallpaperFileModel.weatherEffect,
+                weather
             )
         } catch (e: RuntimeException) {
             Log.e(TAG, "Unable to load wallpaper: ", e)
@@ -89,15 +111,19 @@ class WeatherEffectsRepository @Inject constructor(
                 Log.w(TAG, "Cannot load wallpaper from local storage.")
                 return
             }
+
+            val weatherEffect = WallpaperFileUtils.importLastKnownWeather(context)
+
             _wallpaperImage.value = WallpaperImageModel(
                 fgBitmap,
                 bgBitmap,
-                // TODO: Add new API to change weather type dynamically
+                weatherEffect,
             )
         } catch (e: RuntimeException) {
             Log.e(TAG, "Unable to load wallpaper: ", e)
         } catch (e: OutOfMemoryError) {
             Log.e(TAG, "Unable to load wallpaper: ", e)
+            null
         }
     }
 
@@ -107,14 +133,14 @@ class WeatherEffectsRepository @Inject constructor(
 
         var success = true
         success = success and (foreground?.let {
-            WallpaperFileUtils.export(
+            WallpaperFileUtils.exportBitmap(
                 context,
                 WallpaperFileUtils.FG_FILE_NAME,
                 it,
             )
         } == true)
         success = success and (background?.let {
-            WallpaperFileUtils.export(
+            WallpaperFileUtils.exportBitmap(
                 context,
                 WallpaperFileUtils.BG_FILE_NAME,
                 it,

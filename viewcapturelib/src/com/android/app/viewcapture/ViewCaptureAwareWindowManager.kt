@@ -32,15 +32,18 @@ private const val TAG = "ViewCaptureWindowManager"
 class ViewCaptureAwareWindowManager(
     private val windowManager: WindowManager,
     private val lazyViewCapture: Lazy<ViewCapture>,
+    private val isViewCaptureEnabled: Boolean,
 ) : WindowManager by windowManager {
 
     private var viewCaptureCloseableMap: MutableMap<View, SafeCloseable> = mutableMapOf()
 
     override fun addView(view: View, params: ViewGroup.LayoutParams?) {
         windowManager.addView(view, params)
-        val viewCaptureCloseable: SafeCloseable =
-            lazyViewCapture.value.startCapture(view, getViewName(view))
-        viewCaptureCloseableMap[view] = viewCaptureCloseable
+        if (isViewCaptureEnabled) {
+            val viewCaptureCloseable: SafeCloseable =
+                lazyViewCapture.value.startCapture(view, getViewName(view))
+            viewCaptureCloseableMap[view] = viewCaptureCloseable
+        }
     }
 
     override fun removeView(view: View?) {
@@ -56,11 +59,13 @@ class ViewCaptureAwareWindowManager(
     private fun getViewName(view: View) = "." + view.javaClass.name
 
     private fun removeViewFromCloseableMap(view: View?) {
-        if (viewCaptureCloseableMap.containsKey(view)) {
-            viewCaptureCloseableMap[view]?.close()
-            viewCaptureCloseableMap.remove(view)
-        } else {
-            Log.wtf(TAG, "removeView called with view not present in closeable map!")
+        if (isViewCaptureEnabled) {
+            if (viewCaptureCloseableMap.containsKey(view)) {
+                viewCaptureCloseableMap[view]?.close()
+                viewCaptureCloseableMap.remove(view)
+            } else {
+                Log.wtf(TAG, "removeView called with view not present in closeable map!")
+            }
         }
     }
 }

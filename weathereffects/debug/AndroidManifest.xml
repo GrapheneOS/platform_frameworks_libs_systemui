@@ -21,6 +21,7 @@
     <uses-feature
         android:name="android.software.live_wallpaper"
         android:required="true" />
+    <uses-permission android:name="android.permission.SUBSCRIBE_TO_KEYGUARD_LOCKED_STATE" />
 
     <queries>
         <package android:name="com.google.android.apps.wallpaper" />

@@ -29,6 +29,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.spy
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.invocation.InvocationOnMock
@@ -56,14 +57,29 @@ class ViewCaptureAwareWindowManagerTest {
             .`when`(windowManager)
             .addView(any(View::class.java), any(WindowManager.LayoutParams::class.java))
         `when`(mockRootView.context).thenReturn(context)
-
-        mViewCaptureAwareWindowManager =
-            ViewCaptureAwareWindowManager(windowManager, lazyViewCapture)
     }
 
     @Test
-    fun testAddView_verifyStartCaptureCall() {
+    fun testAddView_viewCaptureEnabled_verifyStartCaptureCall() {
+        mViewCaptureAwareWindowManager =
+            ViewCaptureAwareWindowManager(
+                windowManager,
+                lazyViewCapture,
+                isViewCaptureEnabled = true
+            )
         mViewCaptureAwareWindowManager?.addView(mockRootView, mockRootView.layoutParams)
         verify(viewCaptureSpy).startCapture(any(), anyString())
+    }
+
+    @Test
+    fun testAddView_viewCaptureNotEnabled_verifyStartCaptureCall() {
+        mViewCaptureAwareWindowManager =
+            ViewCaptureAwareWindowManager(
+                windowManager,
+                lazyViewCapture,
+                isViewCaptureEnabled = false
+            )
+        mViewCaptureAwareWindowManager?.addView(mockRootView, mockRootView.layoutParams)
+        verify(viewCaptureSpy, times(0)).startCapture(any(), anyString())
     }
 }

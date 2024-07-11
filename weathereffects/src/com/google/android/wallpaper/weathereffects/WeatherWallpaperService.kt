@@ -36,8 +36,6 @@ class WeatherWallpaperService @Inject constructor(): LiveWallpaper() {
     }
 
     override fun getWallpaperEngine(context: Context, surfaceHolder: SurfaceHolder): TorusEngine {
-        val engine = WeatherEngine(surfaceHolder, context)
-        engine.initialize(applicationScope, interactor)
-        return engine
+        return WeatherEngine(surfaceHolder, applicationScope, interactor, context)
     }
 }

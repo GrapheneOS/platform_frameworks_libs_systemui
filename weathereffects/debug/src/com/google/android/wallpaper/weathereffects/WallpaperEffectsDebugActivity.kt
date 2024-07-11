@@ -29,6 +29,7 @@ import android.view.SurfaceView
 import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.google.android.torus.core.activity.TorusViewerActivity
@@ -36,14 +37,15 @@ import com.google.android.torus.core.engine.TorusEngine
 import com.google.android.torus.utils.extensions.setImmersiveFullScreen
 import com.google.android.wallpaper.weathereffects.dagger.BackgroundScope
 import com.google.android.wallpaper.weathereffects.dagger.MainScope
+import com.google.android.wallpaper.weathereffects.data.repository.WallpaperFileUtils
+import com.google.android.wallpaper.weathereffects.domain.WeatherEffectsInteractor
 import com.google.android.wallpaper.weathereffects.provider.WallpaperInfoContract
 import com.google.android.wallpaper.weathereffects.shared.model.WallpaperFileModel
-import com.google.android.wallpaper.weathereffects.domain.WeatherEffectsInteractor
-import java.io.File
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.File
+import javax.inject.Inject
 
 class WallpaperEffectsDebugActivity : TorusViewerActivity() {
 
@@ -66,22 +68,31 @@ class WallpaperEffectsDebugActivity : TorusViewerActivity() {
     private val fgCachedAssetPaths: ArrayList<String> = arrayListOf()
     private val bgCachedAssetPaths: ArrayList<String> = arrayListOf()
 
+    /** It will be initialized on [onCreate]. */
+    private var intensity: Float = 0.8f
+
     override fun getWallpaperEngine(context: Context, surfaceView: SurfaceView): TorusEngine {
         this.surfaceView = surfaceView
-        val engine = WeatherEngine(surfaceView.holder, context)
+        val engine = WeatherEngine(
+            surfaceView.holder,
+            mainScope,
+            interactor,
+            context,
+            isDebugActivity = true
+        )
         this.engine = engine
         return engine
     }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         WallpaperEffectsDebugApplication.graph.inject(this)
+        super.onCreate(savedInstanceState)
 
         setContentView(R.layout.debug_activity)
         setImmersiveFullScreen()
 
-         writeAssetsToCache()
+        writeAssetsToCache()
 
         rootView = requireViewById(R.id.main_layout)
         rootView.requireViewById<FrameLayout>(R.id.wallpaper_layout).addView(surfaceView)
@@ -139,8 +150,28 @@ class WallpaperEffectsDebugActivity : TorusViewerActivity() {
                 view.onTouchEvent(event)
             }
 
-        engine?.initialize(mainScope, interactor)
         setDebugText()
+        val seekBar = rootView.requireViewById<SeekBar>(R.id.seekBar)
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                // Convert progress to a value between 0 and 1
+                val value = progress.toFloat() / 100f
+                engine?.setTargetIntensity(value)
+                intensity = value
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                hideButtons()
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                showButtons()
+            }
+        })
+        intensity = seekBar.progress.toFloat() / 100f
+
+        // This avoids that the initial state after installing is showing a black screen.
+        if (!WallpaperFileUtils.hasBitmapsInLocalStorage(applicationContext)) updateWallpaper()
     }
 
     private fun writeAssetsToCache() {
@@ -191,8 +222,11 @@ class WallpaperEffectsDebugActivity : TorusViewerActivity() {
                     weatherEffect,
                 )
             )
-            setDebugText("Wallpaper updated successfully.\n* Weather: " +
-                    "$weatherEffect\n* Foreground: $fgPath\n* Background: $bgPath")
+            engine?.setTargetIntensity(intensity)
+            setDebugText(
+                "Wallpaper updated successfully.\n* Weather: " +
+                        "$weatherEffect\n* Foreground: $fgPath\n* Background: $bgPath"
+            )
         }
     }
 

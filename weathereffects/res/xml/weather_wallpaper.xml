@@ -18,4 +18,5 @@
     android:author="@string/google_author"
     android:description="@string/wallpaper_description"
     android:showMetadataInPreview="true"
+    android:thumbnail="@drawable/ic_launcher_foreground"
     android:supportsAmbientMode="false"/>

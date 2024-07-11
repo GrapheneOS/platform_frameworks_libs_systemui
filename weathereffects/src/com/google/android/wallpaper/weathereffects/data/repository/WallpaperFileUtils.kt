@@ -20,6 +20,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import com.google.android.wallpaper.weathereffects.provider.WallpaperInfoContract
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -35,7 +36,7 @@ object WallpaperFileUtils {
      * @param dispatcher the dispatcher to run within.
      * @return `true` when exported successfully
      */
-    suspend fun export(
+    suspend fun exportBitmap(
         context: Context,
         fileName: String,
         bitmap: Bitmap,
@@ -122,6 +123,59 @@ object WallpaperFileUtils {
         }
     }
 
+    /**
+     * Exports the last known weather, and saves it into a shared preferences file. This is
+     * needed so when we reboot the device, we have information about the last weather and we can
+     * show it (also so we don't have to wait for the weather API to fetch the current weather).
+     *
+     * @param weatherEffect the last known weather effect.
+     * @param context the [Context] of the caller.
+     */
+    fun exportLastKnownWeather(
+        weatherEffect: WallpaperInfoContract.WeatherEffect,
+        context: Context
+    ) {
+        asProtectedContext(context).getSharedPreferences(PREF_FILENAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(LAST_KNOWN_WEATHER_KEY, weatherEffect.value)
+            .apply()
+    }
+
+    /**
+     * Imports the last known weather from shared preferences.
+     *
+     * @param context the [Context] of the caller
+     *
+     * @return the last known weather effect, or null if not found
+     */
+    fun importLastKnownWeather(context: Context): WallpaperInfoContract.WeatherEffect? {
+        return WallpaperInfoContract.WeatherEffect.fromStringValue(
+            asProtectedContext(context).getSharedPreferences(
+                PREF_FILENAME,
+                Context.MODE_PRIVATE
+            ).getString(LAST_KNOWN_WEATHER_KEY, null)
+        )
+    }
+
+    /**
+     * Checks if we have Foreground and Background Bitmap in local storage.
+     *
+     * @param context the [Context] of the caller
+     *
+     * @return whether both Bitmaps exists
+     */
+    fun hasBitmapsInLocalStorage(context: Context): Boolean {
+        val protectedContext = if (context.isDeviceProtectedStorage) {
+            context
+        } else {
+            context.createDeviceProtectedStorageContext()
+        }
+        val fileBgd = protectedContext.getFileStreamPath(BG_FILE_NAME)
+        val fileFgd = protectedContext.getFileStreamPath(FG_FILE_NAME)
+
+        return fileBgd.exists() && fileFgd.exists()
+    }
+
     private fun asProtectedContext(context: Context): Context {
         return if (context.isDeviceProtectedStorage) {
             context
@@ -133,4 +187,6 @@ object WallpaperFileUtils {
     private const val TAG = "WallpaperFileUtils"
     const val FG_FILE_NAME = "fg_image"
     const val BG_FILE_NAME = "bg_image"
+    private const val PREF_FILENAME = "weather_preferences"
+    private const val LAST_KNOWN_WEATHER_KEY = "last_known_weather"
 }

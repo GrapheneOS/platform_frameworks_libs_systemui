@@ -87,8 +87,10 @@ class FrameBuffer(width: Int, height: Int, format: Int = HardwareBuffer.RGBA_888
             if (result.status == HardwareBufferRenderer.RenderResult.SUCCESS) {
                 result.fence.await(Duration.ofMillis(RESULT_FENCE_TIME_OUT))
                 if (!buffer.isClosed) {
-                    Bitmap.wrapHardwareBuffer(buffer, colorSpace)?.let {
-                        callbackExecutor.execute { onImageReady.invoke(it) }
+                    if (!buffer.isClosed) {
+                        Bitmap.wrapHardwareBuffer(buffer, colorSpace)?.let {
+                            callbackExecutor.execute { onImageReady.invoke(it) }
+                        }
                     }
                 }
             }
