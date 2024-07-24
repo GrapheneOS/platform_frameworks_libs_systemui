@@ -46,6 +46,20 @@ object FlowTracing {
         return baseFlow.onEach { stateLogger.log(valueToString(it)) }
     }
 
+    /** Records value of a given numeric flow as a counter track in traces. */
+    fun <T : Number> Flow<T>.traceAsCounter(
+        counterName: String,
+        traceEmissionCount: Boolean = false,
+        valueToInt: (T) -> Int = { it.toInt() }
+    ): Flow<T> {
+        val baseFlow = if (traceEmissionCount) traceEmissionCount(counterName) else this
+        return baseFlow.onEach {
+            if (isEnabled()) {
+                traceCounter(counterName, valueToInt(it))
+            }
+        }
+    }
+
     /** Adds a counter track to monitor emissions from a specific flow.] */
     fun <T> Flow<T>.traceEmissionCount(flowName: String, uniqueSuffix: Boolean = false): Flow<T> {
         val trackName by lazy {
