@@ -64,7 +64,7 @@ class RainEffect(
         elapsedTime += deltaMillis * MILLIS_TO_SECONDS
 
         rainConfig.rainShowerShader.setFloatUniform("time", elapsedTime)
-        rainConfig.glassRainShader.setFloatUniform("time", elapsedTime * 0.7f)
+        rainConfig.glassRainShader.setFloatUniform("time", elapsedTime)
 
         rainConfig.glassRainShader.setInputShader("texture", rainConfig.rainShowerShader)
         rainConfig.colorGradingShader.setInputShader("texture", rainConfig.glassRainShader)
@@ -85,7 +85,7 @@ class RainEffect(
 
     override fun setIntensity(intensity: Float) {
         rainConfig.rainShowerShader.setFloatUniform("intensity", intensity)
-        rainConfig.glassRainShader.setFloatUniform("intensity", intensity * 0.6f)
+        rainConfig.glassRainShader.setFloatUniform("intensity", intensity)
         rainConfig.colorGradingShader.setFloatUniform(
             "intensity",
             rainConfig.colorGradingIntensity * intensity

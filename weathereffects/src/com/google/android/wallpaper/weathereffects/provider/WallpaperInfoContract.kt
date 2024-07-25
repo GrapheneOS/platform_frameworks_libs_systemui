@@ -45,7 +45,8 @@ object WallpaperInfoContract {
     enum class WeatherEffect(val value: String) {
         RAIN("rain"),
         FOG("fog"),
-        SNOW("snow");
+        SNOW("snow"),
+        SUN("SUN");
 
         companion object {
 
@@ -66,6 +67,7 @@ object WallpaperInfoContract {
                     RAIN.value -> RAIN
                     FOG.value -> FOG
                     SNOW.value -> SNOW
+                    SUN.value -> SUN
                     else -> null
                 }
             }

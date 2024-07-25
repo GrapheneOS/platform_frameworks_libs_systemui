@@ -22,6 +22,7 @@ uniform float2 uvOffsetFgd;
 uniform float2 uvScaleFgd;
 uniform float2 uvOffsetBgd;
 uniform float2 uvScaleBgd;
+uniform float2 gridSize;
 uniform float time;
 uniform float screenAspectRatio;
 uniform float2 screenSize;
@@ -71,8 +72,7 @@ vec4 main(float2 fragCoord) {
             uv,
             screenAspectRatio,
             time,
-            // TODO: adjust grid size based on aspect ratio.
-            /* Grid size = */ vec2(7., 1.5),
+            gridSize,
             /* layer number = */ i,
             closestSnowLayerIndex,
             farthestSnowLayerIndex);
@@ -111,8 +111,7 @@ vec4 main(float2 fragCoord) {
             uv,
             screenAspectRatio,
             time,
-            // TODO: adjust grid size based on aspect ratio
-            /* Grid size = */ vec2(7., 1.5),
+            gridSize,
             /* layer number = */ i,
             closestSnowLayerIndex,
             farthestSnowLayerIndex);

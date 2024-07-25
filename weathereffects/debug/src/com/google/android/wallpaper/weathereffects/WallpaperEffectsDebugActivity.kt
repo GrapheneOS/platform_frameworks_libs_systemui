@@ -112,6 +112,11 @@ class WallpaperEffectsDebugActivity : TorusViewerActivity() {
             updateWallpaper()
             setDebugText(context.getString(R.string.generating))
         }
+        rootView.requireViewById<Button>(R.id.sunny).setOnClickListener {
+            weatherEffect = WallpaperInfoContract.WeatherEffect.SUN
+            updateWallpaper()
+            setDebugText(context.getString(R.string.generating))
+        }
         rootView.requireViewById<Button>(R.id.clear).setOnClickListener {
             weatherEffect = null
 

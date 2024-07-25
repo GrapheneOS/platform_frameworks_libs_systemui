@@ -1,0 +1,49 @@
+/*
+ * Copyright (C) 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+uniform shader foreground;
+uniform shader background;
+uniform float2 uvOffsetFgd;
+uniform float2 uvScaleFgd;
+uniform float2 uvOffsetBgd;
+uniform float2 uvScaleBgd;
+uniform float screenAspectRatio;
+uniform float2 screenSize;
+uniform float time;
+uniform float intensity;
+
+#include "shaders/constants.agsl"
+#include "shaders/utils.agsl"
+#include "shaders/simplex2d.agsl"
+
+#include "shaders/lens_flare.agsl"
+
+vec4 main(float2 fragCoord) {
+    float2 uv = fragCoord / screenSize;
+    uv.y /= screenAspectRatio;
+
+    vec4 colorForeground = foreground.eval(fragCoord * uvScaleFgd + uvOffsetFgd);
+    vec4 color = background.eval(fragCoord * uvScaleBgd + uvOffsetBgd);
+
+    // TODO(b/347299395): to add flare and sun effect background
+
+    // add foreground
+    color.rgb = normalBlend(color.rgb, colorForeground.rgb, colorForeground.a);
+
+    // TODO(b/347299395): to add flare and sun effect foreground
+
+    return color;
+}

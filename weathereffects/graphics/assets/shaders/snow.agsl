@@ -26,8 +26,8 @@ const mat2 rot45 = mat2(
 
 uniform half intensity;
 
-const float farthestSnowLayerWiggleSpeed = 5.8;
-const float closestSnowLayerWiggleSpeed = 2.6;
+const float farthestSnowLayerWiggleSpeed = 2.18;
+const float closestSnowLayerWiggleSpeed = 0.9;
 
 /**
  * Generates snow flakes.
@@ -58,7 +58,7 @@ Snow generateSnow(
 
     /* Grid. */
     // Increase the last number to make each layer more separate from the previous one.
-    float depth = 0.65 + layerIndex * 0.41;
+    float depth = 0.65 + layerIndex * 0.37;
     float speedAdj = 1. + layerIndex * 0.15;
     float layerR = idGenerator(layerIndex);
     snowGridSize *= depth;
@@ -66,7 +66,7 @@ Snow generateSnow(
     // Number of rows and columns (each one is a cell, a drop).
     float cellAspectRatio = snowGridSize.x / snowGridSize.y;
     // Aspect ratio impacts visible cells.
-    snowGridSize.y /= screenAspectRatio;
+    uv.y /= screenAspectRatio;
     // Skew uv.x so it goes to left or right
     uv.x += uv.y * (0.8 * layerR - 0.4);
     // scale the UV to allocate number of rows and columns.
@@ -79,7 +79,7 @@ Snow generateSnow(
     // Generate column id, to offset columns vertically (so snow flakes are not aligned).
     float columnId = idGenerator(floor(gridUv.x));
     // Have time affect the position of each column as well.
-    gridUv.y += columnId * 2.6 + time * 0.09 * (1 - columnId);
+    gridUv.y += columnId * 2.6 + time * 0.19 * (1 - columnId);
 
     /* Cell. */
     // Get the cell ID based on the grid position. Value from 0 to 1.
@@ -145,9 +145,12 @@ Snow generateSnow(
     float snowFlakePosUncorrected = (cellUv.x - horizontalWiggle);
 
     // Calculate snow flake.
-    vec2 snowFlakeShape = vec2(1., 1.2);
-    vec2 snowFlakePos = vec2(snowFlakePosUncorrected / cellAspectRatio, cellUv.y);
-    snowFlakePos -= vec2(0., uv.y - 0.5) * cellId;
+    vec2 snowFlakeShape = vec2(0.28, 0.26);
+    vec2 snowFlakePos = vec2(snowFlakePosUncorrected, cellUv.y * cellAspectRatio);
+    snowFlakePos -= vec2(
+            0.,
+            (uv.y - 0.5 / screenAspectRatio)  - cellUv.y / snowGridSize.y
+        ) * screenAspectRatio;
     snowFlakePos *= snowFlakeShape * decreaseFactor;
     vec2 snowFlakeShapeVariation = vec2(0.055) * // max variation
         vec2((cellId * 2. - 1.), // random A based on cell ID

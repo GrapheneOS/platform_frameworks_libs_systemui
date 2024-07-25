@@ -21,8 +21,9 @@
  */
 float drawSplash(vec2 cellUv, float cellTime) {
     /** 0. Adjust UV and time. */
-    cellUv = cellUv * 0.5;
-    cellUv += 0.1;
+    cellUv *= 0.5;
+    // Moves drop a little bit down on the its grid cell.
+    cellUv.y += 0.15;
     float t = 0.408 + cellTime * 4.;
 
     /** 1. Start of drawing a splash */

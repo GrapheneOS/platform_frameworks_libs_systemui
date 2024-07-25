@@ -26,18 +26,16 @@ uniform half intensity;
 #include "shaders/rain_constants.agsl"
 
 vec4 main(float2 fragCoord) {
-    // 0. Add a bit of noise so that the droplets are not perfect circles.
-    fragCoord += vec2(valueNoise(fragCoord) * 0.015 - 0.0025);
-
-    float2 uv = fragCoord / screenSize;
+    // 0. Calculate UV and add a bit of noise so that the droplets are not perfect circles.
+    float2 uv = vec2(valueNoise(fragCoord) * 0.015 - 0.0025) + fragCoord / screenSize;
 
     // 1. Generate small glass rain.
     GlassRain smallDrippingRain = generateGlassRain(
          uv,
          screenAspectRatio,
-         time,
+         time * 0.7,
          /* Grid size = */ vec2(4.0, 2.0),
-         intensity);
+         intensity * 0.6);
     float dropMask = smallDrippingRain.dropMask;
     float droppletsMask = smallDrippingRain.droppletsMask;
     float trailMask = smallDrippingRain.trailMask;
@@ -48,9 +46,9 @@ vec4 main(float2 fragCoord) {
     GlassRain medDrippingRain = generateGlassRain(
           uv,
           screenAspectRatio,
-          time * 1.267,
+          time * 0.8869,
           /* Grid size = */ vec2(3.5, 1.5),
-          intensity);
+          intensity * 0.6);
 
     // 3. Combine those two glass rains.
     dropMask = max(medDrippingRain.dropMask, dropMask);

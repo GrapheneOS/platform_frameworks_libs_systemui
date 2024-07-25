@@ -31,6 +31,8 @@ import androidx.annotation.FloatRange
 
 /** Contains functions for rendering. */
 object GraphicsUtils {
+    /* Default width dp is calculated as default_display_width / default_display_density. */
+    private const val DEFAULT_WIDTH_DP = 1080 / 2.625f
 
     /**
      * Loads a shader from an asset file.
@@ -89,6 +91,7 @@ object GraphicsUtils {
         allocationOut.copyTo(blurredImage)
         return blurredImage
     }
+
     /**
      * @return the [Float] representing the aspect ratio of width / height, -1 if either width or
      *   height is equal to or less than 0.
@@ -100,6 +103,26 @@ object GraphicsUtils {
         return if (width <= 0 || height <= 0) {
             -1f
         } else width / height
+    }
+
+    /**
+     * Compute the weather effect default grid size. This takes into consideration the different
+     * display densities and aspect ratio so the effect looks good on displays with different sizes.
+     * @param surfaceSize the size of the surface where the wallpaper is being rendered.
+     * @param density the current display density.
+     * @return a [Float] representing the default size.
+     */
+    fun computeDefaultGridSize(surfaceSize: SizeF, density: Float): Float {
+        val displayWidthDp = surfaceSize.width / density
+        val adjustedScale = when {
+            // "COMPACT"
+            displayWidthDp < 600 -> 1f
+            // "MEDIUM"
+            displayWidthDp >= 600 && displayWidthDp < 840 -> 0.9f
+            // "EXPANDED"
+            else -> 0.8f
+        }
+        return adjustedScale * displayWidthDp / DEFAULT_WIDTH_DP
     }
 
     private fun resolveShaderIncludes(assetManager: AssetManager, string: String): String {

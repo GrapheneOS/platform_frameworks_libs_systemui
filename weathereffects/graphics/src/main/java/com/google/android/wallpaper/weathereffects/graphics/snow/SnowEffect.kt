@@ -52,13 +52,17 @@ class SnowEffect(
         updateTextureUniforms()
         adjustCropping(surfaceSize)
         prepareColorGrading()
+        updateSnowGridSize(surfaceSize)
         setIntensity(snowConfig.intensity)
 
         // Generate accumulated snow at the end after we updated all the uniforms.
         generateAccumulatedSnow()
     }
 
-    override fun resize(newSurfaceSize: SizeF) = adjustCropping(newSurfaceSize)
+    override fun resize(newSurfaceSize: SizeF) {
+        adjustCropping(newSurfaceSize)
+        updateSnowGridSize(newSurfaceSize)
+    }
 
     override fun update(deltaMillis: Long, frameTimeNanos: Long) {
         elapsedTime += snowSpeed * deltaMillis * MILLIS_TO_SECONDS
@@ -191,6 +195,11 @@ class SnowEffect(
             },
             mainExecutor
         )
+    }
+
+    private fun updateSnowGridSize(surfaceSize: SizeF) {
+        val gridSize = GraphicsUtils.computeDefaultGridSize(surfaceSize, snowConfig.pixelDensity)
+        snowConfig.shader.setFloatUniform("gridSize", 7 * gridSize, 2f * gridSize)
     }
 
     private companion object {

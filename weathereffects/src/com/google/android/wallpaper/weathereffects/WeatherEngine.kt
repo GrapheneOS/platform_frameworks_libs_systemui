@@ -39,6 +39,8 @@ import com.google.android.wallpaper.weathereffects.graphics.rain.RainEffect
 import com.google.android.wallpaper.weathereffects.graphics.rain.RainEffectConfig
 import com.google.android.wallpaper.weathereffects.graphics.snow.SnowEffect
 import com.google.android.wallpaper.weathereffects.graphics.snow.SnowEffectConfig
+import com.google.android.wallpaper.weathereffects.graphics.sun.SunEffect
+import com.google.android.wallpaper.weathereffects.graphics.sun.SunEffectConfig
 import com.google.android.wallpaper.weathereffects.provider.WallpaperInfoContract
 import com.google.android.wallpaper.weathereffects.sensor.UserPresenceController
 import com.google.android.wallpaper.weathereffects.shared.model.WallpaperImageModel
@@ -204,8 +206,17 @@ class WeatherEngine(
             }
 
             WallpaperInfoContract.WeatherEffect.SNOW -> {
-                val snowConfig = SnowEffectConfig(context, foreground, background)
+                val snowConfig = SnowEffectConfig(
+                    context.assets, foreground, background, context.resources.displayMetrics.density
+                )
                 activeEffect = SnowEffect(snowConfig, screenSize.toSizeF(), context.mainExecutor)
+            }
+
+            WallpaperInfoContract.WeatherEffect.SUN -> {
+                val snowConfig = SunEffectConfig(
+                    context.assets, foreground, background, context.resources.displayMetrics.density
+                )
+                activeEffect = SunEffect(snowConfig, screenSize.toSizeF())
             }
 
             else -> {

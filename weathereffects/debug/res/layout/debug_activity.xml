@@ -70,6 +70,16 @@
             android:text="@string/button_snow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:layout_constraintBottom_toTopOf="@id/sunny"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="10dp"
+            android:layout_marginEnd="20dp" />
+
+        <Button
+            android:id="@+id/sunny"
+            android:text="@string/button_sunny"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             app:layout_constraintBottom_toTopOf="@id/clear"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginBottom="10dp"

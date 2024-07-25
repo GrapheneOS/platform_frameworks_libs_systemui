@@ -91,11 +91,11 @@ vec4 main(float2 fragCoord) {
 
     // Add rotation for the rain (as a default sin(time * 0.05) can be used).
     float variation = wiggle(time - uv.y * 1.1, 0.10);
-    uv = rotateAroundPoint(uv, vec2(0.5, -1.42), variation * PI / 9.);
+    vec2 uvRot = rotateAroundPoint(uv, vec2(0.5, -1.42), variation * PI / 9.);
 
     // 1. Generate a layer of rain behind the subject.
     Rain rain = generateRain(
-          uv,
+          uvRot,
           screenAspectRatio,
           time * 18.,
           /* Grid size = */ vec2(20.0, 2.0),
@@ -105,7 +105,7 @@ vec4 main(float2 fragCoord) {
 
     // 2. Generate mid layer of rain behind the subject.
     rain = generateRain(
-          uv,
+          uvRot,
           screenAspectRatio,
           time * 21.4,
           /* Grid size = */ vec2(30.0, 4.0),
@@ -122,7 +122,7 @@ vec4 main(float2 fragCoord) {
 
     // 6. Generate a layer of rain in front of the subject (bigger and faster).
     rain = generateRain(
-          uv,
+          uvRot,
           screenAspectRatio,
           time * 27.,
           /* Grid size = */ vec2(8.0, 3.0),
