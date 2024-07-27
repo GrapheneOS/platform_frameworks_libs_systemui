@@ -24,6 +24,7 @@ import android.util.SizeF
 import com.google.android.wallpaper.weathereffects.graphics.WeatherEffect
 import com.google.android.wallpaper.weathereffects.graphics.utils.GraphicsUtils
 import com.google.android.wallpaper.weathereffects.graphics.utils.ImageCrop
+import java.util.concurrent.TimeUnit
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -47,9 +48,9 @@ class FogEffect(
     override fun resize(newSurfaceSize: SizeF) = adjustCropping(newSurfaceSize)
 
     override fun update(deltaMillis: Long, frameTimeNanos: Long) {
-        val deltaTime = deltaMillis * MILLIS_TO_SECONDS
+        val deltaTime = TimeUnit.MILLISECONDS.toSeconds(deltaMillis)
 
-        val time = frameTimeNanos.toFloat() * NANOS_TO_SECONDS
+        val time = TimeUnit.NANOSECONDS.toSeconds(frameTimeNanos)
         // Variation range [0.4, 1]. We don't want the variation to be 0.
         val variation = sin(0.06f * time + sin(0.18f * time)) * 0.3f + 0.7f
         elapsedTime += variation * deltaTime
@@ -179,11 +180,5 @@ class FogEffect(
             )
         }
         fogConfig.colorGradingShader.setFloatUniform("intensity", fogConfig.colorGradingIntensity)
-    }
-
-    private companion object {
-
-        private const val MILLIS_TO_SECONDS = 1 / 1000f
-        private const val NANOS_TO_SECONDS = 1 / 1_000_000_000f
     }
 }

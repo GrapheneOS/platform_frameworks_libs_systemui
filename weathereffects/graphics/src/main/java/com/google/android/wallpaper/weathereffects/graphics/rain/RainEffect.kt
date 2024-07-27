@@ -29,6 +29,7 @@ import com.google.android.wallpaper.weathereffects.graphics.utils.GraphicsUtils
 import com.google.android.wallpaper.weathereffects.graphics.utils.ImageCrop
 import com.google.android.wallpaper.weathereffects.graphics.utils.SolidColorShader
 import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
 /** Defines and generates the rain weather effect animation. */
@@ -61,7 +62,7 @@ class RainEffect(
     override fun resize(newSurfaceSize: SizeF) = adjustCropping(newSurfaceSize)
 
     override fun update(deltaMillis: Long, frameTimeNanos: Long) {
-        elapsedTime += deltaMillis * MILLIS_TO_SECONDS
+        elapsedTime += TimeUnit.MILLISECONDS.toSeconds(deltaMillis)
 
         rainConfig.rainShowerShader.setFloatUniform("time", elapsedTime)
         rainConfig.glassRainShader.setFloatUniform("time", elapsedTime)
@@ -188,9 +189,5 @@ class RainEffect(
                 BitmapShader(it, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
             )
         }
-    }
-
-    private companion object {
-        private const val MILLIS_TO_SECONDS = 1 / 1000f
     }
 }
