@@ -66,7 +66,7 @@ vec4 main(float2 fragCoord) {
 
     /* Prepare fog layers. */
     // Dither to be applied to background noise.
-    float bgdDither = triangleNoise((fragCoord + 0.0002 * timeBackground) * pixelDensity) * 0.1;
+    float bgdDither = triangleNoise((fragCoord + 0.0002 * timeBackground) * pixelDensity) * 0.15;
 
     // The furthest fog layer in the background.
     vec4 bgdFogFar = fog.eval(
@@ -84,7 +84,7 @@ vec4 main(float2 fragCoord) {
         // Adds sampling dithering.
         vec2(bgdDither * 22));
 
-    float fgdDither = triangleNoise((fragCoord + 0.003 * timeForeground) * pixelDensity) * 0.07;
+    float fgdDither = triangleNoise((fragCoord + 0.003 * timeForeground) * pixelDensity) * 0.1;
     vec4 fgdFogFar = clouds.eval(
         0.5 * cloudsSize * uv +
         // Moves UV based on time.

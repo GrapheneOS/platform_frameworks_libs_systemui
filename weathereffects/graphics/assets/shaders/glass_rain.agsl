@@ -54,7 +54,7 @@ GlassRain generateGlassRain(
     // Number of rows and columns (each one is a cell, a drop).
     float cellAspectRatio = rainGridSize.x / rainGridSize.y;
     // Aspect ratio impacts visible cells.
-    rainGridSize.y /= screenAspectRatio;
+    uv.y /= screenAspectRatio;
     // scale the UV to allocate number of rows and columns.
     vec2 gridUv = uv * rainGridSize;
     // Invert y (otherwise it goes from 0=top to 1=bottom).
@@ -149,10 +149,7 @@ GlassRain generateGlassRain(
 /**
  * Generate rain drops that stay in place on the glass surface.
  */
-vec3 generateStaticGlassRain(vec2 uv, half screenAspectRatio, half time, half intensity) {
-    vec2 gridSize = vec2(15., 15.);
-    // Aspect ratio impacts visible cells.
-    gridSize.y /= screenAspectRatio;
+vec3 generateStaticGlassRain(vec2 uv, half time, half intensity, vec2 gridSize) {
     // scale the UV to allocate number of rows and columns.
     vec2 gridUv = uv * gridSize;
     // Invert y (otherwise it goes from 0=top to 1=bottom).

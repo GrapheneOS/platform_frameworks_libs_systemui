@@ -194,7 +194,9 @@ class WeatherEngine(
 
         when (weatherEffect) {
             WallpaperInfoContract.WeatherEffect.RAIN -> {
-                val rainConfig = RainEffectConfig(context.assets, foreground, background)
+                val rainConfig = RainEffectConfig(
+                    context.assets, foreground, background, context.resources.displayMetrics.density
+                )
                 activeEffect = RainEffect(rainConfig, screenSize.toSizeF(), context.mainExecutor)
             }
 

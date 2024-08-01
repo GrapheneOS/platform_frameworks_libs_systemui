@@ -38,6 +38,8 @@ data class RainEffectConfig(
     val foreground: Bitmap,
     /** A bitmap containing the background of the image. */
     val background: Bitmap,
+    /** Pixel density of the display. Used for dithering. */
+    val pixelDensity: Float,
     /** The amount of the rain. This contributes to the color grading as well. */
     @FloatRange(from = 0.0, to = 1.0) val intensity: Float,
     /** The intensity of the color grading. 0: no color grading, 1: color grading in full effect. */
@@ -49,6 +51,7 @@ data class RainEffectConfig(
      * @param assets asset manager.
      * @param foreground a bitmap containing the foreground of the image.
      * @param background a bitmap containing the background of the image.
+     * @param pixelDensity pixel density of the display.
      * @param intensity initial intensity that affects the amount of rain and color grading.
      *   Expected range is [0, 1]. You can always change the intensity dynamically. Defaults to 1.
      */
@@ -56,6 +59,7 @@ data class RainEffectConfig(
         assets: AssetManager,
         foreground: Bitmap,
         background: Bitmap,
+        pixelDensity: Float,
         intensity: Float = DEFAULT_INTENSITY,
     ) : this(
         rainShowerShader = GraphicsUtils.loadShader(assets, RAIN_SHOWER_LAYER_SHADER_PATH),
@@ -65,6 +69,7 @@ data class RainEffectConfig(
         lut = GraphicsUtils.loadTexture(assets, LOOKUP_TABLE_TEXTURE_PATH),
         foreground,
         background,
+        pixelDensity,
         intensity,
         COLOR_GRADING_INTENSITY
     )

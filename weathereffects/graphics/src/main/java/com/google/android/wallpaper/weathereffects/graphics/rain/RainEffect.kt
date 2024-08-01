@@ -28,6 +28,7 @@ import com.google.android.wallpaper.weathereffects.graphics.WeatherEffect
 import com.google.android.wallpaper.weathereffects.graphics.utils.GraphicsUtils
 import com.google.android.wallpaper.weathereffects.graphics.utils.ImageCrop
 import com.google.android.wallpaper.weathereffects.graphics.utils.SolidColorShader
+import com.google.android.wallpaper.weathereffects.graphics.utils.TimeUtils
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
@@ -42,6 +43,7 @@ class RainEffect(
 ) : WeatherEffect {
 
     private val rainPaint = Paint().also { it.shader = rainConfig.colorGradingShader }
+
     // Set blur effect to reduce the outline noise. No need to set blur effect every time we
     // re-generate the outline buffer.
     private val outlineBuffer =
@@ -56,13 +58,17 @@ class RainEffect(
         updateTextureUniforms()
         adjustCropping(surfaceSize)
         prepareColorGrading()
+        updateRainGridSize(surfaceSize)
         setIntensity(rainConfig.intensity)
     }
 
-    override fun resize(newSurfaceSize: SizeF) = adjustCropping(newSurfaceSize)
+    override fun resize(newSurfaceSize: SizeF) {
+        adjustCropping(newSurfaceSize)
+        updateRainGridSize(newSurfaceSize)
+    }
 
     override fun update(deltaMillis: Long, frameTimeNanos: Long) {
-        elapsedTime += TimeUnit.MILLISECONDS.toSeconds(deltaMillis)
+        elapsedTime += TimeUtils.millisToSeconds(deltaMillis)
 
         rainConfig.rainShowerShader.setFloatUniform("time", elapsedTime)
         rainConfig.glassRainShader.setFloatUniform("time", elapsedTime)
@@ -189,5 +195,11 @@ class RainEffect(
                 BitmapShader(it, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
             )
         }
+    }
+
+    private fun updateRainGridSize(surfaceSize: SizeF) {
+        val widthScreenScale = GraphicsUtils.computeDefaultGridSize(surfaceSize, rainConfig.pixelDensity)
+        rainConfig.rainShowerShader.setFloatUniform("gridScale", widthScreenScale)
+        rainConfig.glassRainShader.setFloatUniform("gridScale", widthScreenScale)
     }
 }

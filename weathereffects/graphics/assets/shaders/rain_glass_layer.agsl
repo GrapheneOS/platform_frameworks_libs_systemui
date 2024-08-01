@@ -17,6 +17,7 @@
 uniform shader texture;
 uniform float time;
 uniform float screenAspectRatio;
+uniform float gridScale;
 uniform float2 screenSize;
 uniform half intensity;
 
@@ -34,7 +35,7 @@ vec4 main(float2 fragCoord) {
          uv,
          screenAspectRatio,
          time * 0.7,
-         /* Grid size = */ vec2(4.0, 2.0),
+         /* Grid size = */ vec2(4.0, 2.0) * gridScale,
          intensity * 0.6);
     float dropMask = smallDrippingRain.dropMask;
     float droppletsMask = smallDrippingRain.droppletsMask;
@@ -47,7 +48,7 @@ vec4 main(float2 fragCoord) {
           uv,
           screenAspectRatio,
           time * 0.8869,
-          /* Grid size = */ vec2(3.5, 1.5),
+          /* Grid size = */ vec2(3.5, 1.5) * gridScale,
           intensity * 0.6);
 
     // 3. Combine those two glass rains.
@@ -60,7 +61,10 @@ vec4 main(float2 fragCoord) {
         medDrippingRain.dropplets * medDrippingRain.droppletsMask, medDrippingRain.droppletsMask);
 
     // 4. Add static rain droplets on the glass surface. (They stay in place and dissapate.)
-    vec3 staticRain = generateStaticGlassRain(uv, screenAspectRatio, time, intensity);
+    vec2 gridSize = vec2(15., 15.) * gridScale;
+    // Aspect ratio impacts visible cells.
+    gridSize.y /= screenAspectRatio;
+    vec3 staticRain = generateStaticGlassRain(uv, time, intensity, gridSize);
     dropMask = max(dropMask, staticRain.z);
     dropUvMasked = mix(dropUvMasked, staticRain.xy * staticRain.z, staticRain.z);
 

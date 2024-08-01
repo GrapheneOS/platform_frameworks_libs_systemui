@@ -23,6 +23,7 @@ uniform float2 uvOffsetBgd;
 uniform float2 uvScaleBgd;
 uniform float time;
 uniform float screenAspectRatio;
+uniform float gridScale;
 uniform float2 screenSize;
 uniform half intensity;
 
@@ -40,7 +41,7 @@ const float rainVisibility = 0.4;
  */
 vec3 drawSplashes(vec2 uv, vec2 fragCoord, vec3 color) {
     /** 1. Make a grid */
-    vec2 gridSize = vec2(15., 15.);
+    vec2 gridSize = vec2(15., 15.) * gridScale;
     // Aspect ratio impacts visible cells.
     gridSize.y /= screenAspectRatio;
     // Scale the UV to allocate number of rows and columns.
@@ -98,7 +99,7 @@ vec4 main(float2 fragCoord) {
           uvRot,
           screenAspectRatio,
           time * 18.,
-          /* Grid size = */ vec2(20.0, 2.0),
+          /* Grid size = */ vec2(20.0, 2.0) * gridScale,
           intensity);
 
     color.rgb = mix(color.rgb, highlightColor, rainVisibility * rain.dropMask);
@@ -108,7 +109,7 @@ vec4 main(float2 fragCoord) {
           uvRot,
           screenAspectRatio,
           time * 21.4,
-          /* Grid size = */ vec2(30.0, 4.0),
+          /* Grid size = */ vec2(30.0, 4.0) * gridScale,
           intensity);
 
     // 3. Blend those layers.
@@ -125,7 +126,7 @@ vec4 main(float2 fragCoord) {
           uvRot,
           screenAspectRatio,
           time * 27.,
-          /* Grid size = */ vec2(8.0, 3.0),
+          /* Grid size = */ vec2(8.0, 3.0) * gridScale,
           intensity);
 
     // Closer rain drops are less visible.

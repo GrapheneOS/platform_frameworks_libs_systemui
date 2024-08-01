@@ -27,8 +27,8 @@ import com.google.android.wallpaper.weathereffects.graphics.WeatherEffect
 import com.google.android.wallpaper.weathereffects.graphics.utils.GraphicsUtils
 import com.google.android.wallpaper.weathereffects.graphics.utils.ImageCrop
 import com.google.android.wallpaper.weathereffects.graphics.utils.MathUtils
+import com.google.android.wallpaper.weathereffects.graphics.utils.TimeUtils
 import java.util.concurrent.Executor
-import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
 /** Defines and generates the rain weather effect animation. */
@@ -66,7 +66,7 @@ class SnowEffect(
     }
 
     override fun update(deltaMillis: Long, frameTimeNanos: Long) {
-        elapsedTime += snowSpeed * TimeUnit.MILLISECONDS.toSeconds(deltaMillis)
+        elapsedTime += snowSpeed * TimeUtils.millisToSeconds(deltaMillis)
 
         snowConfig.shader.setFloatUniform("time", elapsedTime)
         snowConfig.colorGradingShader.setInputShader("texture", snowConfig.shader)
