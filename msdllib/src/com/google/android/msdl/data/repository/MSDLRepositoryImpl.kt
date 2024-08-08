@@ -25,20 +25,20 @@ import com.google.android.msdl.data.model.SoundToken
 /** A [MSDLRepository] that holds haptic compositions as haptic data. */
 class MSDLRepositoryImpl : MSDLRepository {
 
-    override fun getAudioData(soundToken: SoundToken): MSDLData? {
+    override fun getAudioData(soundToken: SoundToken): MSDLSoundData? {
         // TODO(b/345248875) Implement a caching strategy in accordance to the audio file strategy
         return null
     }
 
-    override fun getHapticData(hapticToken: HapticToken): MSDLData? = HAPTIC_DATA[hapticToken]
+    override fun getHapticData(hapticToken: HapticToken): MSDLHapticData? = HAPTIC_DATA[hapticToken]
 
     companion object {
-        private val HAPTIC_DATA: Map<HapticToken, MSDLData> =
+        private val HAPTIC_DATA: Map<HapticToken, MSDLHapticData> =
             mapOf(
                 HapticToken.NEGATIVE_CONFIRMATION_HIGH_EMPHASIS to
-                    MSDLData { HapticComposition(null) },
+                    MSDLHapticData { HapticComposition(null) },
                 HapticToken.NEGATIVE_CONFIRMATION_MEDIUM_EMPHASIS to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -60,7 +60,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.POSITIVE_CONFIRMATION_HIGH_EMPHASIS to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -77,7 +77,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.POSITIVE_CONFIRMATION_MEDIUM_EMPHASIS to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -94,7 +94,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.POSITIVE_CONFIRMATION_LOW_EMPHASIS to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -111,7 +111,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.NEUTRAL_CONFIRMATION_HIGH_EMPHASIS to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -123,7 +123,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.LONG_PRESS to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -135,7 +135,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.SWIPE_THRESHOLD_INDICATOR to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -147,7 +147,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.TAP_HIGH_EMPHASIS to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -159,7 +159,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.TAP_MEDIUM_EMPHASIS to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -171,7 +171,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.DRAG_THRESHOLD_INDICATOR to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -183,7 +183,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.DRAG_INDICATOR to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -195,7 +195,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.TAP_LOW_EMPHASIS to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -207,7 +207,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.KEYPRESS_STANDARD to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -219,7 +219,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.KEYPRESS_SPACEBAR to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -231,7 +231,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.KEYPRESS_RETURN to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(
@@ -243,7 +243,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                         )
                     },
                 HapticToken.KEYPRESS_DELETE to
-                    MSDLData {
+                    MSDLHapticData {
                         HapticComposition(
                             listOf(
                                 HapticCompositionPrimitive(

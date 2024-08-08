@@ -36,7 +36,7 @@ interface MSDLRepository {
      * @param[hapticToken] The [HapticToken] that points to the data.
      * @return the data that corresponds to the token at the time this function is called.
      */
-    fun getHapticData(hapticToken: HapticToken): MSDLData?
+    fun getHapticData(hapticToken: HapticToken): MSDLHapticData?
 
     /**
      * Get the [MSDLData] that corresponds to the given sound reference token. This function needs
@@ -46,12 +46,19 @@ interface MSDLRepository {
      * @param[soundToken] The [SoundToken] that points to the data.
      * @return the data that corresponds to the token at the time this function is called.
      */
-    fun getAudioData(soundToken: SoundToken): MSDLData?
+    fun getAudioData(soundToken: SoundToken): MSDLSoundData?
 }
 
 /** Representation of data contained in a [MSDLRepository] */
-fun interface MSDLData {
+fun interface MSDLHapticData {
 
-    /** Retrieve the data */
+    /** Retrieve the haptic data */
+    fun get(): Any?
+}
+
+/** Representation of data contained in a [MSDLRepository] */
+fun interface MSDLSoundData {
+
+    /** Retrieve the sound data */
     fun get(): Any?
 }

@@ -21,9 +21,10 @@ android_library {
     name: "msdl",
     manifest: "AndroidManifest.xml",
     sdk_version: "system_current",
-    min_sdk_version: "31",
+    min_sdk_version: "33",
     static_libs: [
         "kotlinx_coroutines_android",
+        "androidx.annotation_annotation",
     ],
     srcs: [
         "src/**/*.java",

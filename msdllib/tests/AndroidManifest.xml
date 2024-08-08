@@ -19,7 +19,7 @@
 
     <instrumentation
         android:name="android.testing.TestableInstrumentation"
-        android:label="Tests for public MSDL Lib"
+        android:label="Tests for the public MSDL Lib"
         android:targetPackage="com.google.android.msdl.tests"/>
 
 </manifest>
