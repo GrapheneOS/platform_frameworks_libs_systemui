@@ -27,20 +27,22 @@ java_library {
     srcs: ["android/src-platform-api/**/*.kt"],
 }
 
-java_library {
-    name: "tracinglib-androidx",
-    defaults: ["tracinglib-defaults"],
-    static_libs: [
-        "kotlinx_coroutines_android",
-        "com_android_systemui_flags_lib",
-        "//frameworks/libs/systemui:compilelib",
-        "androidx.tracing_tracing",
-    ],
-    srcs: ["android/src-public-api/**/*.kt"],
-    sdk_version: "31",
-    min_sdk_version: "19",
-    java_version: "17",
-}
+// TODO(b/358541864): Remove source files of "tracinglib-androidx" and delete this target
+// Disable due to compilation error using java.lang.StackWalker:
+// java_library {
+//     name: "tracinglib-androidx",
+//     defaults: ["tracinglib-defaults"],
+//     static_libs: [
+//         "kotlinx_coroutines_android",
+//         "com_android_systemui_flags_lib",
+//         "//frameworks/libs/systemui:compilelib",
+//         "androidx.tracing_tracing",
+//     ],
+//     srcs: ["android/src-public-api/**/*.kt"],
+//     sdk_version: "31",
+//     min_sdk_version: "19",
+//     java_version: "17",
+// }
 
 java_test_host {
     name: "tracinglib-host-test",

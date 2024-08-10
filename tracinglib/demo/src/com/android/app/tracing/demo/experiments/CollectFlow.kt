@@ -15,6 +15,10 @@
  */
 package com.android.app.tracing.demo.experiments
 
+import com.android.app.tracing.coroutines.flow.filter
+import com.android.app.tracing.coroutines.flow.flowOn
+import com.android.app.tracing.coroutines.flow.map
+import com.android.app.tracing.coroutines.flow.withTraceName
 import com.android.app.tracing.coroutines.launch
 import com.android.app.tracing.coroutines.traceCoroutine
 import com.android.app.tracing.demo.FixedThread1
@@ -24,7 +28,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 
 @Singleton
 class CollectFlow
@@ -34,24 +37,23 @@ constructor(
     @FixedThread1 private var fixedThreadContext2: CoroutineContext,
 ) : Experiment {
 
-    override fun getDescription(): String = "Collect flow and delay after getting result"
+    override fun getDescription(): String = "Collect a cold flow with intermediate operators"
 
-    private val countTo100 =
+    private val numFlow =
         flow {
-                for (n in 0..100) {
-                    traceCoroutine("$tag: flow producer - delay(20)") { delay(20) }
-                    traceCoroutine("$tag: flow producer - emit($n)") { emit(n) }
+                for (n in 0..1000) {
+                    traceCoroutine("num-flow:delay(1)") { delay(1) }
+                    traceCoroutine("num-flow:emit($n)") { emit(n) }
                 }
             }
+            .withTraceName("num-flow")
+            .filter { it % 2 == 0 }
+            .map { it * 0.5 }
             .flowOn(fixedThreadContext2)
 
     override suspend fun run(): Unit = coroutineScope {
-        launch("$tag: launch and collect", fixedThreadContext1) {
-            traceCoroutine("$tag: flow consumer - collect") {
-                countTo100.collect { value ->
-                    traceCoroutine("$tag: flow consumer - got $value") { delay(1) }
-                }
-            }
+        launch("launch", fixedThreadContext1) {
+            numFlow.collect { value -> traceCoroutine("got: $value") { delay(1) } }
         }
     }
 }

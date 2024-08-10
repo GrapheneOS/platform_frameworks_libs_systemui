@@ -62,16 +62,23 @@ open class TestBase {
         runBlocking(context, block)
     }
 
-    protected fun expect(vararg expectedOpenTraceSections: String) {
-        println('s')
+    internal fun expect(vararg expectedOpenTraceSections: String) {
         expect(null, *expectedOpenTraceSections)
+    }
+
+    internal fun expectEndsWith(vararg expectedOpenTraceSections: String) {
+        // Inspect trace output to the fake used for recording android.os.Trace API calls:
+        val actualSections = getOpenTraceSectionsOnCurrentThread()
+        assertTrue(expectedOpenTraceSections.size <= actualSections.size)
+        val lastSections = actualSections.takeLast(expectedOpenTraceSections.size).toTypedArray()
+        assertTraceSectionsEquals(expectedOpenTraceSections, lastSections)
     }
 
     /**
      * Checks the currently active trace sections on the current thread, and optionally checks the
      * order of operations if [expectedEvent] is not null.
      */
-    protected fun expect(expectedEvent: Int? = null, vararg expectedOpenTraceSections: String) {
+    internal fun expect(expectedEvent: Int? = null, vararg expectedOpenTraceSections: String) {
         if (expectedEvent != null) {
             val previousEvent = eventCounter.getAndAdd(1)
             val currentEvent = previousEvent + 1
@@ -86,11 +93,26 @@ open class TestBase {
         }
 
         // Inspect trace output to the fake used for recording android.os.Trace API calls:
-        assertArrayEquals(expectedOpenTraceSections, getOpenTraceSectionsOnCurrentThread())
+        assertTraceSectionsEquals(expectedOpenTraceSections, getOpenTraceSectionsOnCurrentThread())
+    }
+
+    private fun assertTraceSectionsEquals(
+        expectedOpenTraceSections: Array<out String>,
+        actualOpenSections: Array<String>
+    ) {
+        assertArrayEquals(
+            """
+            Expected:{${expectedOpenTraceSections.prettyPrintList()}}
+            Actual:{${actualOpenSections.prettyPrintList()}}
+        """
+                .trimIndent(),
+            expectedOpenTraceSections,
+            actualOpenSections
+        )
     }
 
     /** Same as [expect], except that no more [expect] statements can be called after it. */
-    protected fun finish(expectedEvent: Int, vararg expectedOpenTraceSections: String) {
+    internal fun finish(expectedEvent: Int, vararg expectedOpenTraceSections: String) {
         val previousEvent = eventCounter.getAndSet(FINAL_EVENT)
         val currentEvent = previousEvent + 1
         check(expectedEvent == currentEvent) {
@@ -103,7 +125,7 @@ open class TestBase {
         }
 
         // Inspect trace output to the fake used for recording android.os.Trace API calls:
-        assertArrayEquals(expectedOpenTraceSections, getOpenTraceSectionsOnCurrentThread())
+        assertTraceSectionsEquals(expectedOpenTraceSections, getOpenTraceSectionsOnCurrentThread())
     }
 
     private val eventCounter = AtomicInteger(0)
@@ -111,4 +133,8 @@ open class TestBase {
     companion object {
         const val FINAL_EVENT = Int.MIN_VALUE
     }
+}
+
+private fun <T> Array<T>.prettyPrintList(): String {
+    return toList().joinToString(separator = "\", \"", prefix = "\"", postfix = "\"")
 }
