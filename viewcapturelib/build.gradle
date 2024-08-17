@@ -1,10 +1,7 @@
 plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
-    id 'com.google.protobuf'
 }
-
-final String PROTOS_DIR = "${ANDROID_TOP}/frameworks/libs/systemui/viewcapturelib/src/com/android/app/viewcapture/proto"
 
 android {
     namespace = "com.android.app.viewcapture"
@@ -17,7 +14,6 @@ android {
         main {
             java.srcDirs = ['src']
             manifest.srcFile 'AndroidManifest.xml'
-            proto.srcDirs = ["${PROTOS_DIR}"]
         }
         androidTest {
             java.srcDirs = ["tests"]
@@ -32,31 +28,8 @@ android {
 
 dependencies {
     implementation "androidx.core:core:1.9.0"
-    implementation "com.google.protobuf:protobuf-lite:${protobuf_lite_version}"
+    implementation project(":frameworks:libs:systemui:viewcapturelib:view_capture_proto")
     androidTestImplementation project(':SharedTestLib')
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation "androidx.test:rules:1.4.0"
-}
-
-protobuf {
-    // Configure the protoc executable
-    protoc {
-        artifact = "com.google.protobuf:protoc:${protobuf_version}${PROTO_ARCH_SUFFIX}"
-    }
-    plugins {
-        javalite {
-            // The codegen for lite comes as a separate artifact
-            artifact = "com.google.protobuf:protoc-gen-javalite:${protobuf_lite_version}${PROTO_ARCH_SUFFIX}"
-        }
-    }
-    generateProtoTasks {
-        all().each { task ->
-            task.builtins {
-                remove java
-            }
-            task.plugins {
-                javalite { }
-            }
-        }
-    }
 }
