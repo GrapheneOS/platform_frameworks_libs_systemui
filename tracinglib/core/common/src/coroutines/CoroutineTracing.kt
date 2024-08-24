@@ -30,6 +30,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -37,6 +38,19 @@ import kotlinx.coroutines.withContext
 @PublishedApi internal const val TAG = "CoroutineTracing"
 
 @PublishedApi internal const val DEFAULT_TRACK_NAME = "Coroutines"
+
+@OptIn(ExperimentalContracts::class)
+suspend inline fun <R> coroutineScope(
+    traceName: String,
+    crossinline block: suspend CoroutineScope.() -> R
+): R {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
+    return traceCoroutine(traceName) {
+        return@traceCoroutine coroutineScope wrappedCoroutineScope@{
+            return@wrappedCoroutineScope block()
+        }
+    }
+}
 
 /**
  * Convenience function for calling [CoroutineScope.launch] with [traceCoroutine] to enable tracing.

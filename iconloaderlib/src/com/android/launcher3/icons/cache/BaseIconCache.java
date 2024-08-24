@@ -541,7 +541,10 @@ public abstract class BaseIconCache {
         }
         if (icon != null) {
             BaseIconFactory li = getIconFactory();
-            entry.bitmap = li.createShapedIconBitmap(icon, new IconOptions().setUser(user));
+            entry.bitmap = li.createBadgedIconBitmap(
+                    li.createShapedAdaptiveIcon(icon),
+                    new IconOptions().setUser(user)
+            );
             li.close();
         }
         if (!TextUtils.isEmpty(title) && entry.bitmap.icon != null) {

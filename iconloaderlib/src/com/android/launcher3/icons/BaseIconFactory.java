@@ -186,13 +186,12 @@ public class BaseIconFactory implements AutoCloseable {
      * Creates an icon from the bitmap cropped to the current device icon shape
      */
     @NonNull
-    public BitmapInfo createShapedIconBitmap(Bitmap icon, IconOptions options) {
-        Drawable d = new FixedSizeBitmapDrawable(icon);
+    public AdaptiveIconDrawable createShapedAdaptiveIcon(Bitmap iconBitmap) {
+        Drawable drawable = new FixedSizeBitmapDrawable(iconBitmap);
         float inset = getExtraInsetFraction();
         inset = inset / (1 + 2 * inset);
-        d = new AdaptiveIconDrawable(new ColorDrawable(Color.BLACK),
-                new InsetDrawable(d, inset, inset, inset, inset));
-        return createBadgedIconBitmap(d, options);
+        return new AdaptiveIconDrawable(new ColorDrawable(Color.BLACK),
+                new InsetDrawable(drawable, inset, inset, inset, inset));
     }
 
     @NonNull
@@ -212,7 +211,16 @@ public class BaseIconFactory implements AutoCloseable {
     public BitmapInfo createBadgedIconBitmap(@NonNull Drawable icon,
             @Nullable IconOptions options) {
         float[] scale = new float[1];
-        AdaptiveIconDrawable adaptiveIcon = normalizeAndWrapToAdaptiveIcon(icon, null, scale);
+        Drawable tempIcon = icon;
+        if (options != null
+                && options.mIsArchived
+                && icon instanceof BitmapDrawable bitmapDrawable) {
+            // b/358123888
+            // Pre-archived apps can have BitmapDrawables without insets.
+            // Need to convert to Adaptive Icon with insets to avoid cropping.
+            tempIcon = createShapedAdaptiveIcon(bitmapDrawable.getBitmap());
+        }
+        AdaptiveIconDrawable adaptiveIcon = normalizeAndWrapToAdaptiveIcon(tempIcon, null, scale);
         Bitmap bitmap = createIconBitmap(adaptiveIcon, scale[0],
                 options == null ? MODE_WITH_SHADOW : options.mGenerationMode);
 
@@ -496,6 +504,8 @@ public class BaseIconFactory implements AutoCloseable {
     public static class IconOptions {
 
         boolean mIsInstantApp;
+
+        boolean mIsArchived;
 
         @BitmapGenerationMode
         int mGenerationMode = MODE_WITH_SHADOW;

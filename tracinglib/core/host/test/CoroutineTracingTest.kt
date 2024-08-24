@@ -94,6 +94,60 @@ class CoroutineTracingTest : TestBase() {
     }
 
     @Test
+    fun launchInCoroutineScope() = runTestWithTraceContext {
+        launch("span-for-launch-0") {
+            expect("span-for-launch-0")
+            delay(1)
+            expect("span-for-launch-0")
+        }
+        coroutineScope("span-for-coroutineScope-1") {
+            launch("span-for-launch-1") {
+                expect("span-for-coroutineScope-1", "span-for-launch-1")
+                delay(1)
+                expect("span-for-coroutineScope-1", "span-for-launch-1")
+            }
+            launch("span-for-launch-2") {
+                expect("span-for-coroutineScope-1", "span-for-launch-2")
+                delay(1)
+                expect("span-for-coroutineScope-1", "span-for-launch-2")
+            }
+            coroutineScope("span-for-coroutineScope-2") {
+                launch("span-for-launch-3") {
+                    expect(
+                        "span-for-coroutineScope-1",
+                        "span-for-coroutineScope-2",
+                        "span-for-launch-3"
+                    )
+                    delay(1)
+                    expect(
+                        "span-for-coroutineScope-1",
+                        "span-for-coroutineScope-2",
+                        "span-for-launch-3"
+                    )
+                }
+                launch("span-for-launch-4") {
+                    expect(
+                        "span-for-coroutineScope-1",
+                        "span-for-coroutineScope-2",
+                        "span-for-launch-4"
+                    )
+                    delay(1)
+                    expect(
+                        "span-for-coroutineScope-1",
+                        "span-for-coroutineScope-2",
+                        "span-for-launch-4"
+                    )
+                }
+            }
+        }
+        launch("span-for-launch-5") {
+            expect("span-for-launch-5")
+            delay(1)
+            expect("span-for-launch-5")
+        }
+    }
+
+    @Test
     fun nestedUpdateAndRestoreOnSingleThread_unconfinedDispatcher() = runTestWithTraceContext {
         traceCoroutine("parent-span") {
             expect(1, "parent-span")
