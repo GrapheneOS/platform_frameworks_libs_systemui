@@ -26,30 +26,26 @@ import android.widget.TextView
 import com.android.app.tracing.TraceUtils.trace
 import com.android.app.tracing.demo.experiments.Experiment
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.newSingleThreadContext
 
 private const val TRACK_NAME = "Active experiments"
 
 class MainActivity : Activity() {
 
-    @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
-    val threadContext = newSingleThreadContext("Experiment launcher")
-
     private val allExperiments = lazy {
         (applicationContext as MainApplication).appComponent.getAllExperiments()
+    }
+
+    private val experimentLaunchScope = lazy {
+        (applicationContext as MainApplication).appComponent.getExperimentLauncherCoroutineScope()
     }
 
     private var logContainer: ScrollView? = null
     private var loggerView: TextView? = null
 
     private fun <T : Experiment> createButtonForExperiment(demo: T): Button {
-        val buttonCoroutineScope = CoroutineScope(threadContext)
         var launchCounter = 0
         var job: Job? = null
         val className = demo::class.simpleName ?: "<unknown class>"
@@ -64,7 +60,7 @@ class MainActivity : Activity() {
                 val experimentName = "$className #${launchCounter++}"
                 trace("$className#onClick") {
                     job?.let { trace("cancel") { it.cancel("Cancelled due to click") } }
-                    trace("launch") { job = buttonCoroutineScope.launch { demo.run() } }
+                    trace("launch") { job = experimentLaunchScope.value.launch { demo.run() } }
                     trace("toast") { appendLine("$experimentName started") }
                     job?.let {
                         Trace.asyncTraceForTrackBegin(

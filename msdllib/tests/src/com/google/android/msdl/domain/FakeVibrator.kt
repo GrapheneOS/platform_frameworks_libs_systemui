@@ -26,8 +26,23 @@ class FakeVibrator : Vibrator() {
     var latestVibration: VibrationEffect? = null
         private set
 
+    val supportedPrimitives =
+        mutableMapOf(
+            VibrationEffect.Composition.PRIMITIVE_CLICK to true,
+            VibrationEffect.Composition.PRIMITIVE_SPIN to true,
+            VibrationEffect.Composition.PRIMITIVE_THUD to true,
+            VibrationEffect.Composition.PRIMITIVE_TICK to true,
+            VibrationEffect.Composition.PRIMITIVE_LOW_TICK to true,
+            VibrationEffect.Composition.PRIMITIVE_QUICK_FALL to true,
+            VibrationEffect.Composition.PRIMITIVE_QUICK_RISE to true,
+            VibrationEffect.Composition.PRIMITIVE_SLOW_RISE to true,
+        )
+
     var latestAttributes: VibrationAttributes? = null
         private set
+
+    fun setSupportForAllPrimitives(supported: Boolean) =
+        supportedPrimitives.replaceAll { _, _ -> supported }
 
     override fun cancel() {}
 
@@ -36,6 +51,9 @@ class FakeVibrator : Vibrator() {
     override fun hasAmplitudeControl(): Boolean = this.hasAmplitudeControl
 
     override fun hasVibrator(): Boolean = this.hasVibrator
+
+    override fun arePrimitivesSupported(vararg primitiveIds: Int): BooleanArray =
+        primitiveIds.map { id -> supportedPrimitives[id] ?: false }.toBooleanArray()
 
     override fun vibrate(
         uid: Int,

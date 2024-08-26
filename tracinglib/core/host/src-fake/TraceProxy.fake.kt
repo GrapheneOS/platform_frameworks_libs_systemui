@@ -22,7 +22,7 @@ const val DEBUG = false
 
 /** Log a message with a tag indicating the current thread ID */
 private fun debug(message: String) {
-    if (DEBUG) println("Thread #${Thread.currentThread().id}: $message")
+    if (DEBUG) println("Thread #${currentThreadId()}: $message")
 }
 
 private var isTracingEnabled = true
@@ -47,7 +47,7 @@ object FakeTraceState {
     private val allThreadStates = hashMapOf<Long, MutableList<String>>()
 
     fun begin(sectionName: String) {
-        val threadId = Thread.currentThread().id
+        val threadId = currentThreadId()
         synchronized(allThreadStates) {
             if (allThreadStates.containsKey(threadId)) {
                 allThreadStates[threadId]!!.add(sectionName)
@@ -58,7 +58,7 @@ object FakeTraceState {
     }
 
     fun end() {
-        val threadId = Thread.currentThread().id
+        val threadId = currentThreadId()
         synchronized(allThreadStates) {
             assertFalse(
                 "Attempting to close trace section on thread=$threadId, " +
@@ -71,7 +71,7 @@ object FakeTraceState {
     }
 
     fun getOpenTraceSectionsOnCurrentThread(): Array<String> {
-        val threadId = Thread.currentThread().id
+        val threadId = currentThreadId()
         synchronized(allThreadStates) {
             return allThreadStates[threadId]?.toTypedArray() ?: emptyArray()
         }
@@ -129,3 +129,5 @@ internal actual fun instant(eventName: String) {
 internal actual fun instantForTrack(trackName: String, eventName: String) {
     debug("instantForTrack: track=$trackName name=$eventName")
 }
+
+private fun currentThreadId(): Long = Thread.currentThread().threadId()

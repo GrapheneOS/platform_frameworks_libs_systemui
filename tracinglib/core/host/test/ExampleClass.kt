@@ -21,6 +21,7 @@ class ExampleClass(
     private val incrementCounter: suspend () -> Unit,
 ) {
     suspend fun classMethod(value: Int) {
+        value.inc() // <-- suppress warning that parameter 'value' is unused
         testBase.expect(
             "launch-for-collect",
             "com.android.app.tracing.coroutines.FlowTracingTest\$stateFlowCollection$1\$collectJob$1$3:collect",

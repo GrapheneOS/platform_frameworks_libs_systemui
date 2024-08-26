@@ -46,10 +46,22 @@ enum class MSDLToken(
         SoundToken.START,
         FeedbackLevel.DEFAULT,
     ),
+    /* Inform the user that an ongoing activity has paused */
+    PAUSE(
+        HapticToken.NEUTRAL_CONFIRMATION_MEDIUM_EMPHASIS,
+        SoundToken.PAUSE,
+        FeedbackLevel.DEFAULT,
+    ),
     /* Inform the user that their previously started activity has stopped SUCCESSFULLY */
     STOP(
         HapticToken.POSITIVE_CONFIRMATION_MEDIUM_EMPHASIS,
         SoundToken.STOP,
+        FeedbackLevel.DEFAULT,
+    ),
+    /* Inform the user that their previously started activity has cancelled SUCCESSFULLY */
+    CANCEL(
+        HapticToken.POSITIVE_CONFIRMATION_MEDIUM_EMPHASIS,
+        SoundToken.CANCEL,
         FeedbackLevel.DEFAULT,
     ),
     /* Inform the user that the state of an interactive component has been switched to on SUCCESSFULLY */
@@ -100,16 +112,10 @@ enum class MSDLToken(
         SoundToken.TAP_MEDIUM_EMPHASIS,
         FeedbackLevel.DEFAULT,
     ),
-    /* Played when a users drag gesture reaches the maximum value */
-    DRAG_THRESHOLD_INDICATOR_CEILING(
+    /* Played when a users drag gesture reaches the maximum or minimum value */
+    DRAG_THRESHOLD_INDICATOR_LIMIT(
         HapticToken.DRAG_THRESHOLD_INDICATOR,
-        SoundToken.DRAG_THRESHOLD_INDICATOR_CEILING,
-        FeedbackLevel.DEFAULT,
-    ),
-    /* Played when a users drag gesture reaches the minimum value */
-    DRAG_THRESHOLD_INDICATOR_FLOOR(
-        HapticToken.DRAG_THRESHOLD_INDICATOR,
-        SoundToken.DRAG_THRESHOLD_INDICATOR_FLOOR,
+        SoundToken.DRAG_THRESHOLD_INDICATOR_LIMIT,
         FeedbackLevel.DEFAULT,
     ),
     /* Inform the user that their drag gesture has resulted in an incremental value change.

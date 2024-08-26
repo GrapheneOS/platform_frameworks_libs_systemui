@@ -22,9 +22,7 @@ import android.os.Vibrator
 import com.google.android.msdl.data.model.FeedbackLevel
 import com.google.android.msdl.data.model.HapticComposition
 import com.google.android.msdl.data.model.MSDLToken
-import com.google.android.msdl.data.repository.MSDLHapticData
 import com.google.android.msdl.data.repository.MSDLRepository
-import com.google.android.msdl.data.repository.MSDLSoundData
 import java.util.concurrent.Executor
 
 /**
@@ -35,11 +33,14 @@ import java.util.concurrent.Executor
  * @param[repository] Repository to retrieve audio and haptic data.
  * @param[executor] An [Executor] used to schedule haptic playback.
  * @param[vibrator] Instance of the default [Vibrator] on the device.
+ * @param[useHapticFallbackForToken] A map that determines if the haptic fallback effect should be
+ *   used for a given token.
  */
 class MSDLPlayerImpl(
     private val repository: MSDLRepository,
     private val vibrator: Vibrator,
     private val executor: Executor,
+    private val useHapticFallbackForToken: Map<MSDLToken, Boolean?>,
 ) : MSDLPlayer {
 
     // TODO(b/355230334): This should be retrieved from the system Settings
@@ -50,19 +51,18 @@ class MSDLPlayerImpl(
         // level of the token
         if (getSystemFeedbackLevel() < token.minimumFeedbackLevel) return
 
+        // Play the data for the token with the given properties
+        playData(token, properties)
+    }
+
+    private fun playData(
+        token: MSDLToken,
+        properties: InteractionProperties?,
+    ) {
         // Gather the data from the repositories
         val hapticData = repository.getHapticData(token.hapticToken)
         val soundData = repository.getAudioData(token.soundToken)
 
-        // Play the data for the token with the given properties
-        playData(hapticData, soundData, properties)
-    }
-
-    private fun playData(
-        hapticData: MSDLHapticData?,
-        soundData: MSDLSoundData?,
-        properties: InteractionProperties?,
-    ) {
         // Nothing to play
         if (hapticData == null && soundData == null) return
 
@@ -71,9 +71,8 @@ class MSDLPlayerImpl(
             // 1. Create the effect
             val composition: HapticComposition? = hapticData?.get() as? HapticComposition
             val effect =
-                if (properties == null) {
-                    // Compose as-is
-                    composition?.composeIntoVibrationEffect()
+                if (useHapticFallbackForToken[token] == true) {
+                    composition?.fallbackEffect
                 } else {
                     when (properties) {
                         is InteractionProperties.DynamicVibrationScale -> {
@@ -81,7 +80,7 @@ class MSDLPlayerImpl(
                                 scaleOverride = properties.scale
                             )
                         }
-                        else -> null
+                        else -> composition?.composeIntoVibrationEffect() // compose as-is
                     }
                 }
 
@@ -98,20 +97,28 @@ class MSDLPlayerImpl(
             // TODO(b/345248875): Play audio and haptics
         }
     }
+
+    companion object {
+        val REQUIRED_PRIMITIVES =
+            listOf(
+                VibrationEffect.Composition.PRIMITIVE_SPIN,
+                VibrationEffect.Composition.PRIMITIVE_THUD,
+                VibrationEffect.Composition.PRIMITIVE_TICK,
+                VibrationEffect.Composition.PRIMITIVE_CLICK,
+            )
+    }
 }
 
 fun HapticComposition.composeIntoVibrationEffect(
     scaleOverride: Float? = null,
     delayOverride: Int? = null,
 ): VibrationEffect? {
-    if (primitives == null) return null
-
     val effectComposition = VibrationEffect.startComposition()
     primitives.forEach { primitive ->
         effectComposition.addPrimitive(
             primitive.primitiveId,
             scaleOverride ?: primitive.scale,
-            delayOverride ?: primitive.delay,
+            delayOverride ?: primitive.delayMillis,
         )
     }
     return effectComposition.compose()

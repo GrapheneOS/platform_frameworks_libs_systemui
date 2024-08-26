@@ -68,7 +68,7 @@ internal class TraceData(
      */
     internal fun endAllOnThread() {
         strictModeCheck()
-        repeat(openSliceCount.get()) { endSlice() }
+        repeat(openSliceCount.get() ?: 0) { endSlice() }
         openSliceCount.set(0)
     }
 
