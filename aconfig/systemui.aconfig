@@ -48,3 +48,10 @@ flag {
   description: "Enables new interactive tutorial for learning touchpad gestures"
   bug: "309928033"
 }
+
+flag {
+    name: "three_button_corner_swipe"
+    namespace: "systemui"
+    description: "Allow the Assistant corner swipe gesture while in 3 button mode"
+    bug: "361651619"
+}
