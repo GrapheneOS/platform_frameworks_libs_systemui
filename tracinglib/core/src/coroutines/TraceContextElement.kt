@@ -16,11 +16,14 @@
 
 package com.android.app.tracing.coroutines
 
-import com.android.systemui.Flags.coroutineTracing
+import androidx.annotation.VisibleForTesting
+import com.android.systemui.Flags
 import com.android.systemui.util.Compile
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CopyableThreadContextElement
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val DEBUG = false
 
@@ -30,7 +33,7 @@ private inline fun debug(message: () -> String) {
 }
 
 /** Use a final subclass to avoid virtual calls (b/316642146). */
-@PublishedApi internal class TraceDataThreadLocal : ThreadLocal<TraceData?>()
+class TraceDataThreadLocal : ThreadLocal<TraceData?>()
 
 /**
  * Thread-local storage for giving each thread a unique [TraceData]. It can only be used when paired
@@ -43,13 +46,13 @@ private inline fun debug(message: () -> String) {
  *
  * @see traceCoroutine
  */
-@PublishedApi internal val traceThreadLocal = TraceDataThreadLocal()
+val traceThreadLocal = TraceDataThreadLocal()
 
 /**
  * Returns a new [CoroutineContext] used for tracing. Used to hide internal implementation details.
  */
 fun createCoroutineTracingContext(): CoroutineContext =
-    if (Compile.IS_DEBUG && coroutineTracing()) {
+    if (Compile.IS_DEBUG && Flags.coroutineTracing()) {
         TraceContextElement()
     } else {
         EmptyCoroutineContext
@@ -63,12 +66,14 @@ fun createCoroutineTracingContext(): CoroutineContext =
  *
  * @see traceCoroutine
  */
-internal class TraceContextElement private constructor(internal val traceData: TraceData?) :
+@OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
+@VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+class TraceContextElement private constructor(val traceData: TraceData?) :
     CopyableThreadContextElement<TraceData?> {
 
-    internal companion object Key : CoroutineContext.Key<TraceContextElement>
+    companion object Key : CoroutineContext.Key<TraceContextElement>
 
-    internal constructor() : this(if (Compile.IS_DEBUG) TraceData() else null)
+    constructor() : this(if (Compile.IS_DEBUG) TraceData() else null)
 
     override val key: CoroutineContext.Key<*>
         get() = Key
@@ -161,6 +166,7 @@ internal class TraceContextElement private constructor(internal val traceData: T
         return TraceContextElement(traceData?.clone())
     }
 
+    @OptIn(ExperimentalStdlibApi::class)
     override fun toString(): String {
         return "TraceContextElement@${hashCode().toHexString()}[$traceData]"
     }

@@ -16,6 +16,7 @@
 
 package com.android.app.tracing
 
+import android.os.Trace
 import android.os.TraceNameSupplier
 
 inline fun namedRunnable(tag: String, crossinline block: () -> Unit): Runnable {
@@ -27,7 +28,7 @@ inline fun namedRunnable(tag: String, crossinline block: () -> Unit): Runnable {
 }
 
 inline fun instantForTrack(trackName: String, eventName: () -> String) {
-    if (isEnabled()) {
-        instantForTrack(trackName, eventName())
+    if (Trace.isEnabled()) {
+        Trace.instantForTrack(Trace.TRACE_TAG_APP, trackName, eventName())
     }
 }

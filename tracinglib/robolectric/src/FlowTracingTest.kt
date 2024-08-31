@@ -16,14 +16,19 @@
 
 package com.android.app.tracing.coroutines
 
+import android.platform.test.annotations.EnableFlags
 import com.android.app.tracing.coroutines.flow.collect
 import com.android.app.tracing.coroutines.flow.collectTraced
 import com.android.app.tracing.coroutines.flow.filter
 import com.android.app.tracing.coroutines.flow.flowOn
 import com.android.app.tracing.coroutines.flow.map
 import com.android.app.tracing.coroutines.flow.withTraceName
+import com.android.app.tracing.coroutines.util.ExampleClass
+import com.android.systemui.Flags.FLAG_COROUTINE_TRACING
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -33,11 +38,11 @@ import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.BlockJUnit4ClassRunner
 
-@RunWith(BlockJUnit4ClassRunner::class)
+@OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
+@EnableFlags(FLAG_COROUTINE_TRACING)
 class FlowTracingTest : TestBase() {
+
     @Test
     fun stateFlowCollection() = runTestWithTraceContext {
         val state = MutableStateFlow(1)

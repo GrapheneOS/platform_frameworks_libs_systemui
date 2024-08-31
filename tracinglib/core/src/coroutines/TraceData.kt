@@ -16,6 +16,7 @@
 
 package com.android.app.tracing.coroutines
 
+import androidx.annotation.VisibleForTesting
 import com.android.app.tracing.beginSlice
 import com.android.app.tracing.endSlice
 import java.util.ArrayDeque
@@ -28,8 +29,7 @@ import java.util.ArrayDeque
  */
 typealias TraceSection = String
 
-@PublishedApi
-internal class TraceCountThreadLocal : ThreadLocal<Int>() {
+class TraceCountThreadLocal : ThreadLocal<Int>() {
     override fun initialValue(): Int {
         return 0
     }
@@ -41,9 +41,9 @@ internal class TraceCountThreadLocal : ThreadLocal<Int>() {
  *
  * @see traceCoroutine
  */
-@PublishedApi
-internal class TraceData(
-    internal val slices: ArrayDeque<TraceSection> = ArrayDeque(),
+@VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+class TraceData(
+    val slices: ArrayDeque<TraceSection> = ArrayDeque(),
 ) : Cloneable {
 
     /**
@@ -57,7 +57,7 @@ internal class TraceData(
     private val openSliceCount = TraceCountThreadLocal()
 
     /** Adds current trace slices back to the current thread. Called when coroutine is resumed. */
-    internal fun beginAllOnThread() {
+    fun beginAllOnThread() {
         strictModeCheck()
         slices.descendingIterator().forEach { beginSlice(it) }
         openSliceCount.set(slices.size)
@@ -66,7 +66,7 @@ internal class TraceData(
     /**
      * Removes all current trace slices from the current thread. Called when coroutine is suspended.
      */
-    internal fun endAllOnThread() {
+    fun endAllOnThread() {
         strictModeCheck()
         repeat(openSliceCount.get() ?: 0) { endSlice() }
         openSliceCount.set(0)
@@ -78,8 +78,7 @@ internal class TraceData(
      * coroutines, or to child coroutines that have already started. The unique ID is used to verify
      * that the [endSpan] is corresponds to a [beginSpan].
      */
-    @PublishedApi
-    internal fun beginSpan(name: String) {
+    fun beginSpan(name: String) {
         strictModeCheck()
         slices.push(name)
         openSliceCount.set(slices.size)
@@ -91,8 +90,7 @@ internal class TraceData(
      * trace slice will immediately be removed from the current thread. This information will not
      * propagate to parent coroutines, or to child coroutines that have already started.
      */
-    @PublishedApi
-    internal fun endSpan() {
+    fun endSpan() {
         strictModeCheck()
         // Should never happen, but we should be defensive rather than crash the whole application
         if (slices.size > 0) {
@@ -112,6 +110,7 @@ internal class TraceData(
         return TraceData(slices.clone())
     }
 
+    @OptIn(ExperimentalStdlibApi::class)
     override fun toString(): String {
         return "TraceData@${hashCode().toHexString()}-size=${slices.size}"
     }
@@ -128,7 +127,7 @@ internal class TraceData(
          * `ConcurrentModificationException` if TraceData is modified from the wrong thread. This
          * should only be set for testing.
          */
-        internal var strictModeForTesting: Boolean = false
+        var strictModeForTesting: Boolean = false
     }
 }
 

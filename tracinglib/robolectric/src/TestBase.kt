@@ -16,9 +16,11 @@
 
 package com.android.app.tracing.coroutines
 
-import com.android.app.tracing.FakeTraceState.getOpenTraceSectionsOnCurrentThread
-import com.android.app.tracing.setAndroidSystemTracingEnabled
-import com.android.systemui.Flags
+import android.platform.test.flag.junit.SetFlagsRule
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.app.tracing.coroutines.util.FakeTraceState
+import com.android.app.tracing.coroutines.util.FakeTraceState.getOpenTraceSectionsOnCurrentThread
+import com.android.app.tracing.coroutines.util.ShadowTrace
 import com.android.systemui.util.Compile
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
@@ -28,22 +30,31 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.runner.RunWith
-import org.junit.runners.BlockJUnit4ClassRunner
+import org.robolectric.annotation.Config
 
-@RunWith(BlockJUnit4ClassRunner::class)
+@RunWith(AndroidJUnit4::class)
+@Config(shadows = [ShadowTrace::class])
 open class TestBase {
+
+    @get:Rule val setFlagsRule = SetFlagsRule()
+
     @Before
     fun setup() {
+        assumeTrue(
+            "Coroutine tracing tests are only applicable on debuggable builds",
+            Compile.IS_DEBUG
+        )
         TraceData.strictModeForTesting = true
-        Compile.setIsDebug(true)
-        Flags.setCoroutineTracingEnabled(true)
-        setAndroidSystemTracingEnabled(true)
+        FakeTraceState.isTracingEnabled = true
+        eventCounter.set(0)
     }
 
     @After
-    fun checkFinished() {
+    fun tearDown() {
         val lastEvent = eventCounter.get()
         assertTrue(
             "Expected `finish(${lastEvent + 1})` to be called, but the test finished",
@@ -66,7 +77,7 @@ open class TestBase {
         expect(null, *expectedOpenTraceSections)
     }
 
-    internal fun expectEndsWith(vararg expectedOpenTraceSections: String) {
+    protected fun expectEndsWith(vararg expectedOpenTraceSections: String) {
         // Inspect trace output to the fake used for recording android.os.Trace API calls:
         val actualSections = getOpenTraceSectionsOnCurrentThread()
         assertTrue(expectedOpenTraceSections.size <= actualSections.size)
@@ -78,7 +89,7 @@ open class TestBase {
      * Checks the currently active trace sections on the current thread, and optionally checks the
      * order of operations if [expectedEvent] is not null.
      */
-    internal fun expect(expectedEvent: Int? = null, vararg expectedOpenTraceSections: String) {
+    protected fun expect(expectedEvent: Int? = null, vararg expectedOpenTraceSections: String) {
         if (expectedEvent != null) {
             val previousEvent = eventCounter.getAndAdd(1)
             val currentEvent = previousEvent + 1
@@ -112,7 +123,7 @@ open class TestBase {
     }
 
     /** Same as [expect], except that no more [expect] statements can be called after it. */
-    internal fun finish(expectedEvent: Int, vararg expectedOpenTraceSections: String) {
+    protected fun finish(expectedEvent: Int, vararg expectedOpenTraceSections: String) {
         val previousEvent = eventCounter.getAndSet(FINAL_EVENT)
         val currentEvent = previousEvent + 1
         check(expectedEvent == currentEvent) {
@@ -130,7 +141,7 @@ open class TestBase {
 
     private val eventCounter = AtomicInteger(0)
 
-    companion object {
+    private companion object {
         const val FINAL_EVENT = Int.MIN_VALUE
     }
 }

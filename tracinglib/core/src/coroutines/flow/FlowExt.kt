@@ -16,9 +16,8 @@
 
 package com.android.app.tracing.coroutines.flow
 
+import android.os.Trace
 import com.android.app.tracing.coroutines.traceCoroutine
-import com.android.app.tracing.traceBegin
-import com.android.app.tracing.traceEnd
 import kotlin.experimental.ExperimentalTypeInference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
@@ -33,7 +32,7 @@ import kotlinx.coroutines.flow.map as kx_map
 fun <T> Flow<T>.withTraceName(name: String?): Flow<T> {
     return object : Flow<T> {
         override suspend fun collect(collector: FlowCollector<T>) {
-            this@withTraceName.collect("${name ?: walkStackForClassName()}", collector)
+            this@withTraceName.collect(name ?: walkStackForClassName(), collector)
         }
     }
 }
@@ -68,6 +67,7 @@ suspend fun <T> Flow<T>.collectLatest(name: String? = null, action: suspend (T) 
     }
 }
 
+@OptIn(ExperimentalStdlibApi::class)
 fun <T> Flow<T>.flowOn(context: kotlin.coroutines.CoroutineContext): Flow<T> {
     val contextName =
         context[CoroutineName]?.name
@@ -80,7 +80,7 @@ inline fun <T> Flow<T>.filter(
     name: String? = null,
     crossinline predicate: suspend (T) -> Boolean,
 ): Flow<T> {
-    val flowName = "${name ?: walkStackForClassName()}"
+    val flowName = name ?: walkStackForClassName()
     return withTraceName(flowName).kx_filter {
         return@kx_filter traceCoroutine("$flowName:predicate") { predicate(it) }
     }
@@ -94,14 +94,14 @@ inline fun <T, R> Flow<T>.map(
     name: String? = null,
     crossinline transform: suspend (T) -> R,
 ): Flow<R> {
-    val flowName = "${name ?: walkStackForClassName()}"
+    val flowName = name ?: walkStackForClassName()
     return withTraceName(flowName).kx_map {
         return@kx_map traceCoroutine("$flowName:transform") { transform(it) }
     }
 }
 
 fun getFlowSliceNames(name: String?): Pair<String, String> {
-    val flowName = "${name ?: walkStackForClassName()}"
+    val flowName = name ?: walkStackForClassName()
     return Pair("$flowName:collect", "$flowName:emit")
 }
 
@@ -116,7 +116,7 @@ private fun isFrameInteresting(frame: StackWalker.StackFrame): Boolean {
 
 /** Get a name for the trace section include the name of the call site. */
 fun walkStackForClassName(): String {
-    traceBegin("FlowExt#walkStackForClassName")
+    Trace.traceBegin(Trace.TRACE_TAG_APP, "FlowExt#walkStackForClassName")
     try {
         val interestingFrame =
             StackWalker.getInstance().walk { stream ->
@@ -129,6 +129,6 @@ fun walkStackForClassName(): String {
             "<unknown>"
         }
     } finally {
-        traceEnd()
+        Trace.traceEnd(Trace.TRACE_TAG_APP)
     }
 }

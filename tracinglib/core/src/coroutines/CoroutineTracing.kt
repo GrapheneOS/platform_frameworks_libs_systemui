@@ -16,9 +16,7 @@
 
 package com.android.app.tracing.coroutines
 
-import com.android.app.tracing.asyncTraceForTrackBegin
-import com.android.app.tracing.asyncTraceForTrackEnd
-import com.android.app.tracing.isEnabled
+import android.os.Trace
 import com.android.systemui.util.Compile
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.contracts.ExperimentalContracts
@@ -35,9 +33,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
-@PublishedApi internal const val TAG = "CoroutineTracing"
+const val TAG = "CoroutineTracing"
 
-@PublishedApi internal const val DEFAULT_TRACK_NAME = "Coroutines"
+const val DEFAULT_TRACK_NAME = "Coroutines"
 
 @OptIn(ExperimentalContracts::class)
 suspend inline fun <R> coroutineScope(
@@ -192,7 +190,7 @@ inline fun <T> traceCoroutine(spanName: () -> String, block: () -> T): T {
     // tracing is not active (i.e. when TRACE_TAG_APP is disabled). Otherwise, when the
     // coroutine resumes when tracing is active, we won't know its name.
     val traceData = if (Compile.IS_DEBUG) traceThreadLocal.get() else null
-    val asyncTracingEnabled = isEnabled()
+    val asyncTracingEnabled = Trace.isEnabled()
     val spanString = if (traceData != null || asyncTracingEnabled) spanName() else "<none>"
     traceData?.beginSpan(spanString)
 
@@ -200,11 +198,13 @@ inline fun <T> traceCoroutine(spanName: () -> String, block: () -> T): T {
     // coroutine spans. When the coroutine_tracing flag is enabled, those same names will
     // appear in small slices on each thread as the coroutines are suspended and resumed.
     val cookie = if (asyncTracingEnabled) ThreadLocalRandom.current().nextInt() else 0
-    if (asyncTracingEnabled) asyncTraceForTrackBegin(DEFAULT_TRACK_NAME, spanString, cookie)
+    if (asyncTracingEnabled)
+        Trace.asyncTraceForTrackBegin(Trace.TRACE_TAG_APP, DEFAULT_TRACK_NAME, spanString, cookie)
     try {
         return block()
     } finally {
-        if (asyncTracingEnabled) asyncTraceForTrackEnd(DEFAULT_TRACK_NAME, spanString, cookie)
+        if (asyncTracingEnabled)
+            Trace.asyncTraceForTrackEnd(Trace.TRACE_TAG_APP, DEFAULT_TRACK_NAME, cookie)
         traceData?.endSpan()
     }
 }

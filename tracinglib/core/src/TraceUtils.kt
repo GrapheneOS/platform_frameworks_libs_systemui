@@ -16,6 +16,7 @@
 
 package com.android.app.tracing
 
+import android.os.Trace
 import com.android.app.tracing.coroutines.traceCoroutine
 import java.util.concurrent.ThreadLocalRandom
 
@@ -64,7 +65,7 @@ import java.util.concurrent.ThreadLocalRandom
  * @see traceCoroutine
  */
 fun beginSlice(sliceName: String) {
-    traceBegin(sliceName)
+    Trace.traceBegin(Trace.TRACE_TAG_APP, sliceName)
 }
 
 /**
@@ -76,7 +77,7 @@ fun beginSlice(sliceName: String) {
  * @see traceCoroutine
  */
 fun endSlice() {
-    traceEnd()
+    Trace.traceEnd(Trace.TRACE_TAG_APP)
 }
 
 /**
@@ -84,7 +85,7 @@ fun endSlice() {
  * after the passed block.
  */
 inline fun <T> traceSection(tag: String, block: () -> T): T {
-    val tracingEnabled = isEnabled()
+    val tracingEnabled = Trace.isEnabled()
     if (tracingEnabled) beginSlice(tag)
     return try {
         // Note that as this is inline, the block section would be duplicated if it is called
@@ -100,7 +101,7 @@ inline fun <T> traceSection(tag: String, block: () -> T): T {
  * strings when not needed.
  */
 inline fun <T> traceSection(tag: () -> String, block: () -> T): T {
-    val tracingEnabled = isEnabled()
+    val tracingEnabled = Trace.isEnabled()
     if (tracingEnabled) beginSlice(tag())
     return try {
         block()
@@ -149,7 +150,7 @@ object TraceUtils {
     /** Creates an async slice in the default track. */
     @JvmStatic
     inline fun <T> traceAsync(tag: () -> String, block: () -> T): T {
-        val tracingEnabled = isEnabled()
+        val tracingEnabled = Trace.isEnabled()
         return if (tracingEnabled) {
             traceAsync(DEFAULT_TRACK_NAME, tag(), block)
         } else {
@@ -164,7 +165,7 @@ object TraceUtils {
      */
     @JvmStatic
     inline fun <T> traceAsync(trackName: String, tag: () -> String, block: () -> T): T {
-        val tracingEnabled = isEnabled()
+        val tracingEnabled = Trace.isEnabled()
         return if (tracingEnabled) {
             traceAsync(trackName, tag(), block)
         } else {
@@ -182,11 +183,11 @@ object TraceUtils {
     @JvmStatic
     inline fun <T> traceAsync(trackName: String, method: String, block: () -> T): T {
         val cookie = ThreadLocalRandom.current().nextInt()
-        asyncTraceForTrackBegin(trackName, method, cookie)
+        Trace.asyncTraceForTrackBegin(Trace.TRACE_TAG_APP, trackName, method, cookie)
         try {
             return block()
         } finally {
-            asyncTraceForTrackEnd(trackName, method, cookie)
+            Trace.asyncTraceForTrackEnd(Trace.TRACE_TAG_APP, trackName, cookie)
         }
     }
 }

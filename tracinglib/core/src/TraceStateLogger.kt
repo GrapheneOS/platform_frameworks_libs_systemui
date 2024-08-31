@@ -16,6 +16,7 @@
 
 package com.android.app.tracing
 
+import android.os.Trace
 import android.util.Log
 
 /**
@@ -48,11 +49,13 @@ constructor(
     /** If needed, logs the value to a track with name [trackName]. */
     fun log(newValue: String) {
         if (instantEvent) {
-            instantForTrack(trackName, newValue)
+            Trace.instantForTrack(Trace.TRACE_TAG_APP, trackName, newValue)
         }
         if (logOnlyIfDifferent && previousValue == newValue) return
-        previousValue?.let { asyncTraceForTrackEnd(trackName, it, 0) }
-        asyncTraceForTrackBegin(trackName, newValue, 0)
+        if (previousValue != null) {
+            Trace.asyncTraceForTrackEnd(Trace.TRACE_TAG_APP, trackName, 0)
+        }
+        Trace.asyncTraceForTrackBegin(Trace.TRACE_TAG_APP, trackName, newValue, 0)
         if (logcat) {
             Log.d(trackName, "newValue: $newValue")
         }

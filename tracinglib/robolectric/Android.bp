@@ -16,21 +16,27 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-java_library {
-    name: "tracinglib-platform",
+android_app {
+    name: "tracinglib-test-app",
+    manifest: "app-manifest.xml",
+    platform_apis: true,
+}
+
+android_robolectric_test {
+    enabled: true,
+    name: "tracinglib-robo-test",
+    srcs: ["src/**/*.kt"],
+    java_resource_dirs: ["config"],
     static_libs: [
-        "kotlinx_coroutines_android",
-        "com_android_systemui_flags_lib",
-        "//frameworks/libs/systemui:compilelib",
+        "tracinglib-platform",
+        "flag-junit",
     ],
     libs: [
-        "androidx.annotation_annotation",
+        "androidx.test.core",
+        "androidx.test.runner",
+        "androidx.test.ext.junit",
     ],
-    kotlincflags: [
-        "-Xjvm-default=all",
-        "-opt-in=kotlin.ExperimentalStdlibApi",
-        "-opt-in=kotlinx.coroutines.DelicateCoroutinesApi",
-        "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-    ],
-    srcs: ["src/**/*.kt"],
+    instrumentation_for: "tracinglib-test-app",
+    upstream: true,
+    strict_mode: false,
 }

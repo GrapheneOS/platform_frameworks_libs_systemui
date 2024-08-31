@@ -17,6 +17,7 @@
 
 package com.android.app.tracing
 
+import android.os.Trace
 import com.android.app.tracing.TraceUtils.traceAsync
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.experimental.ExperimentalTypeInference
@@ -54,8 +55,8 @@ object FlowTracing {
     ): Flow<T> {
         val baseFlow = if (traceEmissionCount) traceEmissionCount(counterName) else this
         return baseFlow.onEach {
-            if (isEnabled()) {
-                traceCounter(counterName, valueToInt(it))
+            if (Trace.isEnabled()) {
+                Trace.traceCounter(Trace.TRACE_TAG_APP, counterName, valueToInt(it))
             }
         }
     }
@@ -68,7 +69,7 @@ object FlowTracing {
         var count = 0
         return onEach {
             count += 1
-            traceCounter(trackName, count)
+            Trace.traceCounter(Trace.TRACE_TAG_APP, trackName, count)
         }
     }
 
@@ -87,8 +88,8 @@ object FlowTracing {
         var count = 0
         return onEach {
             count += 1
-            if (isEnabled()) {
-                traceCounter(trackName, count)
+            if (Trace.isEnabled()) {
+                Trace.traceCounter(Trace.TRACE_TAG_APP, trackName, count)
             }
         }
     }

@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.app.tracing.coroutines
+package com.android.app.tracing.coroutines.util
 
-class ExampleClass(
-    private val testBase: TestBase,
-    private val incrementCounter: suspend () -> Unit,
-) {
-    suspend fun classMethod(value: Int) {
-        value.inc() // <-- suppress warning that parameter 'value' is unused
-        testBase.expect(
-            "launch-for-collect",
-            "com.android.app.tracing.coroutines.FlowTracingTest\$stateFlowCollection$1\$collectJob$1$3:collect",
-            "com.android.app.tracing.coroutines.FlowTracingTest\$stateFlowCollection$1\$collectJob$1$3:emit"
-        )
-        incrementCounter()
-    }
+const val DEBUG = false
+
+/** Log a message with a tag indicating the current thread ID */
+internal fun debugLog(message: String) {
+    if (DEBUG) println("Thread #${currentThreadId()}: $message")
 }
+
+internal fun currentThreadId(): Long = Thread.currentThread().id
