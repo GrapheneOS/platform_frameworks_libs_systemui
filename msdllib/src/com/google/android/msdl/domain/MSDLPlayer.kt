@@ -46,7 +46,8 @@ interface MSDLPlayer {
      *   properties can modify how a token plays (e.g.,
      *   [InteractionProperties.DynamicVibrationScale] for slider haptics in the
      *   [MSDLToken.DRAG_INDICATOR] token) and can be supplied if custom
-     *   [android.os.VibrationAttributes] are required for haptic playback.
+     *   [android.os.VibrationAttributes] are required for haptic playback. If no properties are
+     *   supplied, haptic feedback will play using USAGE_TOUCH [android.os.VibrationAttributes].
      */
     fun playToken(token: MSDLToken, properties: InteractionProperties? = null)
 
