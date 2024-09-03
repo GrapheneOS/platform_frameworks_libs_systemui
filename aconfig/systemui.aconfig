@@ -55,3 +55,10 @@ flag {
     description: "Allow the Assistant corner swipe gesture while in 3 button mode"
     bug: "361651619"
 }
+
+flag {
+    name: "new_customization_picker_ui"
+    namespace: "systemui"
+    description: "Enables the BC25 design of the customization picker UI."
+    bug: "339081035"
+}
