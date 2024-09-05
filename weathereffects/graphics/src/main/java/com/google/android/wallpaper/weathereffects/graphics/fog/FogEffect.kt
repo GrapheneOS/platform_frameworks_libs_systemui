@@ -65,7 +65,7 @@ class FogEffect(
         val variationFgd0 = 0.256f * sin(scaledElapsedTime)
         val variationFgd1 = 0.156f * sin(scaledElapsedTime) * sin(scaledElapsedTime)
         val timeFgd0 = 0.4f * elapsedTime * 5f + variationFgd0
-        val timeFgd1 = 0.03f * elapsedTime * 5f + variationFgd1
+        val timeFgd1 = 0.1f * elapsedTime * 5f + variationFgd1
 
         val variationBgd0 = 0.156f * sin((scaledElapsedTime + Math.PI.toFloat() / 2.0f))
         val variationBgd1 =

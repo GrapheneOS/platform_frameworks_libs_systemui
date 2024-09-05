@@ -34,7 +34,7 @@ uniform half intensity;
 #include "shaders/utils.agsl"
 #include "shaders/simplex2d.agsl"
 
-const vec3 fogColor = vec3(1.);
+const vec3 fogColor = vec3(0.20);
 
 vec4 main(float2 fragCoord) {
     float2 uv = fragCoord / screenSize;
@@ -54,11 +54,11 @@ vec4 main(float2 fragCoord) {
 
     // Load foreground and blend it with constant solid fog color.
     vec4 fgd = foreground.eval(fragCoord * uvScaleFgd + uvOffsetFgd);
-    fgd.rgb = mix(fgd.rgb, fogColor, 0.32 * intensity * fgd.a);
+    fgd.rgb = mix(fgd.rgb, fogColor, 0.15 * intensity * fgd.a);
 
     // Load background and blend it with constant solid fog color.
     vec4 bgd = background.eval(fragCoord * uvScaleBgd + uvOffsetBgd);
-    bgd.rgb = mix(bgd.rgb, fogColor, 0.15 * intensity * bgd.a);
+    bgd.rgb = mix(bgd.rgb, fogColor, 0.32 * intensity * bgd.a);
 
     /* Add first layer: background. */
     // set background color as the starting layer.
@@ -66,7 +66,7 @@ vec4 main(float2 fragCoord) {
 
     /* Prepare fog layers. */
     // Dither to be applied to background noise.
-    float bgdDither = triangleNoise((fragCoord + 0.0002 * timeBackground) * pixelDensity) * 0.15;
+    float bgdDither = triangleNoise((fragCoord + 0.0002 * timeBackground) * pixelDensity) * 0.075;
 
     // The furthest fog layer in the background.
     vec4 bgdFogFar = fog.eval(
@@ -74,7 +74,7 @@ vec4 main(float2 fragCoord) {
         // Moves UV based on time.
         vec2(timeBackground * 1.5) +
         // Adds sampling dithering.
-        vec2(bgdDither * 7));
+        vec2(bgdDither * 14));
 
     // The furthest fog layer in the background.
     vec4 bgdFogClose = fog.eval(
@@ -82,43 +82,60 @@ vec4 main(float2 fragCoord) {
         // Moves UV based on time.
         vec2(timeBackground * 5.5) +
         // Adds sampling dithering.
-        vec2(bgdDither * 22));
+        vec2(bgdDither * 40));
 
-    float fgdDither = triangleNoise((fragCoord + 0.003 * timeForeground) * pixelDensity) * 0.1;
+    float fgdDither = triangleNoise((fragCoord + 0.003 * timeForeground) * pixelDensity) * 0.09;
     vec4 fgdFogFar = clouds.eval(
         0.5 * cloudsSize * uv +
         // Moves UV based on time.
-        vec2(timeForeground * 10.) +
+        vec2(timeForeground * 15.) +
         // Adds distosions based on noise.
-        vec2(bgdFogFar.b * 70., bgdFogFar.g * 10) +
+        vec2(bgdFogFar.b * 20., bgdFogFar.g * 2) +
         // Adds sampling dithering.
-        vec2(fgdDither * 10));
+        vec2(fgdDither * 12));
     vec4 fgdFogClose = clouds.eval(
         0.5 * cloudsSize * uv +
         // moves UV based on time.
-        vec2(timeForeground * 72.) +
+        vec2(timeForeground * 32.) +
         // Adds distosions based on noise.
-        vec2(bgdFogFar.g * 50., bgdFogFar.b * 80) +
+        vec2(bgdFogFar.g * 2., bgdFogFar.b * 10) +
         // Adds sampling dithering.
-        vec2(fgdDither * 8));
+        vec2(fgdDither * 22));
+
+    // Undo aspect ratio adjustment.
+    uv.y *= screenAspectRatio;
 
     /* Add second layer: background fog (far or 1, and close or 2). */
     // background, layer 1.
-    float bgdFogLayer1 =
-        map(bgdFogFar.r, 0.2, 1., fgdFogFar.g, 0.8) *
-        bgdFogFar.r *
-        (1. - 0.7 * bgdDither);
-    // Blend with background.
-    color.rgb = normalBlendWithWhiteSrc(color.rgb, bgdFogLayer1 * intensity);
+    float fogHeightVariation;
+    if (uv.y < 0.38) {
+        fogHeightVariation = 0.03 * cos(uv.x * 2.5 + timeBackground.x * 0.07);
+        float bgFogFarCombined = map(bgdFogFar.r, 0.74, 0.9, fgdFogFar.g, 0.95) * bgdFogFar.r;
+        float bgdFogLayer1 =
+            bgFogFarCombined *
+            smoothstep(-0.1, 0.05, uv.y + fogHeightVariation) *
+            (1. - smoothstep(0.15, 0.35, uv.y + fogHeightVariation));
+        bgdFogLayer1 *= 0.45 * (1. - bgdDither);
+        bgdFogLayer1 = clamp(bgdFogLayer1, 0., 1.);
+        // Blend with background.
+        color.rgb = screenBlend(color.rgb, bgdFogLayer1 * intensity);
+    //    color.rgb = vec3(bgdFogLayer1 * intensity);
+    }
 
-    // background, layer 2.
-    float fbmSimplexWorley = bgdFogClose.g * 0.625 + bgdFogClose.b * 0.3755;
-    float bgdFogLayer2 =
-        0.85 *
-        smoothstep(0.88 * fbmSimplexWorley, 1., bgdFogClose.r) *
-        (1.- 0.4 * bgdDither);
-    // Blend with background.
-    color.rgb = normalBlendWithWhiteSrc(color.rgb, bgdFogLayer2 * intensity);
+    if (uv.y > 0.23 && uv.y < 0.87) {
+        // background, layer 2.
+        float fbmSimplexWorley = bgdFogClose.g * 0.625 + bgdFogClose.b * 0.3755;
+        float bgFogloseCombined = smoothstep(0.88 * fbmSimplexWorley, 1., bgdFogClose.r);
+        fogHeightVariation = 0.02 * sin(uv.x * 2.5 + timeBackground.x * 0.09);
+        float bgdFogLayer2 =
+            bgFogloseCombined *
+            smoothstep(0.25, 0.55, uv.y + fogHeightVariation) *
+            (1. - smoothstep(0.7, 0.85, uv.y + fogHeightVariation));
+        bgdFogLayer2 *= 0.6 * (1.- bgdDither);
+        bgdFogLayer2 = clamp(bgdFogLayer2, 0., 1.);
+        // Blend with background.
+        color.rgb = screenBlend(color.rgb, bgdFogLayer2 * intensity);
+    }
 
     /* Add third layer: foreground. */
     // Add the foreground. Any effect from here will be in front of the subject.
@@ -126,16 +143,30 @@ vec4 main(float2 fragCoord) {
 
     /* Add fourth layer: foreground fog (far or 1, and close or 2). */
     // foreground fog, layer 1.
-    float fgdFogLayer1 =
-        fgdFogFar.r *
-        0.5 * (1. - fgdDither);
-    color.rgb = normalBlendWithWhiteSrc(color.rgb, fgdFogLayer1 * intensity);
-
-    // Foreground fog, layer 2.
-    float fgdFogLayer2 =
-            fgdFogClose.g *
-            0.4 * (1. - fgdDither);
-    color.rgb = normalBlendWithWhiteSrc(color.rgb, fgdFogLayer2 * intensity);
-
+    if (uv.y > 0.32) {
+        fogHeightVariation = 0.1 * cos(uv.x * 2.5 + timeForeground.x * 0.085);
+        float fgdFogLayer1 =
+                mix(
+                    fgdFogFar.r,
+                    1.,
+                    0.5 * intensity * smoothstep(0.72, 0.92, uv.y + fogHeightVariation)) *
+                smoothstep(0.42, 0.82, uv.y + fogHeightVariation);
+        fgdFogLayer1 *= 0.65 * (1. - fgdDither);
+        fgdFogLayer1 = clamp(fgdFogLayer1, 0., 1.);
+        color.rgb = screenBlend(color.rgb, fgdFogLayer1 * intensity);
+    }
+    if (uv.y > 0.25) {
+        // Foreground fog, layer 2.
+        fogHeightVariation = 0.05 * sin(uv.x * 2. + timeForeground.y * 0.5);
+        float fgdFogLayer2 =
+                mix(
+                    fgdFogClose.g,
+                    1.,
+                    0.65 * intensity * smoothstep(0.85, 0.98, uv.y + fogHeightVariation)) *
+                smoothstep(0.30, 0.90, uv.y + uv.x * 0.09);
+        fgdFogLayer2 *= 0.8 * (1. - fgdDither);
+        fgdFogLayer2 = clamp(fgdFogLayer2, 0., 1.);
+        color.rgb = screenBlend(color.rgb, fgdFogLayer2 * intensity);
+    }
     return color;
 }

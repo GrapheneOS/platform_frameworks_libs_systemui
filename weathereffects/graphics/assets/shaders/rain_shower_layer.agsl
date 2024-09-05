@@ -77,7 +77,7 @@ vec3 drawSplashes(vec2 uv, vec2 fragCoord, vec3 color) {
 
     float splash = drawSplash(cellUv, cellTime) * smoothstep(0., 0.45, intensity);
 
-    return normalBlendWithWhiteSrc(color, splash);
+    return screenBlend(color, splash);
 }
 
 vec4 main(float2 fragCoord) {
