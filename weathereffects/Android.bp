@@ -46,8 +46,7 @@ android_app {
     name: "WeatherEffectsDebug",
     manifest: "debug/AndroidManifest.xml",
     owner: "google",
-    sdk_version: "system_current",
-    min_sdk_version: "34",
+    platform_apis: true,
     srcs: [
         "src/**/*.java",
         "src/**/*.kt",
@@ -89,6 +88,7 @@ android_test {
     manifest: "AndroidManifest.xml",
     test_suites: ["general-tests"],
     sdk_version: "current",
+    owner: "google",
     srcs: [
         "tests/src/**/*.java",
         "tests/src/**/*.kt",

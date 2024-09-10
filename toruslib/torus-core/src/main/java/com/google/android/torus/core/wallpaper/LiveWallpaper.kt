@@ -409,7 +409,7 @@ abstract class LiveWallpaper : WallpaperService() {
         /**
          * This is overriding a hidden API [WallpaperService.shouldZoomOutWallpaper].
          */
-        fun shouldZoomOutWallpaper(): Boolean {
+        override fun shouldZoomOutWallpaper(): Boolean {
             if (wallpaperEngine is LiveWallpaperEventListener) {
                 return (wallpaperEngine as LiveWallpaperEventListener).shouldZoomOutWallpaper()
             }

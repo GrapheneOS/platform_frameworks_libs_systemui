@@ -47,7 +47,5 @@ android_library {
     optimize: {
         enabled: true,
     },
-    min_sdk_version: "31",
-    sdk_version: "system_current",
+    platform_apis: true,
 }
-
