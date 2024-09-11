@@ -117,26 +117,26 @@ class CoroutineTracingTest : TestBase() {
                     expect(
                         "span-for-coroutineScope-1",
                         "span-for-coroutineScope-2",
-                        "span-for-launch-3"
+                        "span-for-launch-3",
                     )
                     delay(1)
                     expect(
                         "span-for-coroutineScope-1",
                         "span-for-coroutineScope-2",
-                        "span-for-launch-3"
+                        "span-for-launch-3",
                     )
                 }
                 launch("span-for-launch-4") {
                     expect(
                         "span-for-coroutineScope-1",
                         "span-for-coroutineScope-2",
-                        "span-for-launch-4"
+                        "span-for-launch-4",
                     )
                     delay(1)
                     expect(
                         "span-for-coroutineScope-1",
                         "span-for-coroutineScope-2",
-                        "span-for-launch-4"
+                        "span-for-launch-4",
                     )
                 }
             }
@@ -227,13 +227,7 @@ class CoroutineTracingTest : TestBase() {
             "stuff"
         }
 
-        val threadContexts =
-            listOf(
-                thread1,
-                thread2,
-                thread3,
-                thread4,
-            )
+        val threadContexts = listOf(thread1, thread2, thread3, thread4)
 
         val finishedLaunches = Channel<Int>()
 
@@ -264,7 +258,7 @@ class CoroutineTracingTest : TestBase() {
 
     private fun CoroutineScope.testTraceSectionsMultiThreaded(
         thread1Context: CoroutineContext,
-        thread2Context: CoroutineContext
+        thread2Context: CoroutineContext,
     ) {
         val fetchData1: suspend () -> String = {
             expect("span-for-launch-1")
@@ -277,18 +271,12 @@ class CoroutineTracingTest : TestBase() {
         }
 
         val fetchData2: suspend () -> String = {
-            expect(
-                "span-for-launch-1",
-                "span-for-launch-2",
-            )
+            expect("span-for-launch-1", "span-for-launch-2")
             delay(1L)
             traceCoroutine("span-for-fetchData-2") {
                 expect("span-for-launch-1", "span-for-launch-2", "span-for-fetchData-2")
             }
-            expect(
-                "span-for-launch-1",
-                "span-for-launch-2",
-            )
+            expect("span-for-launch-1", "span-for-launch-2")
             "stuff-2"
         }
 
@@ -316,7 +304,7 @@ class CoroutineTracingTest : TestBase() {
         // Thread-#1 and Thread-#2 inherit TraceContextElement from the test's CoroutineContext.
         testTraceSectionsMultiThreaded(
             thread1Context = EmptyCoroutineContext,
-            thread2Context = EmptyCoroutineContext
+            thread2Context = EmptyCoroutineContext,
         )
     }
 
@@ -326,7 +314,7 @@ class CoroutineTracingTest : TestBase() {
         // does not need a TraceContextElement because it does not do any tracing.
         testTraceSectionsMultiThreaded(
             thread1Context = TraceContextElement(),
-            thread2Context = EmptyCoroutineContext
+            thread2Context = EmptyCoroutineContext,
         )
     }
 
@@ -337,7 +325,7 @@ class CoroutineTracingTest : TestBase() {
         // trace context because it does not do any tracing.
         testTraceSectionsMultiThreaded(
             thread1Context = TraceContextElement(),
-            thread2Context = TraceContextElement()
+            thread2Context = TraceContextElement(),
         )
     }
 
@@ -347,7 +335,7 @@ class CoroutineTracingTest : TestBase() {
         // trace results.
         testTraceSectionsMultiThreaded(
             thread1Context = TraceContextElement(),
-            thread2Context = TraceContextElement()
+            thread2Context = TraceContextElement(),
         )
     }
 
@@ -365,16 +353,12 @@ class CoroutineTracingTest : TestBase() {
         }
 
         val fetchData2: suspend () -> String = {
-            expect(
-                "span-for-launch-2",
-            )
+            expect("span-for-launch-2")
             channel.receive()
             traceCoroutine("span-for-fetchData-2") {
                 expect("span-for-launch-2", "span-for-fetchData-2")
             }
-            expect(
-                "span-for-launch-2",
-            )
+            expect("span-for-launch-2")
             "stuff-2"
         }
 

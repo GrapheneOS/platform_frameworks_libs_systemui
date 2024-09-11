@@ -16,24 +16,28 @@
 
 package com.google.android.wallpaper.weathereffects.graphics.fog
 
+import android.graphics.Bitmap
 import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Shader
 import android.util.SizeF
 import com.google.android.wallpaper.weathereffects.graphics.WeatherEffect
+import com.google.android.wallpaper.weathereffects.graphics.WeatherEffect.Companion.DEFAULT_INTENSITY
 import com.google.android.wallpaper.weathereffects.graphics.utils.GraphicsUtils
 import com.google.android.wallpaper.weathereffects.graphics.utils.ImageCrop
 import com.google.android.wallpaper.weathereffects.graphics.utils.TimeUtils
-import java.util.concurrent.TimeUnit
 import kotlin.math.sin
 import kotlin.random.Random
 
 /** Defines and generates the fog weather effect animation. */
 class FogEffect(
     private val fogConfig: FogEffectConfig,
+    private var foreground: Bitmap,
+    private var background: Bitmap,
+    private var intensity: Float = DEFAULT_INTENSITY,
     /** The initial size of the surface where the effect will be shown. */
-    surfaceSize: SizeF
+    private var surfaceSize: SizeF
 ) : WeatherEffect {
 
     private val fogPaint = Paint().also { it.shader = fogConfig.colorGradingShader }
@@ -44,12 +48,13 @@ class FogEffect(
         adjustCropping(surfaceSize)
         prepareColorGrading()
         updateFogGridSize(surfaceSize)
-        setIntensity(fogConfig.intensity)
+        setIntensity(intensity)
     }
 
     override fun resize(newSurfaceSize: SizeF) {
         adjustCropping(newSurfaceSize)
         updateFogGridSize(newSurfaceSize)
+        surfaceSize = newSurfaceSize
     }
 
     override fun update(deltaMillis: Long, frameTimeNanos: Long) {
@@ -98,13 +103,27 @@ class FogEffect(
         )
     }
 
+    override fun setBitmaps(foreground: Bitmap, background: Bitmap) {
+        this.foreground = foreground
+        this.background = background
+        fogConfig.shader.setInputBuffer(
+            "background",
+            BitmapShader(background, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
+        )
+        fogConfig.shader.setInputBuffer(
+            "foreground",
+            BitmapShader(foreground, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
+        )
+        adjustCropping(surfaceSize)
+    }
+
     private fun adjustCropping(surfaceSize: SizeF) {
         val imageCropFgd =
             ImageCrop.centerCoverCrop(
                 surfaceSize.width,
                 surfaceSize.height,
-                fogConfig.foreground.width.toFloat(),
-                fogConfig.foreground.height.toFloat()
+                foreground.width.toFloat(),
+                foreground.height.toFloat()
             )
         fogConfig.shader.setFloatUniform(
             "uvOffsetFgd",
@@ -120,8 +139,8 @@ class FogEffect(
             ImageCrop.centerCoverCrop(
                 surfaceSize.width,
                 surfaceSize.height,
-                fogConfig.background.width.toFloat(),
-                fogConfig.background.height.toFloat()
+                background.width.toFloat(),
+                background.height.toFloat()
             )
         fogConfig.shader.setFloatUniform(
             "uvOffsetBgd",
@@ -143,12 +162,12 @@ class FogEffect(
     private fun updateTextureUniforms() {
         fogConfig.shader.setInputBuffer(
             "foreground",
-            BitmapShader(fogConfig.foreground, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
+            BitmapShader(foreground, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
         )
 
         fogConfig.shader.setInputBuffer(
             "background",
-            BitmapShader(fogConfig.background, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
+            BitmapShader(background, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
         )
 
         fogConfig.shader.setInputBuffer(

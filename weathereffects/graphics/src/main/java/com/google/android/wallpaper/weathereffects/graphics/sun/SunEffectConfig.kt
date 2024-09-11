@@ -16,10 +16,10 @@
 
 package com.google.android.wallpaper.weathereffects.graphics.sun
 
-import androidx.annotation.FloatRange
 import android.content.res.AssetManager
 import android.graphics.Bitmap
 import android.graphics.RuntimeShader
+import androidx.annotation.FloatRange
 import com.google.android.wallpaper.weathereffects.graphics.fog.FogEffectConfig
 import com.google.android.wallpaper.weathereffects.graphics.utils.GraphicsUtils
 
@@ -31,14 +31,8 @@ data class SunEffectConfig(
     val colorGradingShader: RuntimeShader,
     /** The main lut (color grading) for the effect. */
     val lut: Bitmap?,
-    /** A bitmap containing the foreground of the image. */
-    val foreground: Bitmap,
-    /** A bitmap containing the background of the image. */
-    val background: Bitmap,
     /** Pixel density of the display. Used for dithering. */
     val pixelDensity: Float,
-    /** The amount of the fog. This contributes to the color grading as well. */
-    @FloatRange(from = 0.0, to = 1.0) val intensity: Float,
     /** The intensity of the color grading. 0: no color grading, 1: color grading in full effect. */
     @FloatRange(from = 0.0, to = 1.0) val colorGradingIntensity: Float,
 ) {
@@ -46,33 +40,23 @@ data class SunEffectConfig(
      * Constructor for [FogEffectConfig].
      *
      * @param assets the application [AssetManager].
-     * @param foreground a bitmap containing the foreground of the image.
-     * @param background a bitmap containing the background of the image.
      * @param pixelDensity pixel density of the display.
-     * @param intensity initial intensity that affects the amount of fog and color grading. Expected
-     *   range is [0, 1]. You can always change the intensity dynamically. Defaults to 1.
      */
     constructor(
         assets: AssetManager,
-        foreground: Bitmap,
-        background: Bitmap,
         pixelDensity: Float,
-        intensity: Float = DEFAULT_INTENSITY,
     ) : this(
         shader = GraphicsUtils.loadShader(assets, SHADER_PATH),
         colorGradingShader = GraphicsUtils.loadShader(assets, COLOR_GRADING_SHADER_PATH),
         lut = GraphicsUtils.loadTexture(assets, LOOKUP_TABLE_TEXTURE_PATH),
-        foreground,
-        background,
         pixelDensity,
-        intensity,
         COLOR_GRADING_INTENSITY
     )
+
     companion object {
         private const val SHADER_PATH = "shaders/sun_effect.agsl"
         private const val COLOR_GRADING_SHADER_PATH = "shaders/color_grading_lut.agsl"
         private const val LOOKUP_TABLE_TEXTURE_PATH = "textures/lut_rain_and_fog.png"
-        private const val DEFAULT_INTENSITY = 1f
         private const val COLOR_GRADING_INTENSITY = 0.7f
     }
 }

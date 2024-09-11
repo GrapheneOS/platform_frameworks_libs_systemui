@@ -19,7 +19,6 @@ package com.google.android.msdl.data.repository
 import com.google.android.msdl.data.model.HapticComposition
 import com.google.android.msdl.data.model.HapticToken
 import com.google.common.truth.Truth.assertThat
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -27,12 +26,7 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class MSDLRepositoryImplTest {
 
-    private lateinit var repository: MSDLRepositoryImpl
-
-    @Before
-    fun setup() {
-        repository = MSDLRepositoryImpl()
-    }
+    private val repository = MSDLRepository.createRepository()
 
     @Test
     fun getHapticData_forAllHapticTokens_returnsCompositions() {

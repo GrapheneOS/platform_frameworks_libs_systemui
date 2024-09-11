@@ -46,7 +46,7 @@ open class TestBase {
     fun setup() {
         assumeTrue(
             "Coroutine tracing tests are only applicable on debuggable builds",
-            Compile.IS_DEBUG
+            Compile.IS_DEBUG,
         )
         TraceData.strictModeForTesting = true
         FakeTraceState.isTracingEnabled = true
@@ -109,7 +109,7 @@ open class TestBase {
 
     private fun assertTraceSectionsEquals(
         expectedOpenTraceSections: Array<out String>,
-        actualOpenSections: Array<String>
+        actualOpenSections: Array<String>,
     ) {
         assertArrayEquals(
             """
@@ -118,7 +118,7 @@ open class TestBase {
         """
                 .trimIndent(),
             expectedOpenTraceSections,
-            actualOpenSections
+            actualOpenSections,
         )
     }
 

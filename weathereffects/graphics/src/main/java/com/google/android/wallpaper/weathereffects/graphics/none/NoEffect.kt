@@ -23,7 +23,7 @@ import com.google.android.wallpaper.weathereffects.graphics.WeatherEffect
 import com.google.android.wallpaper.weathereffects.graphics.utils.MatrixUtils
 
 /** Simply draws foreground and background images with no weather effect. */
-class NoEffect(val foreground: Bitmap, val background: Bitmap, private var surfaceSize: SizeF) :
+class NoEffect(var foreground: Bitmap, var background: Bitmap, private var surfaceSize: SizeF) :
     WeatherEffect {
     override fun resize(newSurfaceSize: SizeF) {
         surfaceSize = newSurfaceSize
@@ -40,7 +40,6 @@ class NoEffect(val foreground: Bitmap, val background: Bitmap, private var surfa
             ),
             null
         )
-
         canvas.drawBitmap(
             foreground,
             MatrixUtils.centerCropMatrix(
@@ -56,4 +55,9 @@ class NoEffect(val foreground: Bitmap, val background: Bitmap, private var surfa
     override fun release() {}
 
     override fun setIntensity(intensity: Float) {}
+
+    override fun setBitmaps(foreground: Bitmap, background: Bitmap) {
+        this.foreground = foreground
+        this.background = background
+    }
 }

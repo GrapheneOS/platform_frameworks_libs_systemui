@@ -30,7 +30,7 @@ class NestedLaunchesWithParentSpan
 @Inject
 constructor(
     @FixedThread1 private var fixedThreadContext1: CoroutineContext,
-    @FixedThread2 private var fixedThreadContext2: CoroutineContext
+    @FixedThread2 private var fixedThreadContext2: CoroutineContext,
 ) : Experiment {
     override fun getDescription(): String =
         "Nested launches in which only the parent uses a trace name"

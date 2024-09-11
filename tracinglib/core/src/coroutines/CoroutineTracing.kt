@@ -40,7 +40,7 @@ const val DEFAULT_TRACK_NAME = "Coroutines"
 @OptIn(ExperimentalContracts::class)
 suspend inline fun <R> coroutineScope(
     traceName: String,
-    crossinline block: suspend CoroutineScope.() -> R
+    crossinline block: suspend CoroutineScope.() -> R,
 ): R {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     return traceCoroutine(traceName) {
@@ -59,7 +59,7 @@ inline fun CoroutineScope.launch(
     crossinline spanName: () -> String,
     context: CoroutineContext = EmptyCoroutineContext,
     // TODO(b/306457056): DO NOT pass CoroutineStart; doing so will regress .odex size
-    crossinline block: suspend CoroutineScope.() -> Unit
+    crossinline block: suspend CoroutineScope.() -> Unit,
 ): Job = launch(context) { traceCoroutine(spanName) { block() } }
 
 /**
@@ -71,7 +71,7 @@ inline fun CoroutineScope.launch(
     spanName: String,
     context: CoroutineContext = EmptyCoroutineContext,
     // TODO(b/306457056): DO NOT pass CoroutineStart; doing so will regress .odex size
-    crossinline block: suspend CoroutineScope.() -> Unit
+    crossinline block: suspend CoroutineScope.() -> Unit,
 ): Job = launch(context) { traceCoroutine(spanName) { block() } }
 
 /**
@@ -83,7 +83,7 @@ inline fun <T> CoroutineScope.async(
     crossinline spanName: () -> String,
     context: CoroutineContext = EmptyCoroutineContext,
     // TODO(b/306457056): DO NOT pass CoroutineStart; doing so will regress .odex size
-    crossinline block: suspend CoroutineScope.() -> T
+    crossinline block: suspend CoroutineScope.() -> T,
 ): Deferred<T> = async(context) { traceCoroutine(spanName) { block() } }
 
 /**
@@ -95,7 +95,7 @@ inline fun <T> CoroutineScope.async(
     spanName: String,
     context: CoroutineContext = EmptyCoroutineContext,
     // TODO(b/306457056): DO NOT pass CoroutineStart; doing so will regress .odex size
-    crossinline block: suspend CoroutineScope.() -> T
+    crossinline block: suspend CoroutineScope.() -> T,
 ): Deferred<T> = async(context) { traceCoroutine(spanName) { block() } }
 
 /**
@@ -106,7 +106,7 @@ inline fun <T> CoroutineScope.async(
 inline fun <T> runBlocking(
     crossinline spanName: () -> String,
     context: CoroutineContext,
-    crossinline block: suspend () -> T
+    crossinline block: suspend () -> T,
 ): T = runBlocking(context) { traceCoroutine(spanName) { block() } }
 
 /**
@@ -117,7 +117,7 @@ inline fun <T> runBlocking(
 inline fun <T> runBlocking(
     spanName: String,
     context: CoroutineContext,
-    crossinline block: suspend CoroutineScope.() -> T
+    crossinline block: suspend CoroutineScope.() -> T,
 ): T = runBlocking(context) { traceCoroutine(spanName) { block() } }
 
 /**
@@ -128,7 +128,7 @@ inline fun <T> runBlocking(
 suspend inline fun <T> withContext(
     spanName: String,
     context: CoroutineContext,
-    crossinline block: suspend CoroutineScope.() -> T
+    crossinline block: suspend CoroutineScope.() -> T,
 ): T = withContext(context) { traceCoroutine(spanName) { block() } }
 
 /**
@@ -139,7 +139,7 @@ suspend inline fun <T> withContext(
 suspend inline fun <T> withContext(
     crossinline spanName: () -> String,
     context: CoroutineContext,
-    crossinline block: suspend CoroutineScope.() -> T
+    crossinline block: suspend CoroutineScope.() -> T,
 ): T = withContext(context) { traceCoroutine(spanName) { block() } }
 
 /**

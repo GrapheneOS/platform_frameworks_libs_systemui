@@ -54,7 +54,7 @@ class MainActivity : Activity() {
                 context.getString(
                     R.string.run_experiment_button_text,
                     className,
-                    demo.getDescription()
+                    demo.getDescription(),
                 )
             setOnClickListener {
                 val experimentName = "$className #${launchCounter++}"
@@ -67,7 +67,7 @@ class MainActivity : Activity() {
                             Trace.TRACE_TAG_APP,
                             TRACK_NAME,
                             "Running $experimentName",
-                            it.hashCode()
+                            it.hashCode(),
                         )
                     }
                 }

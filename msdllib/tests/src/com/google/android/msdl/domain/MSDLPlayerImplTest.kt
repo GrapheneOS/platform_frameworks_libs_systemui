@@ -21,7 +21,7 @@ import android.os.VibrationEffect
 import com.google.android.msdl.data.model.FeedbackLevel
 import com.google.android.msdl.data.model.HapticComposition
 import com.google.android.msdl.data.model.MSDLToken
-import com.google.android.msdl.data.repository.MSDLRepositoryImpl
+import com.google.android.msdl.data.repository.MSDLRepository
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executor
 import org.junit.Before
@@ -34,13 +34,12 @@ class MSDLPlayerImplTest {
 
     @Parameterized.Parameter lateinit var token: MSDLToken
 
-    private val repository = MSDLRepositoryImpl()
+    private val repository = MSDLRepository.createRepository()
     private val vibrator = FakeVibrator()
     private val executor = Executor { it.run() }
     private val useHapticFallbackForToken = MSDLToken.entries.associateWith { false }.toMutableMap()
 
-    private var msdlPlayer =
-        MSDLPlayerImpl(repository, vibrator, executor, useHapticFallbackForToken)
+    private var msdlPlayer = MSDLPlayer.createPlayer(vibrator, executor, useHapticFallbackForToken)
 
     @Before
     fun setup() {

@@ -40,7 +40,7 @@ object FlowTracing {
         flowName: String,
         logcat: Boolean = false,
         traceEmissionCount: Boolean = false,
-        crossinline valueToString: (T) -> String = { it.toString() }
+        crossinline valueToString: (T) -> String = { it.toString() },
     ): Flow<T> {
         val stateLogger = TraceStateLogger(flowName, logcat = logcat)
         val baseFlow = if (traceEmissionCount) traceEmissionCount(flowName) else this
@@ -51,7 +51,7 @@ object FlowTracing {
     fun <T : Number> Flow<T>.traceAsCounter(
         counterName: String,
         traceEmissionCount: Boolean = false,
-        valueToInt: (T) -> Int = { it.toInt() }
+        valueToInt: (T) -> Int = { it.toInt() },
     ): Flow<T> {
         val baseFlow = if (traceEmissionCount) traceEmissionCount(counterName) else this
         return baseFlow.onEach {
@@ -80,7 +80,7 @@ object FlowTracing {
      */
     fun <T> Flow<T>.traceEmissionCount(
         flowName: () -> String,
-        uniqueSuffix: Boolean = false
+        uniqueSuffix: Boolean = false,
     ): Flow<T> {
         val trackName by lazy {
             "${flowName()}#emissionCount" + if (uniqueSuffix) "\$${counter.addAndGet(1)}" else ""
@@ -121,7 +121,7 @@ object FlowTracing {
      */
     fun <T> tracedConflatedCallbackFlow(
         name: String,
-        @BuilderInference block: suspend ProducerScope<T>.() -> Unit
+        @BuilderInference block: suspend ProducerScope<T>.() -> Unit,
     ): Flow<T> {
         return callbackFlow {
                 traceAsync(DEFAULT_ASYNC_TRACK_NAME, { "$name#CallbackFlowBlock" }) {

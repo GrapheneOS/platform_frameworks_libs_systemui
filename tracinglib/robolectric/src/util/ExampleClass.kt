@@ -27,7 +27,7 @@ class ExampleClass(
         testBase.expect(
             "launch-for-collect",
             "com.android.app.tracing.coroutines.FlowTracingTest\$stateFlowCollection$1\$collectJob$1$3:collect",
-            "com.android.app.tracing.coroutines.FlowTracingTest\$stateFlowCollection$1\$collectJob$1$3:emit"
+            "com.android.app.tracing.coroutines.FlowTracingTest\$stateFlowCollection$1\$collectJob$1$3:emit",
         )
         incrementCounter()
     }

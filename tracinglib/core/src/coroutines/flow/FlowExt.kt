@@ -54,9 +54,7 @@ suspend inline fun <T> Flow<T>.collect(
 }
 
 @OptIn(ExperimentalTypeInference::class)
-suspend inline fun <T> Flow<T>.collectTraced(
-    @BuilderInference block: FlowCollector<T>,
-) {
+suspend inline fun <T> Flow<T>.collectTraced(@BuilderInference block: FlowCollector<T>) {
     collect(walkStackForClassName(), block)
 }
 

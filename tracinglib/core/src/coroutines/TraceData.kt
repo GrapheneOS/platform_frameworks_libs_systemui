@@ -42,9 +42,7 @@ class TraceCountThreadLocal : ThreadLocal<Int>() {
  * @see traceCoroutine
  */
 @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-class TraceData(
-    val slices: ArrayDeque<TraceSection> = ArrayDeque(),
-) : Cloneable {
+class TraceData(val slices: ArrayDeque<TraceSection> = ArrayDeque()) : Cloneable {
 
     /**
      * ThreadLocal counter for how many open trace sections there are. This is needed because it is

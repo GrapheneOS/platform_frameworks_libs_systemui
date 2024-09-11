@@ -23,7 +23,7 @@ import com.google.android.msdl.data.model.HapticToken
 import com.google.android.msdl.data.model.SoundToken
 
 /** A [MSDLRepository] that holds haptic compositions as haptic data. */
-class MSDLRepositoryImpl : MSDLRepository {
+internal class MSDLRepositoryImpl : MSDLRepository {
 
     override fun getAudioData(soundToken: SoundToken): MSDLSoundData? {
         // TODO(b/345248875) Implement a caching strategy in accordance to the audio file strategy
@@ -63,13 +63,13 @@ class MSDLRepositoryImpl : MSDLRepository {
                                     VibrationEffect.Composition.PRIMITIVE_SPIN,
                                     scale = 1f,
                                     delayMillis = SPIN_DELAY.toInt(),
-                                )
+                                ),
                             ),
                             VibrationEffect.createWaveform(
                                 SPIN_WAVEFORM_TIMINGS,
                                 SPIN_WAVEFORM_AMPLITUDES,
                                 -1,
-                            )
+                            ),
                         )
                     },
                 HapticToken.NEGATIVE_CONFIRMATION_MEDIUM_EMPHASIS to
@@ -79,24 +79,24 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 1f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 ),
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 1f,
-                                    delayMillis = 114
+                                    delayMillis = 114,
                                 ),
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 1f,
-                                    delayMillis = 114
-                                )
+                                    delayMillis = 114,
+                                ),
                             ),
                             VibrationEffect.createWaveform(
                                 longArrayOf(10, 10, 10, 114, 10, 10, 10, 114, 10, 10, 10),
                                 intArrayOf(10, 255, 20, 0, 10, 255, 20, 0, 10, 255, 20),
-                                -1
-                            )
+                                -1,
+                            ),
                         )
                     },
                 HapticToken.POSITIVE_CONFIRMATION_HIGH_EMPHASIS to
@@ -106,19 +106,19 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 1f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 ),
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 1f,
-                                    delayMillis = 114
-                                )
+                                    delayMillis = 114,
+                                ),
                             ),
                             VibrationEffect.createWaveform(
                                 longArrayOf(10, 10, 10, 114, 10, 10, 10),
                                 intArrayOf(10, 255, 20, 0, 10, 255, 20),
-                                -1
-                            )
+                                -1,
+                            ),
                         )
                     },
                 HapticToken.POSITIVE_CONFIRMATION_MEDIUM_EMPHASIS to
@@ -128,19 +128,19 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 1f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 ),
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 1f,
-                                    delayMillis = 52
-                                )
+                                    delayMillis = 52,
+                                ),
                             ),
                             VibrationEffect.createWaveform(
                                 longArrayOf(10, 10, 10, 52, 10, 10, 10),
                                 intArrayOf(10, 255, 20, 0, 10, 255, 20),
-                                -1
-                            )
+                                -1,
+                            ),
                         )
                     },
                 HapticToken.POSITIVE_CONFIRMATION_LOW_EMPHASIS to
@@ -150,19 +150,19 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_TICK,
                                     scale = 1f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 ),
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 1f,
-                                    delayMillis = 52
-                                )
+                                    delayMillis = 52,
+                                ),
                             ),
                             VibrationEffect.createWaveform(
                                 longArrayOf(5, 52, 10, 10, 10),
                                 intArrayOf(100, 0, 10, 255, 20),
-                                -1
-                            )
+                                -1,
+                            ),
                         )
                     },
                 HapticToken.NEUTRAL_CONFIRMATION_HIGH_EMPHASIS to
@@ -172,14 +172,14 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_THUD,
                                     scale = 1f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 )
                             ),
                             VibrationEffect.createWaveform(
                                 longArrayOf(50, 100, 100, 50),
                                 intArrayOf(5, 50, 20, 10),
-                                -1
-                            )
+                                -1,
+                            ),
                         )
                     },
                 HapticToken.NEUTRAL_CONFIRMATION_MEDIUM_EMPHASIS to
@@ -192,7 +192,7 @@ class MSDLRepositoryImpl : MSDLRepository {
                                     delayMillis = 0,
                                 )
                             ),
-                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK),
                         )
                     },
                 HapticToken.LONG_PRESS to
@@ -202,10 +202,10 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 1f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 )
                             ),
-                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK),
                         )
                     },
                 HapticToken.SWIPE_THRESHOLD_INDICATOR to
@@ -215,10 +215,10 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 0.7f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 )
                             ),
-                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK),
                         )
                     },
                 HapticToken.TAP_HIGH_EMPHASIS to
@@ -228,10 +228,10 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 0.7f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 )
                             ),
-                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK),
                         )
                     },
                 HapticToken.TAP_MEDIUM_EMPHASIS to
@@ -241,10 +241,10 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 0.5f,
-                                    delayMillis = 0
-                                ),
+                                    delayMillis = 0,
+                                )
                             ),
-                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK),
                         )
                     },
                 HapticToken.DRAG_THRESHOLD_INDICATOR to
@@ -254,10 +254,10 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_TICK,
                                     scale = 1f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 )
                             ),
-                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK),
                         )
                     },
                 HapticToken.DRAG_INDICATOR to
@@ -267,10 +267,10 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_TICK,
                                     scale = 0.5f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 )
                             ),
-                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK),
                         )
                     },
                 HapticToken.TAP_LOW_EMPHASIS to
@@ -280,10 +280,10 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 0.3f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 )
                             ),
-                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK),
                         )
                     },
                 HapticToken.KEYPRESS_STANDARD to
@@ -293,10 +293,10 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_TICK,
                                     scale = 0.7f,
-                                    delayMillis = 0
-                                ),
+                                    delayMillis = 0,
+                                )
                             ),
-                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK),
                         )
                     },
                 HapticToken.KEYPRESS_SPACEBAR to
@@ -306,10 +306,10 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 0.7f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 )
                             ),
-                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK),
                         )
                     },
                 HapticToken.KEYPRESS_RETURN to
@@ -319,10 +319,10 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 0.7f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 )
                             ),
-                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK),
                         )
                     },
                 HapticToken.KEYPRESS_DELETE to
@@ -332,12 +332,12 @@ class MSDLRepositoryImpl : MSDLRepository {
                                 HapticCompositionPrimitive(
                                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                                     scale = 1f,
-                                    delayMillis = 0
+                                    delayMillis = 0,
                                 )
                             ),
-                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK),
                         )
-                    }
+                    },
             )
     }
 }

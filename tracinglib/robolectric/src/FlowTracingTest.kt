@@ -73,7 +73,7 @@ class FlowTracingTest : TestBase() {
                         expect(
                             "launch-for-collect",
                             "com.android.app.tracing.coroutines.FlowTracingTest\$stateFlowCollection$1\$collectJob$1$2:collect",
-                            "com.android.app.tracing.coroutines.FlowTracingTest\$stateFlowCollection$1\$collectJob$1$2:emit"
+                            "com.android.app.tracing.coroutines.FlowTracingTest\$stateFlowCollection$1\$collectJob$1$2:emit",
                         )
                         incrementCounter()
                     }
@@ -114,7 +114,7 @@ class FlowTracingTest : TestBase() {
                             "state-flow:collect",
                             "flowOn(the-name):collect",
                             "flowOn(the-name):emit",
-                            "state-flow:emit"
+                            "state-flow:emit",
                         )
                     }
                 }
@@ -140,7 +140,7 @@ class FlowTracingTest : TestBase() {
                         "my-flow:emit",
                         "multiply-by-3:emit",
                         "mod-2:emit",
-                        "my-collect-call:emit"
+                        "my-collect-call:emit",
                     )
                 }
             }

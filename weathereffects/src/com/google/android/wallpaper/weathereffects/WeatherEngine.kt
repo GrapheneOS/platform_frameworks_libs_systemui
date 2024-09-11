@@ -44,11 +44,11 @@ import com.google.android.wallpaper.weathereffects.graphics.sun.SunEffectConfig
 import com.google.android.wallpaper.weathereffects.provider.WallpaperInfoContract
 import com.google.android.wallpaper.weathereffects.sensor.UserPresenceController
 import com.google.android.wallpaper.weathereffects.shared.model.WallpaperImageModel
+import kotlin.math.max
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlin.math.max
-import kotlin.math.roundToInt
 
 class WeatherEngine(
     defaultHolder: SurfaceHolder,
@@ -56,8 +56,10 @@ class WeatherEngine(
     private val interactor: WeatherEffectsInteractor,
     private val context: Context,
     private val isDebugActivity: Boolean = false,
-    hardwareAccelerated: Boolean = true
-) : CanvasWallpaperEngine(defaultHolder, hardwareAccelerated), LiveWallpaperKeyguardEventListener,
+    hardwareAccelerated: Boolean = true,
+) :
+    CanvasWallpaperEngine(defaultHolder, hardwareAccelerated),
+    LiveWallpaperKeyguardEventListener,
     LiveWallpaperEventListener {
 
     private var lockStartTime: Long = 0
@@ -87,9 +89,7 @@ class WeatherEngine(
     init {
         /* Load assets. */
         if (interactor.wallpaperImageModel.value == null) {
-            applicationScope.launch {
-                interactor.loadWallpaper()
-            }
+            applicationScope.launch { interactor.loadWallpaper() }
         }
     }
 
@@ -115,14 +115,15 @@ class WeatherEngine(
     }
 
     override fun onResume() {
-        collectWallpaperImageJob = applicationScope.launch {
-            interactor.wallpaperImageModel.collect { asset ->
-                if (asset == null || asset == currentAssets) return@collect
-                currentAssets = asset
-                createWeatherEffect(asset.foreground, asset.background, asset.weatherEffect)
-                updateWallpaperColors(asset.background)
+        collectWallpaperImageJob =
+            applicationScope.launch {
+                interactor.wallpaperImageModel.collect { asset ->
+                    if (asset == null || asset == currentAssets) return@collect
+                    currentAssets = asset
+                    createWeatherEffect(asset.foreground, asset.background, asset.weatherEffect)
+                    updateWallpaperColors(asset.background)
+                }
             }
-        }
         if (activeEffect != null) {
             if (shouldTriggerUpdate()) startUpdateLoop()
         }
@@ -187,40 +188,63 @@ class WeatherEngine(
     private fun createWeatherEffect(
         foreground: Bitmap,
         background: Bitmap,
-        weatherEffect: WallpaperInfoContract.WeatherEffect? = null
+        weatherEffect: WallpaperInfoContract.WeatherEffect? = null,
     ) {
         activeEffect?.release()
         activeEffect = null
 
         when (weatherEffect) {
             WallpaperInfoContract.WeatherEffect.RAIN -> {
-                val rainConfig = RainEffectConfig(
-                    context.assets, foreground, background, context.resources.displayMetrics.density
-                )
-                activeEffect = RainEffect(rainConfig, screenSize.toSizeF(), context.mainExecutor)
+                val rainConfig =
+                    RainEffectConfig(context.assets, context.resources.displayMetrics.density)
+                activeEffect =
+                    RainEffect(
+                        rainConfig,
+                        foreground,
+                        background,
+                        effectIntensity,
+                        screenSize.toSizeF(),
+                        context.mainExecutor,
+                    )
             }
-
             WallpaperInfoContract.WeatherEffect.FOG -> {
-                val fogConfig = FogEffectConfig(
-                    context.assets, foreground, background, context.resources.displayMetrics.density
-                )
-                activeEffect = FogEffect(fogConfig, screenSize.toSizeF())
-            }
+                val fogConfig =
+                    FogEffectConfig(context.assets, context.resources.displayMetrics.density)
 
+                activeEffect =
+                    FogEffect(
+                        fogConfig,
+                        foreground,
+                        background,
+                        effectIntensity,
+                        screenSize.toSizeF()
+                    )
+            }
             WallpaperInfoContract.WeatherEffect.SNOW -> {
-                val snowConfig = SnowEffectConfig(
-                    context.assets, foreground, background, context.resources.displayMetrics.density
-                )
-                activeEffect = SnowEffect(snowConfig, screenSize.toSizeF(), context.mainExecutor)
+                val snowConfig =
+                    SnowEffectConfig(context.assets, context.resources.displayMetrics.density)
+                activeEffect =
+                    SnowEffect(
+                        snowConfig,
+                        foreground,
+                        background,
+                        effectIntensity,
+                        screenSize.toSizeF(),
+                        context.mainExecutor,
+                    )
             }
-
             WallpaperInfoContract.WeatherEffect.SUN -> {
-                val snowConfig = SunEffectConfig(
-                    context.assets, foreground, background, context.resources.displayMetrics.density
-                )
-                activeEffect = SunEffect(snowConfig, screenSize.toSizeF())
+                val snowConfig =
+                    SunEffectConfig(context.assets, context.resources.displayMetrics.density)
+                activeEffect =
+                    SunEffect(
+                        snowConfig,
+                        foreground,
+                        background,
+                        effectIntensity,
+                        screenSize.toSizeF()
+                    )
             }
-
             else -> {
                 activeEffect = NoEffect(foreground, background, screenSize.toSizeF())
             }
@@ -239,11 +263,9 @@ class WeatherEngine(
 
     private fun onUserPresenceChange(
         newUserPresence: UserPresenceController.UserPresence,
-        oldUserPresence: UserPresenceController.UserPresence
+        oldUserPresence: UserPresenceController.UserPresence,
     ) {
-        playIntensityFadeOutAnimation(
-            getAnimationType(newUserPresence, oldUserPresence)
-        )
+        playIntensityFadeOutAnimation(getAnimationType(newUserPresence, oldUserPresence))
     }
 
     private fun updateCurrentIntensity(intensity: Float = effectIntensity) {
@@ -261,7 +283,6 @@ class WeatherEngine(
                 lockStartTime = SystemClock.elapsedRealtime()
                 animateWeatherIntensityOut(AUTO_FADE_DELAY_FROM_AWAY_MILLIS)
             }
-
             AnimationType.UNLOCK -> {
                 // If already running, don't stop it.
                 if (unlockAnimator?.isRunning == true) {
@@ -289,7 +310,6 @@ class WeatherEngine(
                 updateCurrentIntensity()
                 animateWeatherIntensityOut(delayTime, AUTO_FADE_SHORT_DURATION_MILLIS)
             }
-
             AnimationType.NONE -> {
                 // No-op.
             }
@@ -300,22 +320,23 @@ class WeatherEngine(
 
     private fun animateWeatherIntensityOut(
         delayMillis: Long,
-        durationMillis: Long = AUTO_FADE_DURATION_MILLIS
+        durationMillis: Long = AUTO_FADE_DURATION_MILLIS,
     ) {
-        unlockAnimator = ValueAnimator.ofFloat(effectIntensity, 0f).apply {
-            duration = durationMillis
-            startDelay = delayMillis
-            addUpdateListener { updatedAnimation ->
-                effectIntensity = updatedAnimation.animatedValue as Float
-                updateCurrentIntensity()
+        unlockAnimator =
+            ValueAnimator.ofFloat(effectIntensity, 0f).apply {
+                duration = durationMillis
+                startDelay = delayMillis
+                addUpdateListener { updatedAnimation ->
+                    effectIntensity = updatedAnimation.animatedValue as Float
+                    updateCurrentIntensity()
+                }
+                start()
             }
-            start()
-        }
     }
 
     private fun getAnimationType(
         newPresence: UserPresenceController.UserPresence,
-        oldPresence: UserPresenceController.UserPresence
+        oldPresence: UserPresenceController.UserPresence,
     ): AnimationType {
         if (shouldSkipIntensityOutAnimation()) {
             return AnimationType.NONE
@@ -324,18 +345,16 @@ class WeatherEngine(
             UserPresenceController.UserPresence.AWAY -> {
                 if (
                     newPresence == UserPresenceController.UserPresence.LOCKED ||
-                    newPresence == UserPresenceController.UserPresence.ACTIVE
+                        newPresence == UserPresenceController.UserPresence.ACTIVE
                 ) {
                     return AnimationType.WAKE
                 }
             }
-
             UserPresenceController.UserPresence.LOCKED -> {
                 if (newPresence == UserPresenceController.UserPresence.ACTIVE) {
                     return AnimationType.UNLOCK
                 }
             }
-
             else -> {
                 // No-op.
             }
@@ -345,14 +364,15 @@ class WeatherEngine(
     }
 
     private fun updateWallpaperColors(background: Bitmap) {
-        backgroundColor = WallpaperColors.fromBitmap(
-            Bitmap.createScaledBitmap(
-                background,
-                256,
-                (background.width / background.height.toFloat() * 256).roundToInt(),
-                /* filter = */ true
+        backgroundColor =
+            WallpaperColors.fromBitmap(
+                Bitmap.createScaledBitmap(
+                    background,
+                    256,
+                    (background.width / background.height.toFloat() * 256).roundToInt(),
+                    /* filter = */ true
+                )
             )
-        )
     }
 
     /**

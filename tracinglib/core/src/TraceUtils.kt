@@ -132,7 +132,7 @@ object TraceUtils {
     @JvmStatic
     inline fun traceRunnable(
         crossinline tag: () -> String,
-        crossinline block: () -> Unit
+        crossinline block: () -> Unit,
     ): Runnable {
         return Runnable { traceSection(tag) { block() } }
     }

@@ -16,6 +16,7 @@
 
 package com.google.android.wallpaper.weathereffects.graphics
 
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.util.SizeF
 import androidx.annotation.FloatRange
@@ -59,4 +60,16 @@ interface WeatherEffect {
      * @param intensity [0, 1] the intensity of the weather effect.
      */
     fun setIntensity(@FloatRange(from = 0.0, to = 1.0) intensity: Float)
+
+    /**
+     * Reuse current shader but change background, foreground
+     *
+     * @param foreground A bitmap containing the foreground of the image
+     * @param background A bitmap containing the background of the image
+     */
+    fun setBitmaps(foreground: Bitmap, background: Bitmap)
+
+    companion object {
+        val DEFAULT_INTENSITY = 1f
+    }
 }

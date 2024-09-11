@@ -36,7 +36,7 @@ import java.util.concurrent.Executor
  * @param[useHapticFallbackForToken] A map that determines if the haptic fallback effect should be
  *   used for a given token.
  */
-class MSDLPlayerImpl(
+internal class MSDLPlayerImpl(
     private val repository: MSDLRepository,
     private val vibrator: Vibrator,
     private val executor: Executor,
@@ -55,10 +55,7 @@ class MSDLPlayerImpl(
         playData(token, properties)
     }
 
-    private fun playData(
-        token: MSDLToken,
-        properties: InteractionProperties?,
-    ) {
+    private fun playData(token: MSDLToken, properties: InteractionProperties?) {
         // Gather the data from the repositories
         val hapticData = repository.getHapticData(token.hapticToken)
         val soundData = repository.getAudioData(token.soundToken)

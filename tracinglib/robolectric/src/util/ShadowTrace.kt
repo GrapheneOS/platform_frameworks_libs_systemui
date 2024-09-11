@@ -63,7 +63,7 @@ object ShadowTrace {
         traceTag: Long,
         trackName: String,
         methodName: String,
-        cookie: Int
+        cookie: Int,
     ) {
         debugLog(
             "asyncTraceForTrackBegin: track=$trackName name=$methodName cookie=${cookie.toHexString()}"

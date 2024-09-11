@@ -80,7 +80,7 @@ class CoroutineTracingFlagsTest : TestBase() {
                 assertTrue(
                     "Lazy string should have been called when Compile.IS_DEBUG=true, " +
                         "even when Trace.isEnabled()=false",
-                    lazyStringCalled
+                    lazyStringCalled,
                 )
                 val traceData = traceThreadLocal.get()
                 assertNotNull(traceData)

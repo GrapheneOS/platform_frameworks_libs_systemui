@@ -41,7 +41,7 @@ object FakeTraceState {
             assertFalse(
                 "Attempting to close trace section on thread=$threadId, " +
                     "but there are no open sections",
-                allThreadStates[threadId].isNullOrEmpty()
+                allThreadStates[threadId].isNullOrEmpty(),
             )
             // TODO: Replace with .removeLast() once available
             allThreadStates[threadId]!!.removeAt(allThreadStates[threadId]!!.lastIndex)
