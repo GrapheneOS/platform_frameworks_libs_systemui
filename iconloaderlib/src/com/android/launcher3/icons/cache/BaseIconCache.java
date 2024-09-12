@@ -36,6 +36,7 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
+import android.database.sqlite.SQLiteReadOnlyDatabaseException;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
@@ -187,13 +188,24 @@ public abstract class BaseIconCache {
     }
 
     private synchronized void updateIconParamsBg(final int iconDpi, final int iconPixelSize) {
-        mIconDpi = iconDpi;
-        mDefaultIcon = null;
-        mUserFlagOpMap.clear();
-        mIconDb.clear();
-        mIconDb.close();
-        mIconDb = new IconDB(mContext, mDbFileName, iconPixelSize);
-        mCache.clear();
+        try {
+            mIconDpi = iconDpi;
+            mDefaultIcon = null;
+            mUserFlagOpMap.clear();
+            mIconDb.clear();
+            mIconDb.close();
+            mIconDb = new IconDB(mContext, mDbFileName, iconPixelSize);
+            mCache.clear();
+        } catch (SQLiteReadOnlyDatabaseException e) {
+            // This is known to happen during repeated backup and restores, if the Launcher is in
+            // restricted mode. When the launcher is loading and the backup restore is being cleared
+            // there can be a conflict where one DB is trying to delete the DB file, and the other
+            // is attempting to write to it. The effect is that launcher crashes, then the backup /
+            // restore process fails, then the user's home screen icons fail to restore. Adding this
+            // try / catch will stop the crash, and LoaderTask will sanitize any residual icon data,
+            // leading to a completed backup / restore and a better experience for our customers.
+            Log.e(TAG, "failed to clear the launcher's icon db or cache.", e);
+        }
     }
 
     @Nullable
