@@ -36,7 +36,7 @@ android_library {
 android_library {
     name: "msdl-tests-base",
     libs: [
-        "android.test.base",
+        "android.test.base.stubs.system",
         "androidx.test.core",
     ],
     static_libs: [
