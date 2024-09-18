@@ -23,6 +23,9 @@ import com.google.android.msdl.data.model.FeedbackLevel
 import com.google.android.msdl.data.model.HapticComposition
 import com.google.android.msdl.data.model.MSDLToken
 import com.google.android.msdl.data.repository.MSDLRepository
+import com.google.android.msdl.logging.MSDLEvent
+import com.google.android.msdl.logging.MSDLHistoryLogger
+import com.google.android.msdl.logging.MSDLHistoryLoggerImpl
 import java.util.concurrent.Executor
 
 /**
@@ -42,6 +45,9 @@ internal class MSDLPlayerImpl(
     private val executor: Executor,
     private val useHapticFallbackForToken: Map<MSDLToken, Boolean?>,
 ) : MSDLPlayer {
+
+    /** A logger to keep a history of playback events */
+    private val historyLogger = MSDLHistoryLoggerImpl(MSDLHistoryLogger.HISTORY_SIZE)
 
     // TODO(b/355230334): This should be retrieved from the system Settings
     override fun getSystemFeedbackLevel(): FeedbackLevel = MSDLPlayer.SYSTEM_FEEDBACK_LEVEL
@@ -90,10 +96,15 @@ internal class MSDLPlayerImpl(
                     VibrationAttributes.Builder().setUsage(VibrationAttributes.USAGE_TOUCH).build()
                 }
             executor.execute { vibrator.vibrate(effect, attributes) }
+
+            // 3. Log the event
+            historyLogger.addEvent(MSDLEvent(token, properties))
         } else {
             // TODO(b/345248875): Play audio and haptics
         }
     }
+
+    override fun getHistory(): List<MSDLEvent> = historyLogger.getHistory()
 
     companion object {
         val REQUIRED_PRIMITIVES =

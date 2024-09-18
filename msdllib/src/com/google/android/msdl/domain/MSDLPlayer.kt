@@ -23,6 +23,7 @@ import com.google.android.msdl.data.model.MSDLToken
 import com.google.android.msdl.data.repository.MSDLRepository
 import com.google.android.msdl.data.repository.MSDLRepositoryImpl
 import com.google.android.msdl.domain.MSDLPlayerImpl.Companion.REQUIRED_PRIMITIVES
+import com.google.android.msdl.logging.MSDLEvent
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
@@ -50,6 +51,12 @@ interface MSDLPlayer {
      *   supplied, haptic feedback will play using USAGE_TOUCH [android.os.VibrationAttributes].
      */
     fun playToken(token: MSDLToken, properties: InteractionProperties? = null)
+
+    /**
+     * Get the history of recent [MSDLEvent]s. The list can be useful to include in loggers and
+     * system dumps for debugging purposes.
+     */
+    fun getHistory(): List<MSDLEvent>
 
     companion object {
 

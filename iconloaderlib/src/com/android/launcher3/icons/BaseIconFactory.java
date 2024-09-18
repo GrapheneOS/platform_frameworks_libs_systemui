@@ -374,7 +374,7 @@ public class BaseIconFactory implements AutoCloseable {
     }
 
     @NonNull
-    protected Bitmap createIconBitmap(@Nullable final Drawable icon, final float scale) {
+    public Bitmap createIconBitmap(@Nullable final Drawable icon, final float scale) {
         return createIconBitmap(icon, scale, MODE_DEFAULT);
     }
 
