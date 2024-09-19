@@ -34,7 +34,10 @@ public interface CachingLogic<T> {
     @NonNull
     UserHandle getUser(@NonNull final T object);
 
-    @NonNull
+    /**
+     * Loads the user visible label for the object
+     */
+    @Nullable
     CharSequence getLabel(@NonNull final T object);
 
     @NonNull
@@ -44,7 +47,7 @@ public interface CachingLogic<T> {
     }
 
     @NonNull
-    BitmapInfo loadIcon(@NonNull final Context context, @NonNull final T object);
+    BitmapInfo loadIcon(@NonNull Context context, @NonNull BaseIconCache cache, @NonNull T object);
 
     /**
      * Provides a option list of keywords to associate with this object

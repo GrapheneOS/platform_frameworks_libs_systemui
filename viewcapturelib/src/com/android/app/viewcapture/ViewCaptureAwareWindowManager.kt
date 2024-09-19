@@ -68,4 +68,8 @@ class ViewCaptureAwareWindowManager(
             }
         }
     }
+
+    interface Factory {
+        fun create(windowManager: WindowManager): ViewCaptureAwareWindowManager
+    }
 }

@@ -85,7 +85,7 @@ public class BaseIconFactory implements AutoCloseable {
     @NonNull
     private final ColorExtractor mColorExtractor;
 
-    protected final int mFillResIconDpi;
+    protected final int mFullResIconDpi;
     protected final int mIconBitmapSize;
 
     protected boolean mMonoIconEnabled;
@@ -106,11 +106,11 @@ public class BaseIconFactory implements AutoCloseable {
 
     private static int PLACEHOLDER_BACKGROUND_COLOR = Color.rgb(245, 245, 245);
 
-    protected BaseIconFactory(Context context, int fillResIconDpi, int iconBitmapSize,
+    protected BaseIconFactory(Context context, int fullResIconDpi, int iconBitmapSize,
             boolean shapeDetection) {
         mContext = context.getApplicationContext();
         mShapeDetection = shapeDetection;
-        mFillResIconDpi = fillResIconDpi;
+        mFullResIconDpi = fullResIconDpi;
         mIconBitmapSize = iconBitmapSize;
 
         mPm = mContext.getPackageManager();
@@ -121,8 +121,8 @@ public class BaseIconFactory implements AutoCloseable {
         clear();
     }
 
-    public BaseIconFactory(Context context, int fillResIconDpi, int iconBitmapSize) {
-        this(context, fillResIconDpi, iconBitmapSize, false);
+    public BaseIconFactory(Context context, int fullResIconDpi, int iconBitmapSize) {
+        this(context, fullResIconDpi, iconBitmapSize, false);
     }
 
     protected void clear() {
@@ -145,6 +145,10 @@ public class BaseIconFactory implements AutoCloseable {
         return mNormalizer;
     }
 
+    public int getFullResIconDpi() {
+        return mFullResIconDpi;
+    }
+
     @SuppressWarnings("deprecation")
     public BitmapInfo createIconBitmap(Intent.ShortcutIconResource iconRes) {
         try {
@@ -152,7 +156,7 @@ public class BaseIconFactory implements AutoCloseable {
             if (resources != null) {
                 final int id = resources.getIdentifier(iconRes.resourceName, null, null);
                 // do not stamp old legacy shortcuts as the app may have already forgotten about it
-                return createBadgedIconBitmap(resources.getDrawableForDensity(id, mFillResIconDpi));
+                return createBadgedIconBitmap(resources.getDrawableForDensity(id, mFullResIconDpi));
             }
         } catch (Exception e) {
             // Icon not found.
@@ -485,7 +489,7 @@ public class BaseIconFactory implements AutoCloseable {
 
     @NonNull
     public BitmapInfo makeDefaultIcon() {
-        return createBadgedIconBitmap(getFullResDefaultActivityIcon(mFillResIconDpi));
+        return createBadgedIconBitmap(getFullResDefaultActivityIcon(mFullResIconDpi));
     }
 
     @NonNull
@@ -544,6 +548,14 @@ public class BaseIconFactory implements AutoCloseable {
         @NonNull
         public IconOptions setInstantApp(final boolean instantApp) {
             mIsInstantApp = instantApp;
+            return this;
+        }
+
+        /**
+         * If the icon represents an archived app
+         */
+        public IconOptions setIsArchived(boolean isArchived) {
+            mIsArchived = isArchived;
             return this;
         }
 
