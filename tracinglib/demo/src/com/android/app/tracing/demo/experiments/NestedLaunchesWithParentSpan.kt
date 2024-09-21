@@ -40,7 +40,7 @@ constructor(
             delay(10)
             launch(fixedThreadContext2) {
                 delay(10)
-                launch(fixedThreadContext1) { getNumber() }
+                launch(fixedThreadContext1) { incSlowly() }
             }
         }
     }

@@ -17,7 +17,9 @@
 package com.android.app.tracing.coroutines.flow
 
 import android.os.Trace
+import com.android.app.tracing.coroutines.CoroutineTraceName
 import com.android.app.tracing.coroutines.traceCoroutine
+import kotlin.coroutines.CoroutineContext
 import kotlin.experimental.ExperimentalTypeInference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
@@ -66,9 +68,10 @@ suspend fun <T> Flow<T>.collectLatest(name: String? = null, action: suspend (T) 
 }
 
 @OptIn(ExperimentalStdlibApi::class)
-fun <T> Flow<T>.flowOn(context: kotlin.coroutines.CoroutineContext): Flow<T> {
+fun <T> Flow<T>.flowOn(context: CoroutineContext): Flow<T> {
     val contextName =
-        context[CoroutineName]?.name
+        context[CoroutineTraceName]?.name
+            ?: context[CoroutineName]?.name
             ?: context[CoroutineDispatcher]?.javaClass?.simpleName
             ?: context.javaClass.simpleName
     return kx_flowOn(context).withTraceName("flowOn($contextName)")

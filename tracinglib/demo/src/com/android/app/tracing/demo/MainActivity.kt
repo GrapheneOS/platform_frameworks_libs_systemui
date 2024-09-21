@@ -24,8 +24,11 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import com.android.app.tracing.TraceUtils.trace
+import com.android.app.tracing.coroutines.createCoroutineTracingContext
+import com.android.app.tracing.coroutines.nameCoroutine
 import com.android.app.tracing.demo.experiments.Experiment
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -38,12 +41,24 @@ class MainActivity : Activity() {
         (applicationContext as MainApplication).appComponent.getAllExperiments()
     }
 
-    private val experimentLaunchScope = lazy {
-        (applicationContext as MainApplication).appComponent.getExperimentLauncherCoroutineScope()
+    private val experimentLaunchContext = lazy {
+        (applicationContext as MainApplication).appComponent.getExperimentDispatcher()
     }
+
+    private val scopeForExperiment = mutableMapOf<String, CoroutineScope>()
 
     private var logContainer: ScrollView? = null
     private var loggerView: TextView? = null
+
+    private fun getScopeForExperiment(name: String): CoroutineScope {
+        var scope = scopeForExperiment[name]
+        if (scope == null) {
+            scope =
+                CoroutineScope(experimentLaunchContext.value + createCoroutineTracingContext(name))
+            scopeForExperiment[name] = scope
+        }
+        return scope
+    }
 
     private fun <T : Experiment> createButtonForExperiment(demo: T): Button {
         var launchCounter = 0
@@ -60,13 +75,18 @@ class MainActivity : Activity() {
                 val experimentName = "$className #${launchCounter++}"
                 trace("$className#onClick") {
                     job?.let { trace("cancel") { it.cancel("Cancelled due to click") } }
-                    trace("launch") { job = experimentLaunchScope.value.launch { demo.run() } }
+                    trace("launch") {
+                        job =
+                            getScopeForExperiment(className).launch(nameCoroutine("run")) {
+                                demo.run()
+                            }
+                    }
                     trace("toast") { appendLine("$experimentName started") }
                     job?.let {
                         Trace.asyncTraceForTrackBegin(
                             Trace.TRACE_TAG_APP,
                             TRACK_NAME,
-                            "Running $experimentName",
+                            experimentName,
                             it.hashCode(),
                         )
                     }

@@ -23,8 +23,8 @@ import android.platform.test.flag.junit.SetFlagsRule
 import android.platform.test.rule.EnsureDeviceSettingsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import com.android.app.tracing.coroutines.TraceContextElement
-import com.android.app.tracing.coroutines.launch
+import com.android.app.tracing.coroutines.createCoroutineTracingContext
+import com.android.app.tracing.coroutines.nameCoroutine
 import com.android.app.tracing.coroutines.traceCoroutine
 import com.android.systemui.Flags
 import kotlinx.coroutines.delay
@@ -74,7 +74,7 @@ class TraceContextMicroBenchmark {
     @Test
     fun testSingleTraceSection() {
         val state = perfStatusReporter.benchmarkState
-        runBlocking(TraceContextElement()) {
+        runBlocking(createCoroutineTracingContext("root")) {
             while (state.keepRunning()) {
                 traceCoroutine("hello-world") { ensureSuspend(state) }
             }
@@ -86,8 +86,8 @@ class TraceContextMicroBenchmark {
     fun testNestedContext() {
         val state = perfStatusReporter.benchmarkState
 
-        val context1 = TraceContextElement()
-        val context2 = TraceContextElement()
+        val context1 = createCoroutineTracingContext("scope1")
+        val context2 = nameCoroutine("scope2")
         runBlocking {
             while (state.keepRunning()) {
                 withContext(context1) {
@@ -113,9 +113,9 @@ class TraceContextMicroBenchmark {
     fun testInterleavedLaunch() {
         val state = perfStatusReporter.benchmarkState
 
-        runBlocking(TraceContextElement()) {
+        runBlocking(createCoroutineTracingContext("root")) {
             val job1 =
-                launch(TraceContextElement()) {
+                launch(nameCoroutine("scope1")) {
                     while (true) {
                         traceCoroutine("hello") {
                             traceCoroutine("world") { yield() }
@@ -124,7 +124,7 @@ class TraceContextMicroBenchmark {
                     }
                 }
             val job2 =
-                launch(TraceContextElement()) {
+                launch(nameCoroutine("scope2")) {
                     while (true) {
                         traceCoroutine("hallo") {
                             traceCoroutine("welt") { yield() }

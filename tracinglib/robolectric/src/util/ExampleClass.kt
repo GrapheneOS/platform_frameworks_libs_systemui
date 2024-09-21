@@ -25,7 +25,7 @@ class ExampleClass(
     suspend fun classMethod(value: Int) {
         value.inc() // <-- suppress warning that parameter 'value' is unused
         testBase.expect(
-            "launch-for-collect",
+            "main:1^:1^launch-for-collect:3^",
             "com.android.app.tracing.coroutines.FlowTracingTest\$stateFlowCollection$1\$collectJob$1$3:collect",
             "com.android.app.tracing.coroutines.FlowTracingTest\$stateFlowCollection$1\$collectJob$1$3:emit",
         )

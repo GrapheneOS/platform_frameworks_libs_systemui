@@ -18,7 +18,6 @@ package com.android.launcher3.icons.cache;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.PackageInfo;
-import android.os.LocaleList;
 import android.os.UserHandle;
 
 import androidx.annotation.NonNull;
@@ -48,14 +47,6 @@ public interface CachingLogic<T> {
 
     @NonNull
     BitmapInfo loadIcon(@NonNull Context context, @NonNull BaseIconCache cache, @NonNull T object);
-
-    /**
-     * Provides a option list of keywords to associate with this object
-     */
-    @Nullable
-    default String getKeywords(@NonNull final T object, @NonNull final LocaleList localeList) {
-        return null;
-    }
 
     /**
      * Returns the timestamp the entry was last updated in cache.

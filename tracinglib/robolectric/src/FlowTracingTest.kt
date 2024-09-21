@@ -25,8 +25,6 @@ import com.android.app.tracing.coroutines.flow.map
 import com.android.app.tracing.coroutines.flow.withTraceName
 import com.android.app.tracing.coroutines.util.ExampleClass
 import com.android.systemui.Flags.FLAG_COROUTINE_TRACING
-import kotlin.coroutines.EmptyCoroutineContext
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -41,10 +39,10 @@ import org.junit.Test
 
 @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
 @EnableFlags(FLAG_COROUTINE_TRACING)
-class FlowTracingTest : TestBase() {
+class FlowTracingTest : TracingTestBase() {
 
     @Test
-    fun stateFlowCollection() = runTestWithTraceContext {
+    fun stateFlowCollection() = runTestTraced {
         val state = MutableStateFlow(1)
         val bgThreadPool = newFixedThreadPoolContext(2, "bg-pool")
 
@@ -61,17 +59,21 @@ class FlowTracingTest : TestBase() {
         val helper = ExampleClass(this@FlowTracingTest, incrementCounter)
         val collectJob =
             launch("launch-for-collect", bgThreadPool) {
-                expect("launch-for-collect")
+                expect("main:1^:1^launch-for-collect")
                 launch {
                     state.collect("state-flow") {
-                        expect("launch-for-collect", "state-flow:collect", "state-flow:emit")
+                        expect(
+                            "main:1^:1^launch-for-collect:1^",
+                            "state-flow:collect",
+                            "state-flow:emit",
+                        )
                         incrementCounter()
                     }
                 }
                 launch {
                     state.collectTraced {
                         expect(
-                            "launch-for-collect",
+                            "main:1^:1^launch-for-collect:2^",
                             "com.android.app.tracing.coroutines.FlowTracingTest\$stateFlowCollection$1\$collectJob$1$2:collect",
                             "com.android.app.tracing.coroutines.FlowTracingTest\$stateFlowCollection$1\$collectJob$1$2:emit",
                         )
@@ -81,7 +83,7 @@ class FlowTracingTest : TestBase() {
                 launch { state.collectTraced(helper::classMethod) }
             }
         val emitJob =
-            launch(newSingleThreadContext("emitter thread")) {
+            launch(newSingleThreadContext("emitter-thread")) {
                 for (n in 2..5) {
                     delay(100)
                     state.value = n
@@ -94,23 +96,19 @@ class FlowTracingTest : TestBase() {
     }
 
     @Test
-    fun flowOnWithTraceName() = runTestWithTraceContext {
+    fun flowOnWithTraceName() = runTestTraced {
         val state =
             flowOf(1, 2, 3, 4)
                 .withTraceName("my-flow")
-                .flowOn(
-                    newSingleThreadContext("flow-thread") +
-                        EmptyCoroutineContext +
-                        CoroutineName("the-name")
-                )
+                .flowOn(newSingleThreadContext("flow-thread") + nameCoroutine("the-name"))
         val bgThreadPool = newFixedThreadPoolContext(2, "bg-pool")
         val collectJob =
             launch("launch-for-collect", bgThreadPool) {
-                expect("launch-for-collect")
+                expect("main:1^:1^launch-for-collect")
                 launch {
                     state.collect("state-flow") {
                         expect(
-                            "launch-for-collect",
+                            "main:1^:1^launch-for-collect:1^",
                             "state-flow:collect",
                             "flowOn(the-name):collect",
                             "flowOn(the-name):emit",
@@ -123,7 +121,7 @@ class FlowTracingTest : TestBase() {
     }
 
     @Test
-    fun mapAndFilter() = runTestWithTraceContext {
+    fun mapAndFilter() = runTestTraced {
         val state =
             flowOf(1, 2, 3, 4)
                 .withTraceName("my-flow")
@@ -132,7 +130,7 @@ class FlowTracingTest : TestBase() {
         launch("launch-for-collect") {
                 state.collect("my-collect-call") {
                     expect(
-                        "launch-for-collect",
+                        "main:1^:1^launch-for-collect",
                         "my-collect-call:collect",
                         "mod-2:collect",
                         "multiply-by-3:collect",

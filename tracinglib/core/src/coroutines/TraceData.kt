@@ -42,7 +42,9 @@ class TraceCountThreadLocal : ThreadLocal<Int>() {
  * @see traceCoroutine
  */
 @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-class TraceData(val slices: ArrayDeque<TraceSection> = ArrayDeque()) : Cloneable {
+class TraceData {
+
+    var slices: ArrayDeque<TraceSection>? = null
 
     /**
      * ThreadLocal counter for how many open trace sections there are. This is needed because it is
@@ -57,8 +59,8 @@ class TraceData(val slices: ArrayDeque<TraceSection> = ArrayDeque()) : Cloneable
     /** Adds current trace slices back to the current thread. Called when coroutine is resumed. */
     fun beginAllOnThread() {
         strictModeCheck()
-        slices.descendingIterator().forEach { beginSlice(it) }
-        openSliceCount.set(slices.size)
+        slices?.descendingIterator()?.forEach { beginSlice(it) }
+        openSliceCount.set(slices?.size ?: 0)
     }
 
     /**
@@ -78,8 +80,11 @@ class TraceData(val slices: ArrayDeque<TraceSection> = ArrayDeque()) : Cloneable
      */
     fun beginSpan(name: String) {
         strictModeCheck()
-        slices.push(name)
-        openSliceCount.set(slices.size)
+        if (slices == null) {
+            slices = ArrayDeque()
+        }
+        slices!!.push(name)
+        openSliceCount.set(slices!!.size)
         beginSlice(name)
     }
 
@@ -91,48 +96,39 @@ class TraceData(val slices: ArrayDeque<TraceSection> = ArrayDeque()) : Cloneable
     fun endSpan() {
         strictModeCheck()
         // Should never happen, but we should be defensive rather than crash the whole application
-        if (slices.size > 0) {
-            slices.pop()
-            openSliceCount.set(slices.size)
+        if (slices != null && slices!!.size > 0) {
+            slices!!.pop()
+            openSliceCount.set(slices!!.size)
             endSlice()
-        } else if (strictModeForTesting) {
+        } else if (STRICT_MODE_FOR_TESTING) {
             throw IllegalStateException(INVALID_SPAN_END_CALL_ERROR_MESSAGE)
         }
     }
 
-    /**
-     * Used by [TraceContextElement] when launching a child coroutine so that the child coroutine's
-     * state is isolated from the parent.
-     */
-    public override fun clone(): TraceData {
-        return TraceData(slices.clone())
-    }
-
-    @OptIn(ExperimentalStdlibApi::class)
-    override fun toString(): String {
-        return "TraceData@${hashCode().toHexString()}-size=${slices.size}"
-    }
+    override fun toString(): String =
+        if (DEBUG) "{${slices?.joinToString(separator = "\", \"", prefix = "\"", postfix = "\"")}}"
+        else super.toString()
 
     private fun strictModeCheck() {
-        if (strictModeForTesting && traceThreadLocal.get() !== this) {
+        if (STRICT_MODE_FOR_TESTING && traceThreadLocal.get() !== this) {
             throw ConcurrentModificationException(STRICT_MODE_ERROR_MESSAGE)
         }
     }
-
-    companion object {
-        /**
-         * Whether to add additional checks to the coroutine machinery, throwing a
-         * `ConcurrentModificationException` if TraceData is modified from the wrong thread. This
-         * should only be set for testing.
-         */
-        var strictModeForTesting: Boolean = false
-    }
 }
 
+/**
+ * Whether to add additional checks to the coroutine machinery, throwing a
+ * `ConcurrentModificationException` if TraceData is modified from the wrong thread. This should
+ * only be set for testing.
+ */
+var STRICT_MODE_FOR_TESTING: Boolean = false
+
 private const val INVALID_SPAN_END_CALL_ERROR_MESSAGE =
-    "TraceData#endSpan called when there were no active trace sections."
+    "TraceData#endSpan called when there were no active trace sections in its scope."
 
 private const val STRICT_MODE_ERROR_MESSAGE =
     "TraceData should only be accessed using " +
         "the ThreadLocal: CURRENT_TRACE.get(). Accessing TraceData by other means, such as " +
         "through the TraceContextElement's property may lead to concurrent modification."
+
+@OptIn(ExperimentalStdlibApi::class) val hexFormatForId = HexFormat { number.prefix = "0x" }

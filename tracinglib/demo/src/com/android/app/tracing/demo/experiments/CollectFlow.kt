@@ -50,19 +50,19 @@ constructor(
             flow {
                     for (n in 0..4) {
                         traceCoroutine("delay-and-emit for $n") {
-                            blockCurrentThread(10)
+                            blockCurrentThread(5)
                             delay(1)
-                            blockCurrentThread(10)
+                            blockCurrentThread(6)
                             emit(n)
-                            blockCurrentThread(10)
+                            blockCurrentThread(7)
                             delay(1)
-                            blockCurrentThread(10)
+                            blockCurrentThread(8)
                         }
                     }
                 }
                 .withTraceName("flowOf numbers")
                 .filter {
-                    blockCurrentThread(10)
+                    blockCurrentThread(9)
                     it % 2 == 0
                 }
                 .withTraceName("filter for even")
@@ -77,9 +77,9 @@ constructor(
         launch("launch on thread #1", fixedThreadContext1) {
             numFlow.collect {
                 traceCoroutine("got: $it") {
-                    blockCurrentThread(10)
+                    blockCurrentThread(11)
                     delay(1)
-                    blockCurrentThread(10)
+                    blockCurrentThread(12)
                 }
             }
         }

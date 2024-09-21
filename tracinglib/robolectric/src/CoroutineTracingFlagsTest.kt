@@ -52,10 +52,6 @@ class CoroutineTracingFlagsTest : TestBase() {
                 fail("Lazy string should not be called when FLAG_COROUTINE_TRACING is disabled")
                 "error"
             }) {
-                // This should edge-case should never happen because TraceContextElement is internal
-                // and can only be created through createCoroutineTracingContext(), which checks for
-                // Compile.IS_DEBUG=true. However, we want to be certain that even if a
-                // TraceContextElement is somehow used, it is unused when IS_DEBUG=false.
                 assertNull(traceThreadLocal.get())
             }
         }
@@ -69,22 +65,20 @@ class CoroutineTracingFlagsTest : TestBase() {
         withContext(createCoroutineTracingContext()) {
             assertNotNull(traceThreadLocal.get())
 
-            // When Compile.IS_DEBUG=true, it is expected that the lazy-String is called even when
-            // tracing is disabled, because otherwise the coroutine resumption points would be
-            // missing their names.
+            // It is expected that the lazy-String is called even when tracing is disabled because
+            // otherwise the coroutine resumption points would be missing names.
             var lazyStringCalled = false
             traceCoroutine({
                 lazyStringCalled = true
                 "hello"
             }) {
                 assertTrue(
-                    "Lazy string should have been called when Compile.IS_DEBUG=true, " +
+                    "Lazy string should be been called when FLAG_COROUTINE_TRACING is enabled, " +
                         "even when Trace.isEnabled()=false",
                     lazyStringCalled,
                 )
-                val traceData = traceThreadLocal.get()
-                assertNotNull(traceData)
-                assertEquals(traceData?.slices?.size, 1)
+                val traceData = traceThreadLocal.get() as TraceData
+                assertEquals(traceData.slices?.size, 1)
             }
         }
     }

@@ -15,30 +15,45 @@
  */
 package com.android.app.tracing.demo.experiments
 
-import com.android.app.tracing.coroutines.traceCoroutine
+import android.os.Trace
+import java.util.concurrent.Executors.newFixedThreadPool
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 private val counter = AtomicInteger()
 
 internal suspend fun doWork() {
-    getNumber(0, 50)
-    getNumber(50, 0)
-    getNumber(50, 50)
+    incSlowly(0, 50)
+    incSlowly(50, 0)
+    incSlowly(50, 50)
 }
+
+// BAD - wastefully use a thread pool for resuming continuations in a contrived manner
+val threadPoolForSleep = newFixedThreadPool(4)
 
 /**
  * A simple suspending function that returns a unique sequential number, ordered by when it was
  * originally called. It can optionally be used to simulate slow functions by sleeping before or
  * after the suspension point
  */
-suspend fun getNumber(delayBeforeSuspension: Long = 0, delayAfterSuspension: Long = 0): Int {
+@Suppress("BlockingMethodInNonBlockingContext")
+suspend fun incSlowly(delayBeforeSuspension: Long = 0, delayBeforeResume: Long = 0): Int {
     val num = counter.incrementAndGet()
-    traceCoroutine("getNumber#$num") {
-        Thread.sleep(delayBeforeSuspension) // BAD
-        return suspendCoroutine { continuation ->
-            Thread.sleep(delayAfterSuspension) // BAD
+    Trace.traceBegin(Trace.TRACE_TAG_APP, "inc#$num:sleep-before-suspend:$delayBeforeSuspension")
+    try {
+        Thread.sleep(delayBeforeSuspension) // BAD - sleep for demo purposes only
+    } finally {
+        Trace.traceEnd(Trace.TRACE_TAG_APP)
+    }
+    return suspendCancellableCoroutine { continuation ->
+        threadPoolForSleep.submit {
+            Trace.traceBegin(Trace.TRACE_TAG_APP, "inc#$num:sleep-before-resume:$delayBeforeResume")
+            try {
+                Thread.sleep(delayBeforeResume) // BAD - sleep for demo purposes only
+            } finally {
+                Trace.traceEnd(Trace.TRACE_TAG_APP)
+            }
             continuation.resume(num)
         }
     }

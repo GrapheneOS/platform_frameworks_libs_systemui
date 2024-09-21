@@ -19,7 +19,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.os.Trace
-import com.android.app.tracing.coroutines.createCoroutineTracingContext
+import com.android.app.tracing.coroutines.nameCoroutine
 import com.android.app.tracing.demo.experiments.CollectFlow
 import com.android.app.tracing.demo.experiments.CombineDeferred
 import com.android.app.tracing.demo.experiments.Experiment
@@ -39,7 +39,8 @@ import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlin.annotation.AnnotationRetention.RUNTIME
 import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.CoroutineScope
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.android.asCoroutineDispatcher
 
@@ -57,7 +58,14 @@ import kotlinx.coroutines.android.asCoroutineDispatcher
 
 @Qualifier @MustBeDocumented @Retention(RUNTIME) annotation class ExperimentLauncherThread
 
-@Qualifier @MustBeDocumented @Retention(RUNTIME) annotation class Tracer
+const val NAME_DISPATCHERS = false
+
+private fun nameDispatcher(name: String) =
+    if (NAME_DISPATCHERS) {
+        nameCoroutine(name)
+    } else {
+        EmptyCoroutineContext
+    }
 
 @Module
 class ConcurrencyModule {
@@ -65,64 +73,48 @@ class ConcurrencyModule {
     @Provides
     @Singleton
     @Default
-    fun provideDefaultCoroutineContext(@Tracer tracerContext: CoroutineContext): CoroutineContext {
-        return Dispatchers.Default + tracerContext
+    fun provideDefaultCoroutineContext(): CoroutineContext {
+        return Dispatchers.Default + nameDispatcher("Dispatchers.Default")
     }
 
     @Provides
     @Singleton
     @IO
-    fun provideIOCoroutineContext(@Tracer tracerContext: CoroutineContext): CoroutineContext {
-        return Dispatchers.IO + tracerContext
+    fun provideIOCoroutineContext(): CoroutineContext {
+        return Dispatchers.IO + nameDispatcher("Dispatchers.IO")
     }
 
     @Provides
     @Singleton
     @Unconfined
-    fun provideUnconfinedCoroutineContext(
-        @Tracer tracerContext: CoroutineContext
-    ): CoroutineContext {
-        return Dispatchers.Unconfined + tracerContext
+    fun provideUnconfinedCoroutineContext(): CoroutineContext {
+        return Dispatchers.Unconfined + nameDispatcher("Dispatchers.Unconfined")
     }
 
     @Provides
     @Singleton
     @FixedThread1
-    fun provideFixedThread1CoroutineContext(
-        @Tracer tracerContext: CoroutineContext
-    ): CoroutineContext {
+    fun provideFixedThread1CoroutineContext(): CoroutineContext {
         val looper = startThreadWithLooper("FixedThread #1")
-        return Handler(looper).asCoroutineDispatcher("FixedCoroutineDispatcher #1") + tracerContext
+        return Handler(looper).asCoroutineDispatcher("FixedCoroutineDispatcher #1") +
+            nameDispatcher("FixedCoroutineDispatcher #1")
     }
 
     @Provides
     @Singleton
     @FixedThread2
-    fun provideFixedThread2CoroutineContext(
-        @Tracer tracerContext: CoroutineContext
-    ): CoroutineContext {
+    fun provideFixedThread2CoroutineContext(): CoroutineContext {
         val looper = startThreadWithLooper("FixedThread #2")
-        return Handler(looper).asCoroutineDispatcher("FixedCoroutineDispatcher #2") + tracerContext
+        return Handler(looper).asCoroutineDispatcher("FixedCoroutineDispatcher #2") +
+            nameDispatcher("FixedCoroutineDispatcher #2")
     }
 
     @Provides
     @Singleton
     @ExperimentLauncherThread
-    fun provideExperimentLauncherCoroutineScope(
-        @Tracer tracerContext: CoroutineContext
-    ): CoroutineScope {
+    fun provideExperimentDispatcher(): CoroutineDispatcher {
         val looper = startThreadWithLooper("Experiment Launcher Thread")
-        return CoroutineScope(
-            Handler(looper).asCoroutineDispatcher("Experiment Launcher CoroutineDispatcher") +
-                tracerContext
-        )
-    }
-
-    @Provides
-    @Tracer
-    @Singleton
-    fun provideTracerCoroutineContext(): CoroutineContext {
-        return createCoroutineTracingContext()
+        return Handler(looper).asCoroutineDispatcher("Experiment Launcher CoroutineDispatcher")
     }
 }
 
@@ -170,7 +162,7 @@ interface ApplicationComponent {
     /** Returns [Experiment]s that should be used with the application. */
     @Singleton fun getAllExperiments(): Map<Class<*>, Provider<Experiment>>
 
-    @Singleton @ExperimentLauncherThread fun getExperimentLauncherCoroutineScope(): CoroutineScope
+    @Singleton @ExperimentLauncherThread fun getExperimentDispatcher(): CoroutineDispatcher
 }
 
 private fun startThreadWithLooper(name: String): Looper {
