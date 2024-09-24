@@ -208,7 +208,7 @@ public class BaseIconFactory implements AutoCloseable {
      * The bitmap is visually normalized with other icons and has enough spacing to add shadow.
      *
      * @param icon source of the icon
-     * @return a bitmap suitable for disaplaying as an icon at various system UIs.
+     * @return a bitmap suitable for displaying as an icon at various system UIs.
      */
     @TargetApi(Build.VERSION_CODES.TIRAMISU)
     @NonNull
