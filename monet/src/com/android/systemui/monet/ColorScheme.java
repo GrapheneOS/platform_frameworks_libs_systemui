@@ -328,7 +328,13 @@ public class ColorScheme {
     }
 
     private static double hueDiff(double a, double b) {
-        return 180f - (Math.abs(a - b) - 180f);
+        double diff = Math.abs(a - b);
+        if (diff > 180f) {
+            // 0 and 360 are the same hue. If hue difference is greater than 180, subtract from 360
+            // to account for the circularity.
+            diff = 360f - diff;
+        }
+        return diff;
     }
 
     private static String stringForColor(int color) {
