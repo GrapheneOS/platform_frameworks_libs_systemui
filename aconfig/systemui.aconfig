@@ -66,6 +66,6 @@ flag {
 flag {
     name: "new_customization_picker_ui"
     namespace: "systemui"
-    description: "Enables the BC25 design of the customization picker UI."
+    description: "Enables the new design of the customization picker UI."
     bug: "339081035"
 }
