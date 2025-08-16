@@ -64,6 +64,12 @@ internal val bgThread2 = newSingleThreadContext("test-bg-2")
 internal val bgThread3 = newSingleThreadContext("test-bg-3")
 internal val bgThread4 = newSingleThreadContext("test-bg-4")
 
+sealed interface TraceStatus
+
+object TraceCorrect : TraceStatus
+
+class TraceError(val message: String) : TraceStatus
+
 @RunWith(AndroidJUnit4::class)
 @Config(shadows = [ShadowTrace::class, ShadowSystemProperties::class])
 abstract class TestBase {
@@ -186,15 +192,6 @@ abstract class TestBase {
         }
     }
 
-    private fun logInvalidTraceState(message: String, throwInsteadOfLog: Boolean = false) {
-        val e = InvalidTraceStateException(message)
-        if (throwInsteadOfLog) {
-            throw e
-        } else {
-            assertionErrors.add(e)
-        }
-    }
-
     /**
      * Same as [expect], but also call [delay] for 1ms, calling [expect] before and after the
      * suspension point.
@@ -214,9 +211,10 @@ abstract class TestBase {
                 actualSections.takeLast(expectedOpenTraceSections.size).toTypedArray()
             assertTraceSectionsEquals(expectedOpenTraceSections, null, lastSections, null)
         } else {
-            logInvalidTraceState(
-                "Invalid length: expected size (${expectedOpenTraceSections.size}) <= actual size (${actualSections.size})"
-            )
+            assertionErrors +=
+                InvalidTraceStateException(
+                    "Invalid length: expected size (${expectedOpenTraceSections.size}) <= actual size (${actualSections.size})"
+                )
         }
     }
 
@@ -224,14 +222,15 @@ abstract class TestBase {
         val previousEvent = eventCounter.getAndAdd(1)
         val currentEvent = previousEvent + 1
         if (!expectedEvent.contains(currentEvent)) {
-            logInvalidTraceState(
-                if (previousEvent == FINAL_EVENT) {
-                    "Expected event ${expectedEvent.prettyPrintList()}, but finish() was already called"
-                } else {
-                    "Expected event ${expectedEvent.prettyPrintList()}," +
-                        " but the event counter is currently at #$currentEvent"
-                }
-            )
+            assertionErrors +=
+                InvalidTraceStateException(
+                    if (previousEvent == FINAL_EVENT) {
+                        "Expected event ${expectedEvent.prettyPrintList()}, but finish() was already called"
+                    } else {
+                        "Expected event ${expectedEvent.prettyPrintList()}," +
+                            " but the event counter is currently at #$currentEvent"
+                    }
+                )
         }
         return currentEvent
     }
@@ -246,13 +245,16 @@ abstract class TestBase {
         val caughtExceptions = mutableListOf<AssertionError>()
         possibleOpenSections.forEach { expectedSections ->
             try {
-                assertTraceSectionsEquals(
-                    expectedSections,
-                    expectedEvent = null,
-                    actualOpenSections,
-                    actualEvent = null,
-                    throwInsteadOfLog = true,
-                )
+                val status =
+                    assertTraceSectionsEquals(
+                        expectedSections,
+                        expectedEvent = null,
+                        actualOpenSections,
+                        actualEvent = null,
+                    )
+                if (status is TraceError) {
+                    throw InvalidTraceStateException(status.message)
+                }
             } catch (e: AssertionError) {
                 caughtExceptions.add(e)
             }
@@ -267,26 +269,42 @@ abstract class TestBase {
         }
     }
 
+    private inline fun throwError(status: TraceStatus) {
+        if (status is TraceError) {
+            assertionErrors += InvalidTraceStateException(status.message)
+        }
+    }
+
     internal fun expect(vararg expectedOpenTraceSections: String) {
-        expect(null, *expectedOpenTraceSections)
+        val status = expectInternal(null, *expectedOpenTraceSections)
+        throwError(status)
     }
 
     internal fun expect(expectedEvent: Int, vararg expectedOpenTraceSections: String) {
-        expect(listOf(expectedEvent), *expectedOpenTraceSections)
+        val status = expectInternal(listOf(expectedEvent), *expectedOpenTraceSections)
+        throwError(status)
+    }
+
+    internal fun expect(possibleEventPos: List<Int>?, vararg expectedOpenTraceSections: String) {
+        val status = expectInternal(possibleEventPos, *expectedOpenTraceSections)
+        throwError(status)
     }
 
     /**
      * Checks the currently active trace sections on the current thread, and optionally checks the
      * order of operations if [expectedEvent] is not null.
      */
-    internal fun expect(possibleEventPos: List<Int>?, vararg expectedOpenTraceSections: String) {
+    private fun expectInternal(
+        possibleEventPos: List<Int>?,
+        vararg expectedOpenTraceSections: String,
+    ): TraceStatus {
         var currentEvent: Int? = null
         allEventCounter.getAndAdd(1)
         if (possibleEventPos != null) {
             currentEvent = expectEvent(possibleEventPos)
         }
         val actualOpenSections = getOpenTraceSectionsOnCurrentThread()
-        assertTraceSectionsEquals(
+        return assertTraceSectionsEquals(
             expectedOpenTraceSections,
             possibleEventPos,
             actualOpenSections,
@@ -299,40 +317,37 @@ abstract class TestBase {
         expectedEvent: List<Int>?,
         actualOpenSections: Array<String>,
         actualEvent: Int?,
-        throwInsteadOfLog: Boolean = false,
-    ) {
+    ): TraceStatus {
         val expectedSize = expectedOpenTraceSections.size
         val actualSize = actualOpenSections.size
         if (expectedSize != actualSize) {
-            logInvalidTraceState(
+            return TraceError(
                 createFailureMessage(
                     expectedOpenTraceSections,
                     expectedEvent,
                     actualOpenSections,
                     actualEvent,
                     "Size mismatch, expected size $expectedSize but was size $actualSize",
-                ),
-                throwInsteadOfLog,
+                )
             )
         } else {
             expectedOpenTraceSections.forEachIndexed { n, expected ->
                 val actualTrace = actualOpenSections[n]
                 val actual = actualTrace.getTracedName()
                 if (expected != actual) {
-                    logInvalidTraceState(
+                    return TraceError(
                         createFailureMessage(
                             expectedOpenTraceSections,
                             expectedEvent,
                             actualOpenSections,
                             actualEvent,
                             "Differed at index #$n, expected \"$expected\" but was \"$actual\"",
-                        ),
-                        throwInsteadOfLog,
+                        )
                     )
-                    return
                 }
             }
         }
+        return TraceCorrect
     }
 
     private fun createFailureMessage(
@@ -360,12 +375,13 @@ abstract class TestBase {
         finalEvent.compareAndSet(INVALID_EVENT, expectedEvent)
         val previousEvent = eventCounter.getAndSet(FINAL_EVENT)
         if (expectedEvent != previousEvent) {
-            logInvalidTraceState(
-                "Expected to finish with event #$expectedEvent, but " +
-                    if (previousEvent == FINAL_EVENT)
-                        "finish() was already called with event #${finalEvent.get()}"
-                    else "the event counter is currently at #$previousEvent"
-            )
+            assertionErrors +=
+                InvalidTraceStateException(
+                    "Expected to finish with event #$expectedEvent, but " +
+                        if (previousEvent == FINAL_EVENT)
+                            "finish() was already called with event #${finalEvent.get()}"
+                        else "the event counter is currently at #$previousEvent"
+                )
         }
         return previousEvent
     }
@@ -374,12 +390,13 @@ abstract class TestBase {
         allEventCounter.compareAndSet(INVALID_EVENT, totalEvents)
         val previousEvent = allEventCounter.getAndSet(FINAL_EVENT)
         if (totalEvents != previousEvent) {
-            logInvalidTraceState(
-                "Expected test to end with a total of $totalEvents events, but " +
-                    if (previousEvent == FINAL_EVENT)
-                        "finish() was already called at event #${finalEvent.get()}"
-                    else "instead there were $previousEvent events"
-            )
+            assertionErrors +=
+                InvalidTraceStateException(
+                    "Expected test to end with a total of $totalEvents events, but " +
+                        if (previousEvent == FINAL_EVENT)
+                            "finish() was already called at event #${finalEvent.get()}"
+                        else "instead there were $previousEvent events"
+                )
         }
         return previousEvent
     }

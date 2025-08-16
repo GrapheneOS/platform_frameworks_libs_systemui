@@ -149,11 +149,7 @@ class CallbackFlowTracingTest : TestBase() {
                 // upstream flow already has tracing, so tracing with a collect call here would be
                 // redundant. That's why we call `collect` instead of `collectTraced`
                 repository.combinedState.collect {
-                    expect(
-                        "1^main:1^collectCombined",
-                        "collect:combinedState",
-                        "emit:combinedState",
-                    )
+                    expect("1^main:1^collectCombined", "combinedState#collect", "emit")
                 }
             }
             delay(10)
