@@ -25,7 +25,6 @@ import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
-import com.android.mechanics.MotionValue.Companion.StableThresholdSpatial
 import com.android.mechanics.debug.DebugInspector
 import com.android.mechanics.debug.FrameData
 import com.android.mechanics.impl.Computations
@@ -57,7 +56,7 @@ sealed interface ManagedMotionValue : MotionValueState, DisposableHandle
 class MotionValueCollection(
     internal val input: () -> Float,
     internal val gestureContext: GestureContext,
-    internal val stableThreshold: Float = StableThresholdSpatial,
+    internal val stableThreshold: Float = MotionValue.StableThresholdEffect,
     val label: String? = null,
 ) {
     private val managedComputations = mutableStateSetOf<ManagedMotionComputation>()
