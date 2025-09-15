@@ -18,16 +18,7 @@
     240,
     256,
     272,
-    288,
-    304,
-    320,
-    336,
-    352,
-    368,
-    384,
-    400,
-    416,
-    432
+    288
   ],
   "features": [
     {
@@ -52,15 +43,6 @@
         0,
         0,
         0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
         0
       ]
     },
@@ -68,15 +50,6 @@
       "name": "gestureDirection",
       "type": "string",
       "data_points": [
-        "Min",
-        "Min",
-        "Min",
-        "Min",
-        "Min",
-        "Min",
-        "Min",
-        "Min",
-        "Min",
         "Min",
         "Min",
         "Min",
@@ -109,26 +82,17 @@
         21,
         18,
         15,
-        12,
-        9,
-        6.1834006,
-        4.0823064,
-        2.5971997,
-        1.58311,
-        0.9141716,
-        0.4889884,
-        0.2301146,
-        0.08085263,
-        0.001194974,
-        -0.03613234,
-        -0.049089864,
-        -0.049071845,
-        -0.042999808,
-        -0.034852397,
-        -0.026743067,
-        -0.019653551,
-        -0.013916051,
-        -0.009518558,
+        11.525466,
+        8.861062,
+        6.965241,
+        5.2373986,
+        3.783774,
+        2.1837316,
+        0.98092216,
+        0.3759203,
+        0.12481006,
+        0.034722682,
+        0.00695624,
         0
       ]
     },
@@ -143,17 +107,8 @@
         21,
         18,
         15,
-        12,
-        9,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
+        10,
+        8.5,
         0,
         0,
         0,
@@ -199,8 +154,12 @@
           "dampingRatio": 0.9
         },
         {
-          "stiffness": 700,
-          "dampingRatio": 0.9
+          "stiffness": 1774.7703,
+          "dampingRatio": 0.91875
+        },
+        {
+          "stiffness": 11408.549,
+          "dampingRatio": 0.95624995
         },
         {
           "stiffness": 700,
@@ -215,72 +174,32 @@
           "dampingRatio": 0.9
         },
         {
-          "stiffness": 700,
-          "dampingRatio": 0.9
+          "stiffness": 4499.728,
+          "dampingRatio": 0.9375
         },
         {
-          "stiffness": 700,
-          "dampingRatio": 0.9
+          "stiffness": 4499.728,
+          "dampingRatio": 0.9375
         },
         {
-          "stiffness": 700,
-          "dampingRatio": 0.9
+          "stiffness": 4499.728,
+          "dampingRatio": 0.9375
         },
         {
-          "stiffness": 700,
-          "dampingRatio": 0.9
+          "stiffness": 4499.728,
+          "dampingRatio": 0.9375
         },
         {
-          "stiffness": 700,
-          "dampingRatio": 0.9
+          "stiffness": 4499.728,
+          "dampingRatio": 0.9375
         },
         {
-          "stiffness": 700,
-          "dampingRatio": 0.9
+          "stiffness": 4499.728,
+          "dampingRatio": 0.9375
         },
         {
-          "stiffness": 700,
-          "dampingRatio": 0.9
-        },
-        {
-          "stiffness": 700,
-          "dampingRatio": 0.9
-        },
-        {
-          "stiffness": 700,
-          "dampingRatio": 0.9
-        },
-        {
-          "stiffness": 700,
-          "dampingRatio": 0.9
-        },
-        {
-          "stiffness": 700,
-          "dampingRatio": 0.9
-        },
-        {
-          "stiffness": 700,
-          "dampingRatio": 0.9
-        },
-        {
-          "stiffness": 700,
-          "dampingRatio": 0.9
-        },
-        {
-          "stiffness": 700,
-          "dampingRatio": 0.9
-        },
-        {
-          "stiffness": 700,
-          "dampingRatio": 0.9
-        },
-        {
-          "stiffness": 700,
-          "dampingRatio": 0.9
-        },
-        {
-          "stiffness": 700,
-          "dampingRatio": 0.9
+          "stiffness": 4499.728,
+          "dampingRatio": 0.9375
         }
       ]
     },
@@ -295,15 +214,6 @@
         true,
         true,
         true,
-        true,
-        true,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
         false,
         false,
         false,

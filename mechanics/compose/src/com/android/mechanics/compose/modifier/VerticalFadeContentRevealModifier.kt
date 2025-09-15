@@ -92,6 +92,7 @@ private class FadeContentRevealNode(val deltaY: Float, private val label: String
 
     override fun onDetach() {
         revealAlpha?.dispose()
+        revealAlpha = null
     }
 
     private fun spec(): MotionSpec {

@@ -46,7 +46,7 @@ import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import com.android.mechanics.ManagedMotionValue
 import com.android.mechanics.debug.DebugMotionValueNode
-import com.android.mechanics.effects.RevealOnThreshold
+import com.android.mechanics.effects.VerticalTactileSurfaceRevealEffect
 import com.android.mechanics.spec.Mapping
 import com.android.mechanics.spec.MotionSpec
 import com.android.mechanics.spec.builder.ComposeMotionBuilderContext
@@ -61,46 +61,38 @@ import kotlin.math.roundToInt
  */
 fun Modifier.verticalTactileSurfaceReveal(
     deltaY: Float = 0f,
-    revealOnThreshold: RevealOnThreshold = DefaultRevealOnThreshold,
+    effectSpec: VerticalTactileSurfaceRevealEffect = DefaultEffectSpec,
     label: String? = null,
 ): Modifier =
     this then
-        VerticalTactileSurfaceRevealElement(
-            deltaY = deltaY,
-            revealOnThreshold = revealOnThreshold,
-            label = label,
-        )
+        VerticalTactileSurfaceRevealElement(deltaY = deltaY, effectSpec = effectSpec, label = label)
 
-private val DefaultRevealOnThreshold = RevealOnThreshold()
+private val DefaultEffectSpec = VerticalTactileSurfaceRevealEffect()
 
 private data class VerticalTactileSurfaceRevealElement(
     val deltaY: Float,
-    val revealOnThreshold: RevealOnThreshold,
+    val effectSpec: VerticalTactileSurfaceRevealEffect,
     val label: String?,
 ) : ModifierNodeElement<VerticalTactileSurfaceRevealNode>() {
     override fun create(): VerticalTactileSurfaceRevealNode =
-        VerticalTactileSurfaceRevealNode(
-            deltaY = deltaY,
-            revealOnThreshold = revealOnThreshold,
-            label = label,
-        )
+        VerticalTactileSurfaceRevealNode(deltaY = deltaY, effectSpec = effectSpec, label = label)
 
     override fun update(node: VerticalTactileSurfaceRevealNode) {
         check(node.deltaY == deltaY) { "Cannot update deltaY from ${node.deltaY} to $deltaY" }
-        node.update(revealOnThreshold = revealOnThreshold)
+        node.update(effectSpec = effectSpec)
     }
 
     override fun InspectorInfo.inspectableProperties() {
         name = "tactileSurfaceReveal"
         properties["deltaY"] = deltaY
-        properties["revealOnThreshold"] = revealOnThreshold
+        properties["effectSpec"] = effectSpec
         properties["label"] = label
     }
 }
 
 private class VerticalTactileSurfaceRevealNode(
     val deltaY: Float,
-    private var revealOnThreshold: RevealOnThreshold,
+    private var effectSpec: VerticalTactileSurfaceRevealEffect,
     private val label: String?,
 ) : DelegatingNode(), ApproachLayoutModifierNode, CompositionLocalConsumerModifierNode {
     // These properties are calculated during the lookahead pass (`lookAheadMeasure`) to
@@ -126,12 +118,13 @@ private class VerticalTactileSurfaceRevealNode(
         motionBuilderContext = motionBuilderContext()
     }
 
-    fun update(revealOnThreshold: RevealOnThreshold) {
-        this.revealOnThreshold = revealOnThreshold
+    fun update(effectSpec: VerticalTactileSurfaceRevealEffect) {
+        this.effectSpec = effectSpec
     }
 
     override fun onDetach() {
         revealHeight?.dispose()
+        revealHeight = null
     }
 
     private fun spec(): MotionSpec {
@@ -143,11 +136,7 @@ private class VerticalTactileSurfaceRevealNode(
                 // Cache the state read to avoid the performance cost of accessing it twice.
                 val start = layoutOffsetY
                 motionBuilderContext.spatialMotionSpec(Mapping.Zero) {
-                    between(
-                        start = start,
-                        end = start + lookAheadHeight,
-                        effect = revealOnThreshold,
-                    )
+                    between(start = start, end = start + lookAheadHeight, effect = effectSpec)
                 }
             }
             MotionDriver.State.MaxValue -> {
@@ -204,35 +193,53 @@ private class VerticalTactileSurfaceRevealNode(
         return measurable.measure(constraints).run {
             layout(width, height) {
                 placeWithLayer(IntOffset.Zero) {
-                    val revealHeight =
+                    val heightRevealed =
                         constraints
                             .constrainHeight(checkNotNull(revealHeight).output.roundToInt())
                             .toFloat()
 
-                    if (revealHeight != lookAheadHeight) {
-                        approachGraphicsLayer(revealHeight)
+                    if (heightRevealed != lookAheadHeight) {
+                        approachGraphicsLayer(heightRevealed)
                     }
                 }
             }
         }
     }
 
-    private fun GraphicsLayerScope.approachGraphicsLayer(revealHeight: Float) {
-        translationY = (revealHeight - lookAheadHeight) / 2f
+    private fun GraphicsLayerScope.approachGraphicsLayer(heightRevealed: Float) {
+        val maxHeight = lookAheadHeight
+
+        // Center the element vertically (translationY + shape) and clip
         clip = true
+        val heightLeft = heightRevealed - maxHeight
+        translationY = heightLeft / 2f
         shape = GenericShape { placeableSize, _ ->
-            val rect = Rect(Offset(0f, -translationY), Size(placeableSize.width, revealHeight))
-            val cornerMaxSize = revealOnThreshold.cornerMaxSize.toPx()
-            if (cornerMaxSize != 0f) {
-                val radius = (revealHeight / 2f).fastCoerceAtMost(cornerMaxSize)
+            val phase2HeightStart = maxHeight * effectSpec.phase2HeightPercentStart
+
+            val phase1MarginXMax =
+                effectSpec.phase1MarginX.toPx().fastCoerceAtMost(phase2HeightStart)
+            val phase1Progress =
+                (phase2HeightStart - heightRevealed).fastCoerceAtLeast(0f) / phase2HeightStart
+            val marginX = phase1MarginXMax * phase1Progress
+
+            val rect =
+                Rect(
+                    Offset(marginX, -translationY),
+                    Size(placeableSize.width - (marginX * 2f), heightRevealed),
+                )
+
+            val radiusMax = effectSpec.maxCornerSize.toPx().fastCoerceAtMost(maxHeight / 2f)
+            val radius = (heightRevealed / 2f).fastCoerceAtMost(radiusMax)
+            if (radius != 0f) {
                 addRoundRect(RoundRect(rect, CornerRadius(radius)))
             } else {
                 addRect(rect)
             }
         }
-        val fullyVisibleMinHeight = revealOnThreshold.minSize.toPx()
+
+        val fullyVisibleMinHeight = effectSpec.phase1HeightMin.toPx()
         if (fullyVisibleMinHeight != 0f) {
-            val revealAlpha = (revealHeight / fullyVisibleMinHeight).fastCoerceAtLeast(0f)
+            val revealAlpha = (heightRevealed / fullyVisibleMinHeight).fastCoerceAtLeast(0f)
             if (revealAlpha < 1f) {
                 alpha = revealAlpha
                 compositingStrategy = CompositingStrategy.ModulateAlpha
