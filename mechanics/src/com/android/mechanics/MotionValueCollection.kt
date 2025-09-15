@@ -25,8 +25,6 @@ import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
-import androidx.compose.ui.util.trace
-import androidx.compose.ui.util.traceValue
 import com.android.mechanics.MotionValue.Companion.StableThresholdSpatial
 import com.android.mechanics.debug.DebugInspector
 import com.android.mechanics.debug.FrameData
@@ -40,8 +38,6 @@ import com.android.mechanics.spec.SegmentKey
 import com.android.mechanics.spec.SemanticKey
 import com.android.mechanics.spring.SpringState
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.time.Duration
-import kotlin.time.measureTime
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.DisposableHandle
 import kotlinx.coroutines.flow.first
@@ -82,36 +78,6 @@ class MotionValueCollection(
     }
 
     /**
-     * Conditionally wraps the execution of a [block] in a performance trace.
-     *
-     * The primary advantage of this helper is lazy evaluation. The trace message from
-     * [onTraceStart] is not computed and no `try-finally` block is entered unless tracing is
-     * [enabled]. This helps to avoid performance penalties in production builds where tracing is
-     * often turned off.
-     *
-     * @param enabled A boolean flag to enable or disable tracing.
-     * @param onTraceStart A lambda that returns the trace section name. Only invoked if [enabled]
-     *   is true.
-     * @param onTraceEnd A lambda that executes after the block has finished. Only invoked if
-     *   [enabled] is true.
-     * @param block The code block to be executed and traced.
-     */
-    private inline fun trace(
-        enabled: Boolean,
-        onTraceStart: () -> String,
-        onTraceEnd: (Duration) -> Unit = {},
-        block: () -> Unit,
-    ) {
-        if (enabled) {
-            val duration = measureTime { trace(sectionName = onTraceStart(), block = block) }
-
-            onTraceEnd(duration)
-        } else {
-            block()
-        }
-    }
-
-    /**
      * Keeps the all created [ManagedMotionValue]'s animated output running.
      *
      * Clients must call [keepRunning], and keep the coroutine running while any of the created
@@ -144,43 +110,26 @@ class MotionValueCollection(
                     withFrameNanos { frameTimeNanos ->
                         frameCount++
 
-                        trace(
-                            enabled = isTraceEnabled,
-                            onTraceStart = {
-                                val prefix = "MotionValueCollection($label)"
-                                val unstable = managedComputations.count { !it.isStable }
-                                val all = managedComputations.size
-                                traceValue("$prefix:unstable", unstable.toLong())
-                                traceValue("$prefix:all", all.toLong())
+                        lastFrameTimeNanos = currentAnimationTimeNanos
+                        lastInput = currentInput
+                        lastDirection = currentDirection
+                        lastGestureDragOffset = currentGestureDragOffset
 
-                                "$prefix withFrameNanos f:$frameCount ($unstable/$all)"
-                            },
-                            onTraceEnd = {
-                                val prefix = "MotionValueCollection($label)"
-                                traceValue("$prefix:duration", it.inWholeMicroseconds)
-                            },
+                        currentAnimationTimeNanos = frameTimeNanos
+                        currentInput = input.invoke()
+                        currentDirection = gestureContext.direction
+                        currentGestureDragOffset = gestureContext.dragOffset
+
+                        if (
+                            lastInput != currentInput ||
+                                lastDirection != currentDirection ||
+                                lastGestureDragOffset != currentGestureDragOffset
                         ) {
-                            lastFrameTimeNanos = currentAnimationTimeNanos
-                            lastInput = currentInput
-                            lastDirection = currentDirection
-                            lastGestureDragOffset = currentGestureDragOffset
-
-                            currentAnimationTimeNanos = frameTimeNanos
-                            currentInput = input.invoke()
-                            currentDirection = gestureContext.direction
-                            currentGestureDragOffset = gestureContext.dragOffset
-
-                            if (
-                                lastInput != currentInput ||
-                                    lastDirection != currentDirection ||
-                                    lastGestureDragOffset != currentGestureDragOffset
-                            ) {
+                            scheduleNextFrame = true
+                        }
+                        managedComputations.forEach {
+                            if (it.onFrameStart(isAnimatingUninterrupted)) {
                                 scheduleNextFrame = true
-                            }
-                            managedComputations.forEach {
-                                if (it.onFrameStart(isAnimatingUninterrupted)) {
-                                    scheduleNextFrame = true
-                                }
                             }
                         }
                     }
@@ -262,10 +211,6 @@ class MotionValueCollection(
     internal fun onDispose(toDispose: ManagedMotionComputation) {
         managedComputations.remove(toDispose)
         toDispose.onDeactivate()
-    }
-
-    companion object {
-        var isTraceEnabled: Boolean = false
     }
 }
 
