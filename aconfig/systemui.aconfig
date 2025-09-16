@@ -148,14 +148,6 @@ flag {
 }
 
 flag {
-    name: "smartspace_ui_update_resources"
-    namespace: "systemui"
-    description: "Read-only flag for updating resources for Smartspace UI"
-    bug: "389741821"
-    is_fixed_read_only: true
-}
-
-flag {
     name: "smartspace_semantic_weather_data"
     namespace: "systemui"
     description: "Support semantic weather data and its rendering in Smartspace"
