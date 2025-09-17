@@ -96,7 +96,7 @@ private fun StringBuilder.appendBreakpointKey(key: BreakpointKey) {
         append("|")
     }
     append("id:0x")
-    append(System.identityHashCode(key.identity).toString(16).padStart(8, '0'))
+    append(key.identity.hashCode().toString(16).padStart(8, '0'))
 }
 
 private fun StringBuilder.appendSegmentKey(key: SegmentKey) {
@@ -129,7 +129,7 @@ private fun StringBuilder.appendSemanticsLine(
 
     append(semanticKey.debugLabel)
     append("[id:0x")
-    append(System.identityHashCode(semanticKey.identity).toString(16).padStart(8, '0'))
+    append(semanticKey.identity.hashCode().toString(16).padStart(8, '0'))
     append("]")
 
     append("=")

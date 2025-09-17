@@ -19,6 +19,7 @@ package com.android.mechanics.spec.builder
 import androidx.compose.ui.util.packFloats
 import androidx.compose.ui.util.unpackFloat1
 import androidx.compose.ui.util.unpackFloat2
+import kotlin.jvm.JvmInline
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.nextDown
@@ -72,13 +73,15 @@ value class EffectPlacement internal constructor(val value: Long) {
             }
         }
 
-    internal val sortOrder: Float
+    // TODO Convert this to a Comparable instead. Currently uses Double instead of Float, since
+    //  nextUp / nextDown is only available on Doubles in Kotlin Multiplatform.
+    internal val sortOrder: Double
         get() {
             return when (type) {
-                EffectPlacemenType.At -> start
-                EffectPlacemenType.Before -> start.nextDown()
-                EffectPlacemenType.After -> start.nextUp()
-                EffectPlacemenType.Between -> (start + end) / 2
+                EffectPlacemenType.At -> start.toDouble()
+                EffectPlacemenType.Before -> start.toDouble().nextDown()
+                EffectPlacemenType.After -> start.toDouble().nextUp()
+                EffectPlacemenType.Between -> (start.toDouble() + end.toDouble()) / 2
             }
         }
 

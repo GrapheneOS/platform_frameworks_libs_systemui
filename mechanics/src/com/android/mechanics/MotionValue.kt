@@ -44,7 +44,6 @@ import com.android.mechanics.spec.SegmentData
 import com.android.mechanics.spec.SegmentKey
 import com.android.mechanics.spec.SemanticKey
 import com.android.mechanics.spring.SpringState
-import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -255,10 +254,11 @@ class MotionValue(
         internal const val TAG = "MotionValue"
     }
 
-    private var debugInspectorRefCount = AtomicInteger(0)
+    private var debugInspectorRefCount = 0
 
     private fun onDisposeDebugInspector() {
-        if (debugInspectorRefCount.decrementAndGet() == 0) {
+        debugInspectorRefCount--
+        if (debugInspectorRefCount == 0) {
             impl.debugInspector = null
         }
     }
@@ -269,7 +269,8 @@ class MotionValue(
      * The returned [DebugInspector] must be [DebugInspector.dispose]d when no longer needed.
      */
     override fun debugInspector(): DebugInspector {
-        if (debugInspectorRefCount.getAndIncrement() == 0) {
+        debugInspectorRefCount++
+        if (debugInspectorRefCount == 1) {
             impl.debugInspector =
                 DebugInspector(
                     FrameData(

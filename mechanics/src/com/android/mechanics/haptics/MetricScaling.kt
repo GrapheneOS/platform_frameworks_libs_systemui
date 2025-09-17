@@ -17,6 +17,7 @@
 package com.android.mechanics.haptics
 
 import androidx.compose.ui.unit.Density
+import kotlin.jvm.JvmInline
 import kotlin.math.abs
 
 private const val PIXEL_INCH_CONVERSION = 25.4f / (160f * 1000)

@@ -24,6 +24,7 @@ import com.android.mechanics.spec.Breakpoint
 import com.android.mechanics.spec.Guarantee
 import com.android.mechanics.spec.InputDirection
 import com.android.mechanics.spring.SpringParameters
+import kotlin.jvm.JvmInline
 import kotlin.math.max
 
 /**

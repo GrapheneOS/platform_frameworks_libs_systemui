@@ -34,6 +34,7 @@ import com.android.mechanics.spec.OnChangeSegmentHandler
 import com.android.mechanics.spec.SegmentKey
 import com.android.mechanics.spec.SemanticValue
 import com.android.mechanics.spring.SpringParameters
+import kotlin.jvm.JvmInline
 
 internal class MotionSpecBuilderImpl(
     override val baseMapping: Mapping,
@@ -168,7 +169,7 @@ internal class MotionSpecBuilderImpl(
                     }
                 } else {
                     // The previous effect wants to extend to the beginning of the next effect
-                    assert(previousPlacement.max == Float.POSITIVE_INFINITY)
+                    check(previousPlacement.max == Float.POSITIVE_INFINITY)
 
                     // Therefore the current effect is required to have a defined start-point
                     require(measuredPlacement.min.isFinite()) {
@@ -183,7 +184,7 @@ internal class MotionSpecBuilderImpl(
             }
 
             if (prependNoPlaceholderEffect) {
-                assert(actualPlacement.min.isFinite())
+                check(actualPlacement.min.isFinite())
                 // Adding a placeholder that will be skipped, but simplifies the algorithm by
                 // ensuring all effects are back-to-back. The NoEffectPlaceholderId is used to
 
