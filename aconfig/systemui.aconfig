@@ -57,13 +57,6 @@ flag {
 }
 
 flag {
-    name: "ambient_aod"
-    namespace: "systemui"
-    description: "Enables ambient wallpaper and AOD enhancements"
-    bug: "372655702"
-}
-
-flag {
     name: "smartspace_sports_card_background"
     namespace: "systemui"
     description: "Enables Smartspace sports card background protection and related ui updates"
