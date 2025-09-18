@@ -186,3 +186,10 @@ flag {
     description: "Support pan & zoom for extended wallpaper effects"
     bug: "417165168"
 }
+
+flag {
+    name: "aod_inactivity_detection"
+    namespace: "systemui"
+    description: "Support an activity detection sensor to power down the display to save power."
+    bug: "402534470"
+}
