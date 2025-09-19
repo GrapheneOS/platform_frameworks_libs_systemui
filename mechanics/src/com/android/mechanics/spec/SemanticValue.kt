@@ -22,12 +22,10 @@ package com.android.mechanics.spec
  * Semantic states can be supplied by a [MotionSpec], and allows expose semantic information on the
  * logical state a [MotionValue] is in.
  */
-class SemanticKey<T>(val type: Class<T>, val debugLabel: String, val identity: Any = Object()) {
+class SemanticKey<T>(val debugLabel: String, val identity: Any = Any()) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as SemanticKey<*>
+        if (other !is SemanticKey<*>) return false
 
         return identity == other.identity
     }
@@ -42,10 +40,8 @@ class SemanticKey<T>(val type: Class<T>, val debugLabel: String, val identity: A
 }
 
 /** Creates a new semantic key of type [T], identified by [identity]. */
-inline fun <reified T> SemanticKey(
-    debugLabel: String = T::class.java.simpleName,
-    identity: Any = Object(),
-) = SemanticKey(T::class.java, debugLabel, identity)
+inline fun <reified T> SemanticKey(identity: Any = Any()) =
+    SemanticKey<T>(T::class.simpleName.orEmpty(), identity)
 
 /** Pair of semantic [key] and [value]. */
 data class SemanticValue<T>(val key: SemanticKey<T>, val value: T)

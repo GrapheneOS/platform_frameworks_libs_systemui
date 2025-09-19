@@ -85,7 +85,7 @@ class MagneticDetach(
         if (placement.type == EffectPlacemenType.Before) {
             createPlacedBeforeSpec(minLimit, minLimitKey, maxLimit, maxLimitKey)
         } else {
-            assert(placement.type == EffectPlacemenType.After)
+            check(placement.type == EffectPlacemenType.After)
             createPlacedAfterSpec(minLimit, minLimitKey, maxLimit, maxLimitKey)
         }
     }

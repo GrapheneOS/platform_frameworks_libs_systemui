@@ -36,7 +36,6 @@ import com.android.mechanics.spec.SegmentData
 import com.android.mechanics.spec.SegmentKey
 import com.android.mechanics.spec.SemanticKey
 import com.android.mechanics.spring.SpringState
-import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.DisposableHandle
 import kotlinx.coroutines.flow.first
@@ -257,7 +256,8 @@ internal class ManagedMotionComputation(
     }
 
     override fun debugInspector(): DebugInspector {
-        if (debugInspectorRefCount.getAndIncrement() == 0) {
+        debugInspectorRefCount++
+        if (debugInspectorRefCount == 1) {
             debugInspector =
                 DebugInspector(
                     FrameData(
@@ -279,10 +279,11 @@ internal class ManagedMotionComputation(
         return checkNotNull(debugInspector)
     }
 
-    private var debugInspectorRefCount = AtomicInteger(0)
+    private var debugInspectorRefCount = 0
 
     private fun onDisposeDebugInspector() {
-        if (debugInspectorRefCount.decrementAndGet() == 0) {
+        debugInspectorRefCount--
+        if (debugInspectorRefCount == 0) {
             debugInspector = null
         }
     }

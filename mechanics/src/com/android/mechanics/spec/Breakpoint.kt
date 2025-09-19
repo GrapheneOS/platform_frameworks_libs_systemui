@@ -26,12 +26,10 @@ import com.android.mechanics.spring.SpringParameters
  * @param debugLabel name of the breakpoint, for tooling and debugging.
  * @param identity is used to check the equality of two key instances.
  */
-class BreakpointKey(val debugLabel: String? = null, val identity: Any = Object()) {
+class BreakpointKey(val debugLabel: String? = null, val identity: Any = Any()) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as BreakpointKey
+        if (other !is BreakpointKey) return false
 
         return identity == other.identity
     }
@@ -42,7 +40,7 @@ class BreakpointKey(val debugLabel: String? = null, val identity: Any = Object()
 
     override fun toString(): String {
         return "BreakpointKey(${debugLabel ?: ""}" +
-            "@${System.identityHashCode(identity).toString(16).padStart(8,'0')})"
+            "@${identity.hashCode().toString(16).padStart(8,'0')})"
     }
 
     internal companion object {
