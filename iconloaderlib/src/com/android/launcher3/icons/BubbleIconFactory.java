@@ -84,6 +84,19 @@ public class BubbleIconFactory extends BaseIconFactory {
     }
 
     /**
+     * Creates the BitmapInfo for the app bubble. If the user is managed, the badge will be
+     * included in the drawable.
+     */
+    public BitmapInfo getAppBubbleBitmapInfo(@NonNull Drawable appIcon, UserHandle user) {
+        return createBadgedIconBitmap(
+                appIcon, new IconOptions()
+                        .setBitmapGenerationMode(MODE_WITH_SHADOW)
+                        .setUser(user)
+                        // We do not care about extracted color
+                        .setExtractedColor(Color.TRANSPARENT));
+    }
+
+    /**
      * Returns a {@link BitmapInfo} for the app-badge that is shown on top of each bubble. This
      * will include the workprofile indicator on the badge if appropriate.
      */
