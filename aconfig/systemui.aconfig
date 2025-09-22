@@ -131,13 +131,6 @@ flag {
 }
 
 flag {
-    name: "smartspace_ui_update"
-    namespace: "systemui"
-    description: "Update Smartspace UI"
-    bug: "389741821"
-}
-
-flag {
     name: "smartspace_weather_use_monochrome_font_icons"
     namespace: "systemui"
     description: "Update Smartspace to use monochrome font icons for weather"
