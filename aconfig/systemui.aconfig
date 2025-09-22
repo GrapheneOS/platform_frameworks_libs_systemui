@@ -88,20 +88,6 @@ flag {
 }
 
 flag {
-   name: "lockscreen_custom_clocks"
-   namespace: "systemui"
-   description: "Enable lockscreen custom clocks"
-   bug: "378486437"
-}
-
-flag {
-   name: "clock_reactive_variants"
-   namespace: "systemui"
-   description: "Add reactive variant fonts to some clocks"
-   bug: "343495953"
-}
-
-flag {
    name: "clock_reactive_smartspace_layout"
    namespace: "systemui"
    description: "Smartspace layout logic change for reactive clocks"
