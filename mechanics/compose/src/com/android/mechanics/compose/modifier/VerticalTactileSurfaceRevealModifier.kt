@@ -269,7 +269,7 @@ private class VerticalTactileSurfaceRevealNode(
                     Size(placeableSize.width - (offsetX * 2f), heightRevealed),
                 )
 
-            val radiusMax = effectSpec.maxCornerSize.toPx().fastCoerceAtMost(maxHeight / 2f)
+            val radiusMax = effectSpec.maxCornerSize().toPx().fastCoerceAtMost(maxHeight / 2f)
             val radius = (heightRevealed / 2f).fastCoerceAtMost(radiusMax)
 
             animatedValuesForTests?.let {
