@@ -157,6 +157,16 @@ flag {
 }
 
 flag {
+    name: "enable_lpp_assist_invocation_initial_rumble"
+    namespace: "systemui"
+    description: "Enables the initial rumble haptics on power button long press for launching assistant"
+    bug: "419235496"
+    metadata {
+         purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "notification_dot_contrast_border"
     namespace: "launcher"
     description: "Draws a small black or white contrast border around notification dots according to the dot color's luminescence."
