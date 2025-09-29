@@ -81,13 +81,6 @@ flag {
 }
 
 flag {
-   name: "clock_reactive_smartspace_layout"
-   namespace: "systemui"
-   description: "Smartspace layout logic change for reactive clocks"
-   bug: "343495953"
-}
-
-flag {
     name: "extended_wallpaper_effects"
     namespace: "systemui"
     description: "Enables extended wallpaper effects"
