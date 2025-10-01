@@ -39,6 +39,23 @@ import com.android.mechanics.spec.builder.MotionBuilderContext
 import com.android.mechanics.spec.with
 import com.android.mechanics.spring.SpringParameters
 
+/** Default values for the original MagneticDetach implementation. */
+object MagneticDetach {
+    object Defaults {
+        val AttachDetachState = SemanticKey<State>(debugLabel = "AttachDetachState")
+        val AttachedValue = SemanticKey<Float?>(debugLabel = "AttachedValue")
+        val AttachDetachScale = .3f
+        val DetachPosition = 80.dp
+        val AttachPosition = 40.dp
+        val Spring = SpringParameters(stiffness = 800f, dampingRatio = 0.95f)
+    }
+
+    enum class State {
+        Attached,
+        Detached,
+    }
+}
+
 /**
  * Gesture effect that emulates effort to detach an element from its resting position.
  *
@@ -49,26 +66,68 @@ import com.android.mechanics.spring.SpringParameters
  * @param attachScale fraction of input changes propagated after re-attach.
  * @param detachSpring spring used during detach
  * @param attachSpring spring used during attach
+ *
+ * TODO: b/448605986 - align this factory functions and the above defaults with the API best
+ *   practices. This indirection is here to allow extracting a generic MagneticDetachEffect, while
+ *   not having to change all call-sites in one CL.
  */
-class MagneticDetach(
-    private val semanticState: SemanticKey<State> = Defaults.AttachDetachState,
-    private val semanticAttachedValue: SemanticKey<Float?> = Defaults.AttachedValue,
-    private val detachPosition: Dp = Defaults.DetachPosition,
-    private val attachPosition: Dp = Defaults.AttachPosition,
-    private val detachScale: Float = Defaults.AttachDetachScale,
-    private val attachScale: Float = Defaults.AttachDetachScale * (attachPosition / detachPosition),
-    private val detachSpring: SpringParameters = Defaults.Spring,
-    private val attachSpring: SpringParameters = Defaults.Spring,
+fun MagneticDetach(
+    semanticState: SemanticKey<MagneticDetach.State> = MagneticDetach.Defaults.AttachDetachState,
+    semanticAttachedValue: SemanticKey<Float?> = MagneticDetach.Defaults.AttachedValue,
+    detachPosition: Dp = MagneticDetach.Defaults.DetachPosition,
+    attachPosition: Dp = MagneticDetach.Defaults.AttachPosition,
+    detachScale: Float = MagneticDetach.Defaults.AttachDetachScale,
+    attachScale: Float =
+        MagneticDetach.Defaults.AttachDetachScale * (attachPosition / detachPosition),
+    detachSpring: SpringParameters = MagneticDetach.Defaults.Spring,
+    attachSpring: SpringParameters = MagneticDetach.Defaults.Spring,
+    enableHaptics: Boolean = false,
+): MagneticDetachEffect<MagneticDetach.State> =
+    MagneticDetachEffect(
+        semanticState,
+        MagneticDetach.State.Attached,
+        MagneticDetach.State.Detached,
+        semanticAttachedValue,
+        detachPosition,
+        attachPosition,
+        detachScale,
+        attachScale,
+        detachSpring,
+        attachSpring,
+        enableHaptics,
+    )
+
+/**
+ * Gesture effect that emulates effort to detach an element from its resting position. *
+ *
+ * @param attachedStateKey semantic state key on whether the gesture is past the detach threshold.
+ * @param attachedState value for [attachedStateKey] when attached
+ * @param detachedState value for [attachedStateKey] when detached
+ * @param restingValueKey semantic state for the input value the gesture would want to go back to.
+ * @param detachPosition distance from the origin to detach
+ * @param attachPosition distance from the origin to re-attach
+ * @param detachScale fraction of input changes propagated during detach.
+ * @param attachScale fraction of input changes propagated after re-attach.
+ * @param detachSpring spring used during detach
+ * @param attachSpring spring used during attach
+ */
+class MagneticDetachEffect<T>(
+    private val attachedStateKey: SemanticKey<T>,
+    private val attachedState: T,
+    private val detachedState: T,
+    private val restingValueKey: SemanticKey<Float?> = CommonSemantics.RestingValueKey,
+    private val detachPosition: Dp = MagneticDetach.Defaults.DetachPosition,
+    private val attachPosition: Dp = MagneticDetach.Defaults.AttachPosition,
+    private val detachScale: Float = MagneticDetach.Defaults.AttachDetachScale,
+    private val attachScale: Float =
+        MagneticDetach.Defaults.AttachDetachScale * (attachPosition / detachPosition),
+    private val detachSpring: SpringParameters = MagneticDetach.Defaults.Spring,
+    private val attachSpring: SpringParameters = MagneticDetach.Defaults.Spring,
     private val enableHaptics: Boolean = false,
 ) : Effect.PlaceableAfter, Effect.PlaceableBefore {
 
     init {
         require(attachPosition <= detachPosition)
-    }
-
-    enum class State {
-        Attached,
-        Detached,
     }
 
     override fun MotionBuilderContext.intrinsicSize(): Float {
@@ -90,15 +149,6 @@ class MagneticDetach(
         }
     }
 
-    object Defaults {
-        val AttachDetachState = SemanticKey<State>(debugLabel = "AttachDetachState")
-        val AttachedValue = SemanticKey<Float?>(debugLabel = "AttachedValue")
-        val AttachDetachScale = .3f
-        val DetachPosition = 80.dp
-        val AttachPosition = 40.dp
-        val Spring = SpringParameters(stiffness = 800f, dampingRatio = 0.95f)
-    }
-
     /* Effect is attached at minLimit, and detaches at maxLimit. */
     @OptIn(HapticsExperimentalApi::class)
     private fun EffectApplyScope.createPlacedAfterSpec(
@@ -113,9 +163,9 @@ class MagneticDetach(
         val reattachValue = baseValue(reattachPos)
 
         val attachedSemantics =
-            listOf(semanticState with State.Attached, semanticAttachedValue with attachedValue)
+            listOf(attachedStateKey with attachedState, restingValueKey with attachedValue)
         val detachedSemantics =
-            listOf(semanticState with State.Detached, semanticAttachedValue with null)
+            listOf(attachedStateKey with detachedState, restingValueKey with null)
 
         val scaledDetachValue = attachedValue + (detachedValue - attachedValue) * detachScale
         val scaledReattachValue = attachedValue + (reattachValue - attachedValue) * attachScale
@@ -146,7 +196,7 @@ class MagneticDetach(
                 semantics = detachedSemantics,
                 breakpointHaptics = thresholdHaptics,
             )
-            before(semantics = listOf(semanticAttachedValue with null))
+            before(semantics = listOf(restingValueKey with null))
         }
 
         backward(
@@ -162,8 +212,8 @@ class MagneticDetach(
                 mapping = baseMapping,
                 breakpointHaptics = thresholdHaptics,
             )
-            before(semantics = listOf(semanticAttachedValue with null))
-            after(semantics = listOf(semanticAttachedValue with null))
+            before(semantics = listOf(restingValueKey with null))
+            after(semantics = listOf(restingValueKey with null))
         }
 
         addSegmentHandlers(
@@ -186,9 +236,9 @@ class MagneticDetach(
         val reattachValue = baseValue(reattachPos)
 
         val attachedSemantics =
-            listOf(semanticState with State.Attached, semanticAttachedValue with attachedValue)
+            listOf(attachedStateKey with attachedState, restingValueKey with attachedValue)
         val detachedSemantics =
-            listOf(semanticState with State.Detached, semanticAttachedValue with null)
+            listOf(attachedStateKey with detachedState, restingValueKey with null)
 
         val scaledDetachValue = attachedValue + (detachedValue - attachedValue) * detachScale
         val scaledReattachValue = attachedValue + (reattachValue - attachedValue) * attachScale
@@ -200,7 +250,7 @@ class MagneticDetach(
             semantics = attachedSemantics,
         ) {
             before(spring = detachSpring, semantics = detachedSemantics)
-            after(semantics = listOf(semanticAttachedValue with null))
+            after(semantics = listOf(restingValueKey with null))
         }
 
         forward(initialMapping = baseMapping, semantics = detachedSemantics) {
@@ -212,7 +262,7 @@ class MagneticDetach(
                 spring = attachSpring,
                 semantics = attachedSemantics,
             )
-            after(semantics = listOf(semanticAttachedValue with null))
+            after(semantics = listOf(restingValueKey with null))
         }
 
         addSegmentHandlers(
