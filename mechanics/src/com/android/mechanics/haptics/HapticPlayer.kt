@@ -16,6 +16,11 @@
 
 package com.android.mechanics.haptics
 
+import androidx.compose.runtime.staticCompositionLocalOf
+
+/** Composition-local to provide a [HapticPlayer]. */
+val LocalHapticPlayer = staticCompositionLocalOf { HapticPlayer.NoPlayer }
+
 interface HapticPlayer {
 
     fun playSegmentHaptics(

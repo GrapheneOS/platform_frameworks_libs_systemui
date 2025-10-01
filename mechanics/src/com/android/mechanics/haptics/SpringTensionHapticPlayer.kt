@@ -17,15 +17,36 @@
 package com.android.mechanics.haptics
 
 import android.Manifest
+import android.content.Context
 import android.os.VibrationEffect
 import android.os.VibratorManager
 import androidx.annotation.RequiresPermission
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
+
+@Composable
+@HapticsExperimentalApi
+fun SpringTensionHapticPlayerProvider(content: @Composable () -> Unit) {
+    val density = LocalDensity.current
+    val context = LocalContext.current
+    val hapticPlayer =
+        remember(density, context) {
+            val vibratorManager =
+                context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            SpringTensionHapticPlayer(density, vibratorManager)
+        }
+
+    CompositionLocalProvider(LocalHapticPlayer provides hapticPlayer) { content() }
+}
 
 @HapticsExperimentalApi
 class SpringTensionHapticPlayer(private val density: Density, vibratorManager: VibratorManager) :

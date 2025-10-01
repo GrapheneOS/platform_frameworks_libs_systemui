@@ -23,7 +23,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import com.android.mechanics.haptics.HapticPlayer
+import com.android.mechanics.haptics.LocalHapticPlayer
 import com.android.mechanics.spec.MotionSpec
 import com.android.mechanics.spec.builder.MotionBuilderContext
 import com.android.mechanics.spec.builder.rememberMotionBuilderContext
@@ -35,9 +35,10 @@ fun rememberMotionValue(
     spec: () -> MotionSpec,
     label: String? = null,
     stableThreshold: Float = 0.01f,
-    hapticPlayer: HapticPlayer = HapticPlayer.NoPlayer,
 ): MotionValue {
     val specGetter by rememberUpdatedState(spec)
+    val hapticPlayer = LocalHapticPlayer.current
+
     val motionValue =
         remember(input, hapticPlayer) {
             MotionValue(
@@ -61,7 +62,6 @@ fun rememberMotionValue(
     spec: State<MotionSpec>,
     label: String? = null,
     stableThreshold: Float = 0.01f,
-    hapticPlayer: HapticPlayer = HapticPlayer.NoPlayer,
 ): MotionValue {
     return rememberMotionValue(
         input = input,
@@ -69,7 +69,6 @@ fun rememberMotionValue(
         spec = spec::value,
         label = label,
         stableThreshold = stableThreshold,
-        hapticPlayer = hapticPlayer,
     )
 }
 
