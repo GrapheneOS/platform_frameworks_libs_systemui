@@ -41,8 +41,11 @@ object ChangeSegmentHandlers {
     val PreventDirectionChangeWithinCurrentSegment: OnChangeSegmentHandler =
         { currentSegment, newInput, newDirection ->
             currentSegment.takeIf {
-                newDirection != currentSegment.direction &&
-                    it.isValidForInput(newInput, currentSegment.direction)
+                // Keep the previous segment as long as the input moves in the opposite direction,
+                // AND the input is strictly within the segment. Specifically, do not use
+                // SegmentData#isValidForInput, since this assumes validity when exiting on the
+                // entry side; with direction suppression, this assumption does not hold.
+                newDirection != it.direction && newInput in it.range
             }
         }
 

@@ -11,7 +11,24 @@
     128,
     144,
     160,
-    176
+    176,
+    192,
+    208,
+    224,
+    240,
+    256,
+    272,
+    288,
+    304,
+    320,
+    336,
+    352,
+    368,
+    384,
+    400,
+    416,
+    432,
+    448
   ],
   "features": [
     {
@@ -29,6 +46,23 @@
         28.399998,
         14.199998,
         0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
         0
       ]
     },
@@ -42,6 +76,23 @@
         "Max",
         "Max",
         "Max",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
+        "Min",
         "Min",
         "Min",
         "Min",
@@ -64,8 +115,25 @@
         19.779999,
         15.5199995,
         11.26,
-        7,
-        7
+        3.6189127,
+        1.593638,
+        0.45143503,
+        -0.13746244,
+        -0.3953405,
+        -0.46685255,
+        -0.44254303,
+        -0.37651333,
+        -0.29917005,
+        -0.22610326,
+        -0.1640611,
+        -0.11483092,
+        -0.07766384,
+        -0.050719727,
+        -0.0318765,
+        -0.019142693,
+        -0.010833884,
+        -0.0056171017,
+        0
       ]
     },
     {
@@ -82,8 +150,25 @@
         19.779999,
         15.5199995,
         11.26,
-        7,
-        7
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
       ]
     },
     {
@@ -131,12 +216,80 @@
           "dampingRatio": 1
         },
         {
-          "stiffness": 100000,
-          "dampingRatio": 1
+          "stiffness": 700,
+          "dampingRatio": 0.9
         },
         {
-          "stiffness": 100000,
-          "dampingRatio": 1
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
+        },
+        {
+          "stiffness": 700,
+          "dampingRatio": 0.9
         }
       ]
     },
@@ -154,7 +307,24 @@
         true,
         true,
         true,
-        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
         true
       ]
     }

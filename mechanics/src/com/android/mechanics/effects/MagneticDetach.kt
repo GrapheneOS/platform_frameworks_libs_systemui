@@ -91,8 +91,8 @@ class MagneticDetach(
     }
 
     object Defaults {
-        val AttachDetachState = SemanticKey<State>()
-        val AttachedValue = SemanticKey<Float?>()
+        val AttachDetachState = SemanticKey<State>(debugLabel = "AttachDetachState")
+        val AttachedValue = SemanticKey<Float?>(debugLabel = "AttachedValue")
         val AttachDetachScale = .3f
         val DetachPosition = 80.dp
         val AttachPosition = 40.dp

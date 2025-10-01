@@ -220,6 +220,14 @@ class MagneticDetachGoldenTest(private val placement: EffectPlacemenType) :
 
     @Test
     fun beforeDetach_suppressesDirectionReverse() {
+        // This test reveals an unintended behavior we accept for now:
+        // When the direction change was suppressed within the segment, upon exiting on the entry
+        // side, delta is animated. This is because the code path is the same as if the exit was
+        // delayed due to the change direction slop not reached yet. Since we cannot distinguish
+        // these cases within the MotionValue computation, we accept this animation for now.
+        // The relevant test that covers the opposite case would be MotionValueTest
+        // directionChange_maxToMin_changesSegmentWithDirectionChange and
+        // directionChange_minToMax_changesSegmentWithDirectionChange
         motion.goldenTest(
             createTestSpec(),
             verifyTimeSeries = {
