@@ -160,6 +160,16 @@ flag {
 }
 
 flag {
+    name: "enable_gesture_assist_invocation_effect"
+    namespace: "systemui"
+    description: "Enables invocation effect on corner gesture for launching assistant"
+    bug: "417194744"
+    metadata {
+         purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "notification_dot_contrast_border"
     namespace: "launcher"
     description: "Draws a small black or white contrast border around notification dots according to the dot color's luminescence."
