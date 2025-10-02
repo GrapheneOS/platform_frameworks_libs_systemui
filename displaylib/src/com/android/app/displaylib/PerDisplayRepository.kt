@@ -16,12 +16,12 @@
 
 package com.android.app.displaylib
 
+import android.os.Looper
 import android.util.Log
-import android.view.Display
 import android.view.Display.DEFAULT_DISPLAY
+import com.android.app.tracing.coroutines.TrackTracer
 import com.android.app.tracing.coroutines.flow.stateInTraced
 import com.android.app.tracing.coroutines.launchTraced as launch
-import com.android.app.tracing.traceSection
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -91,7 +91,13 @@ interface PerDisplayInstanceProviderWithTeardown<T> : PerDisplayInstanceProvider
  * a new instance). Splitting this into another method helps avoiding the recursion.
  */
 interface PerDisplayInstanceProviderWithSetup<T> : PerDisplayInstanceProvider<T> {
-    /** Sets up a previously created instance of `T`. */
+    /**
+     * Sets up a previously created instance of `T`.
+     *
+     * Note that this can be executed while the instance is used somewhere else already (as in:
+     * we're not locking instance creation + setup, but only creation, as the setup could be
+     * lengthy).
+     */
     fun setupInstance(instance: T)
 }
 
@@ -154,16 +160,8 @@ interface PerDisplayRepository<T> {
 /** Qualifier for [CoroutineScope] used for displaylib background tasks. */
 @Qualifier @Retention(AnnotationRetention.RUNTIME) annotation class DisplayLibBackground
 
-/**
- * Qualifier for [CoroutineContext] backed by [android.os.HandlerThread], which is suitable to
- * create Dagger objects that rely on [android.os.Looper].
- *
- * TODO(b/445367682): remove this qualifier once objects created by per display repository no longer
- *   rely on Looper.myLooper.
- */
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class DisplayLibHandlerThreadBackground
+/** Qualifier for [CoroutineContext] backed by the main thread. Use with care. */
+@Qualifier @Retention(AnnotationRetention.RUNTIME) annotation class DisplayLibMainThread
 
 /**
  * Default implementation of [PerDisplayRepository].
@@ -183,6 +181,20 @@ annotation class DisplayLibHandlerThreadBackground
  *
  * Note that this is a [PerDisplayStoreImpl] 2.0 that doesn't require [CoreStartable] bindings,
  * providing all args in the constructor.
+ *
+ * If [mainThreadForDefaultDisplayEagerlyCreation] is true, then the creation of the instance for
+ * the default display happens on the main thread instead of the background one. This param was
+ * introduced due to the chance of creating a deadlock if there are usages of the
+ * [PerDisplayRepository#get] in constructors or dagger @Provides blocks. In such cases, a thread
+ * stuck in the [get] might need some locks related to dagger (to instantiate its dependencies), but
+ * another thread might be holding them. If this other thread at this point, inside a dagger module,
+ * calls [get], a deadlock will happen (as one thread holds the [get] lock and waits for the dagger
+ * one, while the other holds the dagger one and waits for the [get] one). The param is only for the
+ * default display as currently it's the only case where PerDisplayRepository-ies are accessed
+ * directly in dagger modules to provide default display bindings (for compatibility reasons, as
+ * certain classes undergoing refactors still require the default display instance in the dagger
+ * module). For external displays, everything happens in display specific modules (as it actually
+ * should for the default display as well), so no deadlock are expected to happen.
  */
 class PerDisplayInstanceRepositoryImpl<T>
 @AssistedInject
@@ -190,14 +202,16 @@ constructor(
     @Assisted override val debugName: String,
     @Assisted private val instanceProvider: PerDisplayInstanceProvider<T>,
     @Assisted lifecycleManager: DisplayInstanceLifecycleManager? = null,
-    @DisplayLibHandlerThreadBackground
-    private val bgHandlerThreadBackgroundContext: CoroutineContext,
-    @DisplayLibBackground bgApplicationScope: CoroutineScope,
+    @DisplayLibMainThread private val mainContext: CoroutineContext,
+    @DisplayLibBackground private val bgApplicationScope: CoroutineScope,
     private val displayRepository: DisplayRepository,
     private val initCallback: PerDisplayRepository.InitCallback,
     @Assisted private val createInstanceEagerly: Boolean = false,
+    @Assisted("mainThreadForDefaultDisplayEagerlyCreation")
+    private val mainThreadForDefaultDisplayEagerlyCreation: Boolean = false,
 ) : PerDisplayRepository<T> {
 
+    private val t = TrackTracer(debugName, trackGroup = TAG)
     private val perDisplayInstances = ConcurrentHashMap<Int, T?>()
 
     private val allowedDisplays: StateFlow<Set<Int>> =
@@ -218,7 +232,7 @@ constructor(
                 "allowed displays for $debugName",
                 bgApplicationScope,
                 SharingStarted.WhileSubscribed(),
-                setOf(Display.DEFAULT_DISPLAY),
+                setOf(DEFAULT_DISPLAY),
             )
 
     init {
@@ -229,20 +243,38 @@ constructor(
         initCallback.onInit(debugName, this)
         allowedDisplays.collectLatest { displayIds ->
             if (createInstanceEagerly) {
-                withContext(bgHandlerThreadBackgroundContext) {
-                    val toAdd = displayIds - perDisplayInstances.keys
-                    toAdd.forEach { displayId ->
-                        Log.d(
-                            TAG,
-                            "<$debugName> eagerly creating instance for displayId=$displayId.",
-                        )
-                        get(displayId)
-                    }
-                }
+                eagerlyCreateInstanceForDisplays(displayIds)
             }
             val toRemove = perDisplayInstances.keys - displayIds
-            toRemove.forEach { displayId ->
-                Log.d(TAG, "<$debugName> destroying instance for displayId=$displayId.")
+            removeInstances(toRemove)
+        }
+    }
+
+    private suspend fun eagerlyCreateInstanceForDisplays(displayIds: Set<Int>) {
+        val toAdd = displayIds - perDisplayInstances.keys
+        t.traceAsync("eager creation for displays: $toAdd") {
+            toAdd.forEach { displayId: Int ->
+                withContext(getEagerlyInitializationCoroutineContext(displayId)) {
+                    log("eagerly calling get() for displayId=$displayId")
+                    get(displayId)
+                    log("✅ eagerly created instance for displayId=$displayId")
+                }
+            }
+        }
+    }
+
+    private fun getEagerlyInitializationCoroutineContext(displayId: Int): CoroutineContext {
+        return if (mainThreadForDefaultDisplayEagerlyCreation && displayId == DEFAULT_DISPLAY) {
+            return mainContext
+        } else {
+            bgApplicationScope.coroutineContext
+        }
+    }
+
+    private fun removeInstances(toRemove: Set<Int>) {
+        toRemove.forEach { displayId ->
+            log("destroying instance for displayId=$displayId.")
+            t.traceSyncAndAsync({ "Removing instance for displayId=$displayId" }) {
                 perDisplayInstances.remove(displayId)?.let { instance ->
                     (instanceProvider as? PerDisplayInstanceProviderWithTeardown)?.destroyInstance(
                         instance
@@ -257,57 +289,66 @@ constructor(
             !displayRepository.containsDisplay(displayId) ||
                 displayRepository.getDisplay(displayId) == null
         ) {
-            Log.e(TAG, "<$debugName: Display with id $displayId doesn't exist.")
+            errorLog("get(displayId=$displayId): display doesn't exist.")
             return null
         }
 
         if (displayId !in allowedDisplays.value) {
-            Log.e(
-                TAG,
-                "<$debugName: Display with id $displayId exists but it's not " +
-                    "allowed by lifecycle manager.",
+            errorLog(
+                "get(displayId=$displayId): display exists " +
+                    "but it's not allowed by lifecycle manager."
             )
             return null
         }
 
-        // Let's not let this method return the new instance until the possible setup for it was
-        // executed.
         // There is no need to synchronize the other accesses to the map as it's already a
         // concurrent one.
-        return synchronized(this) {
-            var newlyCreated = false
-            // If it doesn't exist, create it and put it in the map.
-            val instance =
+        var newlyCreated = false
+        val instance =
+            synchronized(this) {
+                // If it doesn't exist, create it and put it in the map.
+
                 perDisplayInstances.computeIfAbsent(displayId) { key ->
-                    Log.d(
-                        TAG,
-                        "<$debugName> creating instance for displayId=$key, as it wasn't available.",
-                    )
+                    if (
+                        createInstanceEagerly &&
+                            mainThreadForDefaultDisplayEagerlyCreation &&
+                            !Looper.getMainLooper().isCurrentThread
+                    ) {
+                        errorLog(
+                            "get($displayId): called from a non main-thread despite " +
+                                "mainThreadForDefaultDisplayEagerlyCreation is true. " +
+                                "Thread.currentThread()=${Thread.currentThread().name}"
+                        )
+                    }
+                    log("creating instance for displayId=$key, as it wasn't available.")
                     val instance =
-                        traceSection({ "creating instance of $debugName for displayId=$key" }) {
+                        t.traceSyncAndAsync({ "$debugName creating instance for displayId=$key" }) {
                             instanceProvider.createInstance(key)
                         }
+                    log("creation for displayId=$key finished.")
                     if (instance == null) {
-                        Log.e(
-                            TAG,
-                            "<$debugName> returning null because createInstance($key) returned null.",
+                        errorLog(
+                            "get($displayId): returning null because createInstance($key) " +
+                                "returned null."
                         )
                     }
                     newlyCreated = true
                     instance
                 }
-
-            if (
-                newlyCreated &&
-                    instance != null &&
-                    instanceProvider is PerDisplayInstanceProviderWithSetup
-            ) {
-                traceSection({ "setting up instance of $debugName for displayId=$displayId" }) {
-                    instanceProvider.setupInstance(instance)
-                }
             }
-            instance
+
+        // The setup happens outside the synchronized block, as it can be expensive. Note that the
+        // instance might be used while the setupInstance method is in progress (WAI)
+        if (
+            newlyCreated &&
+                instance != null &&
+                instanceProvider is PerDisplayInstanceProviderWithSetup
+        ) {
+            t.traceSyncAndAsync({ "$debugName#setupInstance for displayId=$displayId" }) {
+                instanceProvider.setupInstance(instance)
+            }
         }
+        return instance
     }
 
     @AssistedFactory
@@ -317,6 +358,8 @@ constructor(
             instanceProvider: PerDisplayInstanceProvider<T>,
             overrideLifecycleManager: DisplayInstanceLifecycleManager? = null,
             createInstanceEagerly: Boolean = false,
+            @Assisted("mainThreadForDefaultDisplayEagerlyCreation")
+            mainThreadForDefaultDisplayEagerlyCreation: Boolean = false,
         ): PerDisplayInstanceRepositoryImpl<T>
     }
 
@@ -335,6 +378,14 @@ constructor(
         } else {
             perDisplayInstances.forEach { (_, instance) -> instance?.let { action.accept(it) } }
         }
+    }
+
+    private fun log(msg: String) {
+        Log.d(TAG, "<$debugName> $msg.")
+    }
+
+    private fun errorLog(msg: String) {
+        Log.e(TAG, "<$debugName> $msg.")
     }
 }
 
@@ -355,7 +406,7 @@ class DefaultDisplayOnlyInstanceRepositoryImpl<T>(
     private val instanceProvider: PerDisplayInstanceProvider<T>,
 ) : PerDisplayRepository<T> {
     private val lazyDefaultDisplayInstanceDelegate = lazy {
-        instanceProvider.createInstance(Display.DEFAULT_DISPLAY)
+        instanceProvider.createInstance(DEFAULT_DISPLAY)
     }
     private val lazyDefaultDisplayInstance by lazyDefaultDisplayInstanceDelegate
 
