@@ -170,16 +170,6 @@ flag {
 }
 
 flag {
-    name: "notification_dot_contrast_border"
-    namespace: "launcher"
-    description: "Draws a small black or white contrast border around notification dots according to the dot color's luminescence."
-    bug: "378990749"
-    metadata {
-         purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
   name: "extendible_theme_manager"
   namespace: "launcher"
   description: "Enables custom theme manager in Launcher and Customization Picker"
