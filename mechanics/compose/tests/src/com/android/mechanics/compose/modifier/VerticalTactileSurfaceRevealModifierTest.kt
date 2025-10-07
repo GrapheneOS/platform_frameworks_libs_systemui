@@ -34,7 +34,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.TouchInjectionScope
-import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
@@ -57,17 +56,16 @@ import com.android.mechanics.debug.LocalMotionValueDebugController
 import com.android.mechanics.debug.MotionValueDebugController
 import com.android.mechanics.spec.builder.MotionBuilderContext
 import com.android.mechanics.testing.FakeMotionSpecBuilderContext
+import kotlin.time.Duration.Companion.seconds
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import platform.test.motion.MotionTestRule
 import platform.test.motion.compose.ComposeFeatureCaptures.height
-import platform.test.motion.compose.ComposeFeatureCaptures.y
 import platform.test.motion.compose.ComposeRecordingSpec
 import platform.test.motion.compose.ComposeToolkit
 import platform.test.motion.compose.createFixedConfigurationComposeMotionTestRule
-import platform.test.motion.compose.on
 import platform.test.motion.compose.recordMotion
 import platform.test.motion.compose.runTest
 import platform.test.motion.golden.FeatureCapture
@@ -90,7 +88,7 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
         goldenName: String,
         gestureControl: GestureRevealMotion,
     ) =
-        motionRule.runTest {
+        motionRule.runTest(timeout = 40.seconds) {
             lateinit var state: MutableSceneTransitionLayoutState
             val isTransitioning =
                 FeatureCapture<SemanticsNodeInteractionsProvider, Int>("") {
@@ -98,6 +96,8 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
                 }
 
             val boxes = 8
+            val animatedBoxValues = List(boxes) { AnimatedValuesForTests() }
+
             @Composable
             fun ContentScope.TestContent(modifier: Modifier = Modifier) {
                 Box(modifier = modifier.fillMaxSize()) {
@@ -121,7 +121,10 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
                                             else -> Color.Blue
                                         },
                                     )
-                                    .verticalTactileSurfaceReveal(label = "box$it")
+                                    .verticalTactileSurfaceReveal(
+                                        label = "box$it",
+                                        animatedValuesForTests = animatedBoxValues[it],
+                                    )
                                     .size(50.dp)
                             )
                         }
@@ -205,11 +208,27 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
                         timeSeriesCapture = {
                             feature(isTransitioning, "isTransitioning")
                             featureOfElement(ContainerElement, height)
-                            repeat(boxes) {
-                                val testTag = "box$it"
-                                on(hasTestTag(testTag)) {
-                                    feature(y, name = "${testTag}_${y.name}")
-                                    feature(height, name = "${testTag}_${height.name}")
+                            repeat(boxes) { boxId ->
+                                val testTag = "box$boxId"
+                                on({ animatedBoxValues[boxId] }) {
+                                    feature(
+                                        FeatureCapture(
+                                            "${testTag}_y-graphic",
+                                            captureFn = { it.offsetY.asDataPoint() },
+                                        )
+                                    )
+                                    feature(
+                                        FeatureCapture(
+                                            name = "${testTag}_height-graphic",
+                                            captureFn = { it.height.asDataPoint() },
+                                        )
+                                    )
+                                    feature(
+                                        FeatureCapture(
+                                            name = "${testTag}_radius-graphic",
+                                            captureFn = { it.radius.asDataPoint() },
+                                        )
+                                    )
                                 }
                             }
                         },

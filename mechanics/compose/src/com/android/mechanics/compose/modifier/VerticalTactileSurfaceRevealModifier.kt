@@ -16,6 +16,7 @@
 
 package com.android.mechanics.compose.modifier
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -61,21 +62,56 @@ import kotlin.math.roundToInt
  */
 fun Modifier.verticalTactileSurfaceReveal(
     deltaY: Float = 0f,
-    effectSpec: VerticalTactileSurfaceRevealEffect = DefaultEffectSpec,
+    effectSpec: VerticalTactileSurfaceRevealEffect = VerticalTactileSurfaceRevealDefaults.spec,
     label: String? = null,
 ): Modifier =
     this then
-        VerticalTactileSurfaceRevealElement(deltaY = deltaY, effectSpec = effectSpec, label = label)
+        VerticalTactileSurfaceRevealElement(
+            deltaY = deltaY,
+            effectSpec = effectSpec,
+            label = label,
+            animatedValuesForTests = null,
+        )
 
-private val DefaultEffectSpec = VerticalTactileSurfaceRevealEffect()
+internal object VerticalTactileSurfaceRevealDefaults {
+    val spec = VerticalTactileSurfaceRevealEffect()
+}
+
+@VisibleForTesting
+internal fun Modifier.verticalTactileSurfaceReveal(
+    deltaY: Float = 0f,
+    effectSpec: VerticalTactileSurfaceRevealEffect = VerticalTactileSurfaceRevealDefaults.spec,
+    label: String? = null,
+    animatedValuesForTests: AnimatedValuesForTests,
+): Modifier =
+    this then
+        VerticalTactileSurfaceRevealElement(
+            deltaY = deltaY,
+            effectSpec = effectSpec,
+            label = label,
+            animatedValuesForTests = animatedValuesForTests,
+        )
+
+@VisibleForTesting
+internal class AnimatedValuesForTests {
+    var offsetY = Float.NaN
+    var height = Float.NaN
+    var radius = Float.NaN
+}
 
 private data class VerticalTactileSurfaceRevealElement(
     val deltaY: Float,
     val effectSpec: VerticalTactileSurfaceRevealEffect,
     val label: String?,
+    val animatedValuesForTests: AnimatedValuesForTests?,
 ) : ModifierNodeElement<VerticalTactileSurfaceRevealNode>() {
     override fun create(): VerticalTactileSurfaceRevealNode =
-        VerticalTactileSurfaceRevealNode(deltaY = deltaY, effectSpec = effectSpec, label = label)
+        VerticalTactileSurfaceRevealNode(
+            deltaY = deltaY,
+            effectSpec = effectSpec,
+            label = label,
+            animatedValuesForTests = animatedValuesForTests,
+        )
 
     override fun update(node: VerticalTactileSurfaceRevealNode) {
         check(node.deltaY == deltaY) { "Cannot update deltaY from ${node.deltaY} to $deltaY" }
@@ -94,12 +130,14 @@ private class VerticalTactileSurfaceRevealNode(
     val deltaY: Float,
     private var effectSpec: VerticalTactileSurfaceRevealEffect,
     private val label: String?,
+    private val animatedValuesForTests: AnimatedValuesForTests?,
 ) : DelegatingNode(), ApproachLayoutModifierNode, CompositionLocalConsumerModifierNode {
     // These properties are calculated during the lookahead pass (`lookAheadMeasure`) to
     // orchestrate the reveal animation. They are guaranteed to be updated before `approachMeasure`
     // is called.
     private var lookAheadHeight by mutableFloatStateOf(Float.NaN)
     private var layoutOffsetY by mutableFloatStateOf(Float.NaN)
+
     // Created lazily upon first lookahead and disposed in `onDetach`.
     private var revealHeight: ManagedMotionValue? = null
 
@@ -132,6 +170,7 @@ private class VerticalTactileSurfaceRevealNode(
             MotionDriver.State.MinValue -> {
                 motionBuilderContext.fixedSpatialValueSpec(0f)
             }
+
             MotionDriver.State.Transition -> {
                 // Cache the state read to avoid the performance cost of accessing it twice.
                 val start = layoutOffsetY
@@ -139,6 +178,7 @@ private class VerticalTactileSurfaceRevealNode(
                     between(start = start, end = start + lookAheadHeight, effect = effectSpec)
                 }
             }
+
             MotionDriver.State.MaxValue -> {
                 motionBuilderContext.fixedSpatialValueSpec(lookAheadHeight)
             }
@@ -220,16 +260,24 @@ private class VerticalTactileSurfaceRevealNode(
                 effectSpec.phase1MarginX.toPx().fastCoerceAtMost(phase2HeightStart)
             val phase1Progress =
                 (phase2HeightStart - heightRevealed).fastCoerceAtLeast(0f) / phase2HeightStart
-            val marginX = phase1MarginXMax * phase1Progress
+            val offsetX = phase1MarginXMax * phase1Progress
+            val offsetY = -translationY
 
             val rect =
                 Rect(
-                    Offset(marginX, -translationY),
-                    Size(placeableSize.width - (marginX * 2f), heightRevealed),
+                    Offset(offsetX, offsetY),
+                    Size(placeableSize.width - (offsetX * 2f), heightRevealed),
                 )
 
             val radiusMax = effectSpec.maxCornerSize.toPx().fastCoerceAtMost(maxHeight / 2f)
             val radius = (heightRevealed / 2f).fastCoerceAtMost(radiusMax)
+
+            animatedValuesForTests?.let {
+                animatedValuesForTests.offsetY = offsetY
+                animatedValuesForTests.height = heightRevealed
+                animatedValuesForTests.radius = radius
+            }
+
             if (radius != 0f) {
                 addRoundRect(RoundRect(rect, CornerRadius(radius)))
             } else {
