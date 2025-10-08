@@ -353,7 +353,7 @@ abstract class TestBase {
                  Expected : {${expectedOpenTraceSections.prettyPrintList()}}
                  Actual   : {${actualOpenSections.prettyPrintList()}}
                """
-                   .trimIndent()
+            .trimIndent()
     }
 
     private fun checkFinalEvent(expectedEvent: Int): Int {

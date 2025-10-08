@@ -26,6 +26,7 @@ import com.example.tracing.demo.experiments.BasicTracingTutorial
 import com.example.tracing.demo.experiments.CancellableSharedFlow
 import com.example.tracing.demo.experiments.CollectFlow
 import com.example.tracing.demo.experiments.CombineDeferred
+import com.example.tracing.demo.experiments.CombineFlow
 import com.example.tracing.demo.experiments.Experiment
 import com.example.tracing.demo.experiments.FlowTracingTutorial
 import com.example.tracing.demo.experiments.LaunchNested
@@ -113,6 +114,7 @@ class ExperimentModule {
         sharedFlowUsage: SharedFlowUsage,
         cancellableSharedFlow: CancellableSharedFlow,
         collectFlow: CollectFlow,
+        combineFlow: CombineFlow,
         leakySharedFlow: LeakySharedFlow,
     ): List<Experiment> =
         listOf(
@@ -125,6 +127,7 @@ class ExperimentModule {
             sharedFlowUsage,
             cancellableSharedFlow,
             collectFlow,
+            combineFlow,
             leakySharedFlow,
         )
 }

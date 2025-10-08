@@ -33,11 +33,11 @@ import kotlinx.coroutines.delay
 class LaunchStressTest
 @Inject
 constructor(
-    @FixedThread1 private var dispatcher1: CoroutineDispatcher,
-    @FixedThread2 private var dispatcher2: CoroutineDispatcher,
-    @FixedThread3 private val dispatcher3: CoroutineDispatcher,
-    @FixedThread4 private val dispatcher4: CoroutineDispatcher,
-    @FixedPool private var fixedPoolDispatcher: CoroutineDispatcher,
+    @param:FixedThread1 private var dispatcher1: CoroutineDispatcher,
+    @param:FixedThread2 private var dispatcher2: CoroutineDispatcher,
+    @param:FixedThread3 private val dispatcher3: CoroutineDispatcher,
+    @param:FixedThread4 private val dispatcher4: CoroutineDispatcher,
+    @param:FixedPool private var fixedPoolDispatcher: CoroutineDispatcher,
 ) : TracedExperiment() {
 
     override val description: String = "Simultaneous launch{} calls on different threads"

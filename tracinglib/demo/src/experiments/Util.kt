@@ -20,7 +20,6 @@ import com.android.app.tracing.coroutines.traceCoroutine
 import com.android.app.tracing.traceSection
 import com.example.tracing.demo.delayHandler
 import kotlin.coroutines.Continuation
-import kotlin.coroutines.resume
 import kotlin.random.Random
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -34,7 +33,7 @@ private class DelayedContinuationRunner(
         Trace.asyncTraceForTrackEnd(Trace.TRACE_TAG_APP, TRACK_NAME, cookie)
         Trace.traceBegin(Trace.TRACE_TAG_APP, "resume after $traceName")
         try {
-            continuation.resume(Unit)
+            continuation.resumeWith(Result.success(Unit))
         } finally {
             Trace.traceEnd(Trace.TRACE_TAG_APP)
         }

@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 @Singleton
 class BasicTracingTutorial
 @Inject
-constructor(@FixedThread1 private var handlerDispatcher: CoroutineDispatcher) : Experiment() {
+constructor(@param:FixedThread1 private var handlerDispatcher: CoroutineDispatcher) : Experiment() {
 
     override val description: String = "Basic tracing tutorial"
 
