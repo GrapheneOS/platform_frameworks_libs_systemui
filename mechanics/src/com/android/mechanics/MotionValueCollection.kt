@@ -391,8 +391,11 @@ internal class ManagedMotionComputation(
                 )
         }
 
-        return lastSpringState != capturedSpringState ||
-            lastComputedValues != capturedComputedValues
+        return if (isSameSegmentAndAtRest) {
+            false
+        } else {
+            lastSpringState != capturedSpringState || lastComputedValues != capturedComputedValues
+        }
     }
 
     fun wantWakeup(): Boolean {

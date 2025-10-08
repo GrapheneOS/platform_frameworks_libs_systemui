@@ -82,6 +82,7 @@ class MotionValueCollectionLifecycleTest :
         assertThat(motionValue.output).isNaN()
         val inspector = motionValue.debugInspector()
         assertThat(inspector.isActive).isFalse()
+        assertThat(underTest.isAnimating).isFalse()
     }
 
     @Test
@@ -99,6 +100,7 @@ class MotionValueCollectionLifecycleTest :
         assertThat(motionValue.output).isEqualTo(1f)
         val inspector = motionValue.debugInspector()
         assertThat(inspector.isActive).isTrue()
+        assertThat(underTest.isAnimating).isFalse()
     }
 
     @Test
@@ -182,6 +184,7 @@ class MotionValueCollectionLifecycleTest :
         assertThat(underTest.isActive).isFalse()
         assertThat(inspector.isActive).isFalse()
         assertThat(underTest.managedMotionValues.size).isEqualTo(0)
+        assertThat(underTest.isAnimating).isFalse()
     }
 
     @Test
@@ -215,6 +218,7 @@ class MotionValueCollectionLifecycleTest :
         assertThat(underTest.managedMotionValues.size).isEqualTo(0)
         assertThat(inspector1.isActive).isFalse()
         assertThat(inspector2.isActive).isFalse()
+        assertThat(underTest.isAnimating).isFalse()
     }
 
     @Test
@@ -241,6 +245,7 @@ class MotionValueCollectionLifecycleTest :
         assertThat(underTest.isActive).isFalse()
         assertThat(inspector.isActive).isFalse()
         assertThat(underTest.managedMotionValues.size).isEqualTo(1)
+        assertThat(underTest.isAnimating).isFalse()
     }
 
     @Test
@@ -263,6 +268,10 @@ class MotionValueCollectionLifecycleTest :
         rule.mainClock.advanceTimeByFrame()
         rule.awaitIdle()
         assertThat(motionValue.output).isEqualTo(1f)
+
+        rule.mainClock.autoAdvance = true
+        rule.awaitIdle()
+        assertThat(underTest.isAnimating).isFalse()
     }
 
     @Test
@@ -299,6 +308,10 @@ class MotionValueCollectionLifecycleTest :
         rule.awaitIdle()
         assertThat(motionValue.output).isEqualTo(1f)
         assertThat(motionValue.outputTarget).isEqualTo(1f)
+
+        rule.mainClock.autoAdvance = true
+        rule.awaitIdle()
+        assertThat(underTest.isAnimating).isFalse()
     }
 
     @Test
@@ -332,5 +345,9 @@ class MotionValueCollectionLifecycleTest :
         rule.awaitIdle()
         assertThat(motionValue.output).isEqualTo(1f)
         assertThat(motionValue.outputTarget).isEqualTo(1f)
+
+        rule.mainClock.autoAdvance = true
+        rule.awaitIdle()
+        assertThat(underTest.isAnimating).isFalse()
     }
 }
