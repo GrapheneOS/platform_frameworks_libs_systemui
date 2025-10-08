@@ -99,8 +99,12 @@ fun CompositionLocalConsumerModifierNode.motionBuilderContext(): ComposeMotionBu
     )
 }
 
-class ComposeMotionBuilderContext
-internal constructor(motionScheme: MotionScheme, density: Density) :
+/**
+ * [MotionBuilderContext] based on Material 3 MotionScheme.
+ *
+ * Note: This will throw if the MotionScheme uses AnimationSpecs other than SpringSpecs.
+ */
+class ComposeMotionBuilderContext(motionScheme: MotionScheme, density: Density) :
     MotionBuilderContext, Density by density {
 
     override val spatial =
