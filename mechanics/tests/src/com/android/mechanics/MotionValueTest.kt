@@ -59,6 +59,7 @@ import org.junit.runner.RunWith
 import platform.test.motion.MotionTestRule
 import platform.test.motion.compose.runMonotonicClockTest
 import platform.test.motion.golden.DataPointTypes
+import platform.test.motion.golden.feature
 import platform.test.motion.testing.createGoldenPathManager
 
 @RunWith(AndroidJUnit4::class)

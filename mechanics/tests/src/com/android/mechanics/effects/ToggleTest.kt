@@ -35,6 +35,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import platform.test.motion.MotionTestRule
+import platform.test.motion.golden.feature
 import platform.test.motion.testing.createGoldenPathManager
 import platform.test.screenshot.PathConfig
 import platform.test.screenshot.PathElementNoContext

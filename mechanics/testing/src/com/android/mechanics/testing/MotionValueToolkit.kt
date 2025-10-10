@@ -31,6 +31,7 @@ import platform.test.motion.golden.Feature
 import platform.test.motion.golden.FrameId
 import platform.test.motion.golden.TimeSeries
 import platform.test.motion.golden.TimeSeriesCaptureScope
+import platform.test.motion.golden.feature
 
 /**
  * Records and verifies a timeseries of the [MotionValue]'s output.
@@ -161,7 +162,7 @@ val defaultFeatureCaptures: CaptureTimeSeriesFn = {
     feature(FeatureCaptures.gestureDirection)
     feature(FeatureCaptures.output)
     feature(FeatureCaptures.outputTarget)
-    feature(FeatureCaptures.springParameters, name = "outputSpring")
+    feature("outputSpring", FeatureCaptures.springParameters)
     feature(FeatureCaptures.isStable)
 }
 

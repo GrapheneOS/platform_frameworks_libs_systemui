@@ -32,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.swipeDown
@@ -68,7 +67,6 @@ import platform.test.motion.compose.ComposeToolkit
 import platform.test.motion.compose.createFixedConfigurationComposeMotionTestRule
 import platform.test.motion.compose.recordMotion
 import platform.test.motion.compose.runTest
-import platform.test.motion.golden.FeatureCapture
 import platform.test.motion.golden.asDataPoint
 import platform.test.motion.testing.createGoldenPathManager
 
@@ -90,10 +88,6 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
     ) =
         motionRule.runTest(timeout = 40.seconds) {
             lateinit var state: MutableSceneTransitionLayoutState
-            val isTransitioning =
-                FeatureCapture<SemanticsNodeInteractionsProvider, Int>("") {
-                    (if (state.isTransitioning()) 1 else 0).asDataPoint()
-                }
 
             val boxes = 8
             val animatedBoxValues = List(boxes) { AnimatedValuesForTests() }
@@ -206,29 +200,16 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
                             }
                         },
                         timeSeriesCapture = {
-                            feature(isTransitioning, "isTransitioning")
+                            feature("isTransitioning") {
+                                (if (state.isTransitioning()) 1 else 0).asDataPoint()
+                            }
                             featureOfElement(ContainerElement, height)
                             repeat(boxes) { boxId ->
                                 val testTag = "box$boxId"
                                 on({ animatedBoxValues[boxId] }) {
-                                    feature(
-                                        FeatureCapture(
-                                            "${testTag}_y-graphic",
-                                            captureFn = { it.offsetY.asDataPoint() },
-                                        )
-                                    )
-                                    feature(
-                                        FeatureCapture(
-                                            name = "${testTag}_height-graphic",
-                                            captureFn = { it.height.asDataPoint() },
-                                        )
-                                    )
-                                    feature(
-                                        FeatureCapture(
-                                            name = "${testTag}_radius-graphic",
-                                            captureFn = { it.radius.asDataPoint() },
-                                        )
-                                    )
+                                    feature("${testTag}_y-graphic", { it.offsetY.asDataPoint() })
+                                    feature("${testTag}_height-graphic") { it.height.asDataPoint() }
+                                    feature("${testTag}_radius-graphic") { it.radius.asDataPoint() }
                                 }
                             }
                         },
