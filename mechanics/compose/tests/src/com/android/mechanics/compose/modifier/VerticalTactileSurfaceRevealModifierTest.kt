@@ -16,6 +16,7 @@
 
 package com.android.mechanics.compose.modifier
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -28,14 +29,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.swipeDown
-import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.swipeWithVelocity
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -46,16 +45,19 @@ import com.android.compose.animation.scene.OverlayKey
 import com.android.compose.animation.scene.SceneKey
 import com.android.compose.animation.scene.SceneTransitionLayout
 import com.android.compose.animation.scene.Swipe
+import com.android.compose.animation.scene.SwipeDirection
+import com.android.compose.animation.scene.TransitionKey
 import com.android.compose.animation.scene.UserActionResult
 import com.android.compose.animation.scene.featureOfElement
-import com.android.compose.animation.scene.mechanics.rememberGestureContext
 import com.android.compose.animation.scene.rememberMutableSceneTransitionLayoutState
 import com.android.compose.animation.scene.transitions
 import com.android.mechanics.debug.LocalMotionValueDebugController
 import com.android.mechanics.debug.MotionValueDebugController
 import com.android.mechanics.spec.builder.MotionBuilderContext
 import com.android.mechanics.testing.FakeMotionSpecBuilderContext
+import kotlin.test.assertFails
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,6 +66,7 @@ import platform.test.motion.MotionTestRule
 import platform.test.motion.compose.ComposeFeatureCaptures.height
 import platform.test.motion.compose.ComposeRecordingSpec
 import platform.test.motion.compose.ComposeToolkit
+import platform.test.motion.compose.MotionControlScope
 import platform.test.motion.compose.createFixedConfigurationComposeMotionTestRule
 import platform.test.motion.compose.recordMotion
 import platform.test.motion.compose.runTest
@@ -71,7 +74,7 @@ import platform.test.motion.golden.asDataPoint
 import platform.test.motion.testing.createGoldenPathManager
 
 @RunWith(Parameterized::class)
-class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
+class VerticalTactileSurfaceRevealModifierTest(private val useOverlays: Boolean) :
     MotionBuilderContext by FakeMotionSpecBuilderContext.Default {
 
     @get:Rule
@@ -84,9 +87,10 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
 
     private fun assertVerticalTactileSurfaceRevealMotion(
         goldenName: String,
-        gestureControl: GestureRevealMotion,
+        testController: TestController,
     ) =
         motionRule.runTest(timeout = 40.seconds) {
+            lateinit var animationScope: CoroutineScope
             lateinit var state: MutableSceneTransitionLayoutState
 
             val boxes = 8
@@ -98,7 +102,7 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
                     Column(
                         modifier =
                             Modifier.element(ContainerElement)
-                                .motionDriver(rememberGestureContext())
+                                .motionDriver(contentScope = this@TestContent)
                                 .verticalScroll(rememberScrollState())
                                 .background(Color.LightGray)
                                 .padding(4.dp),
@@ -129,19 +133,44 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
             val motion =
                 recordMotion(
                     content = {
+                        animationScope = rememberCoroutineScope()
                         CompositionLocalProvider(
                             LocalMotionValueDebugController provides debugger
                         ) {
                             state =
                                 rememberMutableSceneTransitionLayoutState(
-                                    initialScene = gestureControl.startScene,
-                                    initialOverlays = gestureControl.startOverlays,
+                                    initialScene = testController.startScene,
+                                    initialOverlays = testController.startOverlays,
                                     transitions =
                                         transitions {
                                             from(CollapsedScene, to = ExpandedOverlay) {
+                                                // Spec for triggered animations.
+                                                spec = tween(500)
+                                                intrinsicDirection = SwipeDirection.Down
                                                 scaleSize(ContainerElement, height = 0f)
                                             }
                                             from(CollapsedScene, to = ExpandedScene) {
+                                                // Spec for triggered animations.
+                                                spec = tween(500)
+                                                intrinsicDirection = SwipeDirection.Down
+                                                scaleSize(ContainerElement, height = 0f)
+                                            }
+                                            from(
+                                                CollapsedScene,
+                                                to = ExpandedOverlay,
+                                                key = NoIntrinsicDirection,
+                                            ) {
+                                                // Spec for triggered animations.
+                                                spec = tween(500)
+                                                scaleSize(ContainerElement, height = 0f)
+                                            }
+                                            from(
+                                                CollapsedScene,
+                                                to = ExpandedScene,
+                                                key = NoIntrinsicDirection,
+                                            ) {
+                                                // Spec for triggered animations.
+                                                spec = tween(500)
                                                 scaleSize(ContainerElement, height = 0f)
                                             }
                                         },
@@ -190,9 +219,12 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
                     },
                     ComposeRecordingSpec(
                         recording = {
-                            performTouchInputAsync(
-                                onNodeWithTag(STL_TAG),
-                                gestureControl.gestureControl,
+                            testController.onRecord(
+                                RecordScope(
+                                    motionScope = this,
+                                    stlState = state,
+                                    animationScope = animationScope,
+                                )
                             )
 
                             awaitCondition {
@@ -200,9 +232,7 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
                             }
                         },
                         timeSeriesCapture = {
-                            feature("isTransitioning") {
-                                (if (state.isTransitioning()) 1 else 0).asDataPoint()
-                            }
+                            feature("isTransitioning") { state.isTransitioning().asDataPoint() }
                             featureOfElement(ContainerElement, height)
                             repeat(boxes) { boxId ->
                                 val testTag = "box$boxId"
@@ -220,14 +250,23 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
         }
 
     @Test
-    fun verticalTactileSurfaceReveal_gesture_dragOpen() {
+    fun verticalTactileSurfaceReveal_triggered_open() {
         assertVerticalTactileSurfaceRevealMotion(
             // We are using the same golden for scene-to-scene and scene-to-overlay transition.
-            goldenName = "verticalTactileSurfaceReveal_gesture_dragOpen",
-            gestureControl =
-                GestureRevealMotion(startScene = CollapsedScene) {
-                    swipeDown(endY = 200.dp.toPx(), durationMillis = 500)
+            goldenName = "verticalTactileSurfaceReveal_triggered_open",
+            TestController(
+                startScene = CollapsedScene,
+                startOverlays = emptySet(),
+                onRecord = {
+                    motionRule.toolkit.composeContentTestRule.runOnUiThread {
+                        if (useOverlays) {
+                            stlState.showOverlay(ExpandedOverlay, animationScope)
+                        } else {
+                            stlState.setTargetScene(ExpandedScene, animationScope)
+                        }
+                    }
                 },
+            ),
         )
     }
 
@@ -236,38 +275,73 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
         assertVerticalTactileSurfaceRevealMotion(
             // We are using the same golden for scene-to-scene and scene-to-overlay transition.
             goldenName = "verticalTactileSurfaceReveal_gesture_flingOpen",
-            gestureControl =
-                GestureRevealMotion(startScene = CollapsedScene) {
-                    val end = Offset(centerX, 80.dp.toPx())
-                    swipeWithVelocity(
-                        start = topCenter,
-                        end = end,
-                        endVelocity = FlingVelocity.toPx(),
-                    )
-                },
-        )
-    }
-
-    private fun startExpanded(gestureControl: TouchInjectionScope.() -> Unit): GestureRevealMotion {
-        return if (useOverlays) {
-            GestureRevealMotion(
+            TestController(
                 startScene = CollapsedScene,
-                startOverlays = setOf(ExpandedOverlay),
-                gestureControl = gestureControl,
-            )
-        } else {
-            GestureRevealMotion(startScene = ExpandedScene, gestureControl = gestureControl)
-        }
+                startOverlays = emptySet(),
+                onRecord = {
+                    performTouchInputAsync(onNodeWithTag(STL_TAG)) {
+                        val end = Offset(centerX, 80.dp.toPx())
+                        swipeWithVelocity(
+                            start = topCenter,
+                            end = end,
+                            endVelocity = FlingVelocity.toPx(),
+                        )
+                    }
+                },
+            ),
+        )
     }
 
     @Test
-    fun verticalTactileSurfaceReveal_gesture_dragClose() {
+    fun verticalTactileSurfaceReveal_triggered_close() {
         assertVerticalTactileSurfaceRevealMotion(
             // We are using the same golden for scene-to-scene and scene-to-overlay transition.
-            goldenName = "verticalTactileSurfaceReveal_gesture_dragClose",
-            gestureControl =
-                startExpanded { swipeUp(200.dp.toPx(), 0.dp.toPx(), durationMillis = 500) },
+            goldenName = "verticalTactileSurfaceReveal_triggered_close",
+            TestController(
+                startScene = if (useOverlays) CollapsedScene else ExpandedScene,
+                startOverlays = if (useOverlays) setOf(ExpandedOverlay) else emptySet(),
+                onRecord = {
+                    motionRule.toolkit.composeContentTestRule.runOnUiThread {
+                        if (useOverlays) {
+                            stlState.hideOverlay(ExpandedOverlay, animationScope)
+                        } else {
+                            stlState.setTargetScene(CollapsedScene, animationScope)
+                        }
+                    }
+                },
+            ),
         )
+    }
+
+    @Test
+    fun verticalTactileSurfaceReveal_triggered_close_noIntrinsicDirection() {
+        assertFails {
+            assertVerticalTactileSurfaceRevealMotion(
+                // We are using the same golden for scene-to-scene and scene-to-overlay transition.
+                goldenName = "verticalTactileSurfaceReveal_triggered_close",
+                TestController(
+                    startScene = if (useOverlays) CollapsedScene else ExpandedScene,
+                    startOverlays = if (useOverlays) setOf(ExpandedOverlay) else emptySet(),
+                    onRecord = {
+                        motionRule.toolkit.composeContentTestRule.runOnUiThread {
+                            if (useOverlays) {
+                                stlState.hideOverlay(
+                                    overlay = ExpandedOverlay,
+                                    animationScope = animationScope,
+                                    transitionKey = NoIntrinsicDirection,
+                                )
+                            } else {
+                                stlState.setTargetScene(
+                                    targetScene = CollapsedScene,
+                                    animationScope = animationScope,
+                                    transitionKey = NoIntrinsicDirection,
+                                )
+                            }
+                        }
+                    },
+                ),
+            )
+        }
     }
 
     @Test
@@ -275,19 +349,30 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
         assertVerticalTactileSurfaceRevealMotion(
             // We are using the same golden for scene-to-scene and scene-to-overlay transition.
             goldenName = "verticalTactileSurfaceReveal_gesture_flingClose",
-            gestureControl =
-                startExpanded {
-                    val start = Offset(centerX, 260.dp.toPx())
-                    val end = Offset(centerX, 200.dp.toPx())
-                    swipeWithVelocity(start, end, FlingVelocity.toPx())
+            TestController(
+                startScene = if (useOverlays) CollapsedScene else ExpandedScene,
+                startOverlays = if (useOverlays) setOf(ExpandedOverlay) else emptySet(),
+                onRecord = {
+                    performTouchInputAsync(onNodeWithTag(STL_TAG)) {
+                        val start = Offset(centerX, 260.dp.toPx())
+                        val end = Offset(centerX, 200.dp.toPx())
+                        swipeWithVelocity(start, end, FlingVelocity.toPx())
+                    }
                 },
+            ),
         )
     }
 
-    private class GestureRevealMotion(
+    private class RecordScope(
+        motionScope: MotionControlScope,
+        val stlState: MutableSceneTransitionLayoutState,
+        val animationScope: CoroutineScope,
+    ) : MotionControlScope by motionScope
+
+    private class TestController(
         val startScene: SceneKey,
-        val startOverlays: Set<OverlayKey> = emptySet(),
-        val gestureControl: TouchInjectionScope.() -> Unit,
+        val startOverlays: Set<OverlayKey>,
+        val onRecord: suspend RecordScope.() -> Unit,
     )
 
     private companion object {
@@ -297,6 +382,7 @@ class VerticalTactileSurfaceRevealModifierTest(val useOverlays: Boolean) :
         val ExpandedScene = SceneKey("ExpandedScene")
         val ExpandedOverlay = OverlayKey("ExpandedOverlay")
         val ContainerElement = ElementKey("ContainerElement")
+        val NoIntrinsicDirection = TransitionKey("NoIntrinsicDirection")
 
         val ContainerSize = DpSize(150.dp, 300.dp)
         val FlingVelocity = 1000.dp // dp/sec
