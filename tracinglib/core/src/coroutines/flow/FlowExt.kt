@@ -16,12 +16,17 @@
 
 package com.android.app.tracing.coroutines.flow
 
+import android.os.Trace
 import com.android.app.tracing.coroutines.CoroutineTraceName
 import com.android.app.tracing.coroutines.DebugSysProps.coroutineTracingEnabled
+import com.android.app.tracing.coroutines.DebugSysProps.traceFlowValues
 import com.android.app.tracing.coroutines.traceCoroutine
 import com.android.app.tracing.coroutines.traceName
 import com.android.app.tracing.traceBlocking
 import com.android.systemui.util.Compile
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.experimental.ExperimentalTypeInference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -66,17 +71,28 @@ internal inline fun <T, R> Flow<T>.unsafeTransform(
     crossinline transform: suspend FlowCollector<R>.(value: T) -> Unit
 ): Flow<R> = unsafeFlow { collect { value -> transform(value) } }
 
+@OptIn(ExperimentalContracts::class)
+internal inline fun valStr(value: () -> String): String {
+    contract { callsInPlace(value, InvocationKind.AT_MOST_ONCE) }
+    return if (traceFlowValues) value() else ""
+}
+
 @OptIn(ExperimentalForInheritanceCoroutinesApi::class)
 private open class TracedSharedFlow<out T>(
     private val name: String,
     private val flow: SharedFlow<T>,
 ) : SharedFlow<T> {
     override val replayCache: List<T>
-        get() = traceBlocking("replayCache:$name") { flow.replayCache }
+        get() = traceBlocking("$name#replayCache") { flow.replayCache }
 
     override suspend fun collect(collector: FlowCollector<T>): Nothing {
-        traceCoroutine("collect:$name") {
-            flow.collect { traceCoroutine("emit:$name") { collector.emit(it) } }
+        // To avoid adding extra trace sections when multiple traceAs calls are applied,
+        // always collect from upstream unwrapped flow when possible.
+        val upstream = if (flow is TracedSharedFlow) flow.flow else flow
+        traceCoroutine("$name#collect") {
+            upstream.collect { value ->
+                traceCoroutine("emit${valStr { " -> $value" }}") { collector.emit(value) }
+            }
         }
     }
 }
@@ -87,7 +103,13 @@ private open class TracedStateFlow<out T>(
     private val flow: StateFlow<T>,
 ) : StateFlow<T>, TracedSharedFlow<T>(name, flow) {
     override val value: T
-        get() = traceBlocking("get:$name") { flow.value }
+        get() {
+            return traceBlocking("$name#get") {
+                val v = flow.value
+                if (traceFlowValues) Trace.instant(Trace.TRACE_TAG_APP, "value=$v")
+                v
+            }
+        }
 }
 
 @OptIn(ExperimentalForInheritanceCoroutinesApi::class)
@@ -96,19 +118,19 @@ private open class TracedMutableSharedFlow<T>(
     private val flow: MutableSharedFlow<T>,
 ) : MutableSharedFlow<T>, TracedSharedFlow<T>(name, flow) {
     override val subscriptionCount: StateFlow<Int>
-        get() = traceBlocking("subscriptionCount:$name") { flow.subscriptionCount }
+        get() = traceBlocking("$name#subscriptionCount") { flow.subscriptionCount }
 
     @ExperimentalCoroutinesApi
     override fun resetReplayCache() {
-        traceBlocking("resetReplayCache:$name") { flow.resetReplayCache() }
+        traceBlocking("$name#resetReplayCache") { flow.resetReplayCache() }
     }
 
     override suspend fun emit(value: T) {
-        traceCoroutine("emit:$name") { flow.emit(value) }
+        traceCoroutine("emit${valStr { " -> $value" }}") { flow.emit(value) }
     }
 
     override fun tryEmit(value: T): Boolean {
-        return traceBlocking("tryEmit:$name") { flow.tryEmit(value) }
+        return traceBlocking("tryEmit${valStr { " -> $value" }}") { flow.tryEmit(value) }
     }
 }
 
@@ -118,13 +140,23 @@ private class TracedMutableStateFlow<T>(
     private val flow: MutableStateFlow<T>,
 ) : MutableStateFlow<T>, TracedMutableSharedFlow<T>(name, flow) {
     override var value: T
-        get() = traceBlocking("get:$name") { flow.value }
+        get() {
+            return traceBlocking("$name#get") {
+                val v = flow.value
+                if (traceFlowValues) Trace.instant(Trace.TRACE_TAG_APP, "value=$v")
+                v
+            }
+        }
         set(newValue) {
-            traceBlocking("updateState:$name") { flow.value = newValue }
+            traceBlocking("$name#updateState${valStr { " -> $newValue" }}") {
+                flow.value = newValue
+            }
         }
 
     override fun compareAndSet(expect: T, update: T): Boolean {
-        return traceBlocking("compareAndSet:$name") { flow.compareAndSet(expect, update) }
+        return traceBlocking("$name#compareAndSet${valStr { " $expect -> $update" }}") {
+            flow.compareAndSet(expect, update)
+        }
     }
 }
 
@@ -137,14 +169,14 @@ private class TracedMutableStateFlow<T>(
  * ```
  *   val flow {
  *     // The open trace section here would be:
- *     // "coroutine execution;my-launch", and "collect:my-flow"
+ *     // "coroutine execution;my-launch", and "my-flow#collect"
  *     emit(1)
  *   }
  *   launchTraced("my-launch") {
  *     .flowName("my-flow")
  *     .collect {
  *       // The open trace sections here would be:
- *       // "coroutine execution;my-launch", "collect:my-flow", and "emit:my-flow"
+ *       // "coroutine execution;my-launch", "my-flow#collect", and "emit -> my-value"
  *     }
  *   }
  * ```
@@ -161,8 +193,10 @@ public fun <T> Flow<T>.traceAs(name: String): Flow<T> {
             is SharedFlow -> traceAs(name)
             else ->
                 unsafeFlow {
-                    traceCoroutine("collect:$name") {
-                        collect { value -> traceCoroutine("emit:$name") { emit(value) } }
+                    traceCoroutine("$name#collect") {
+                        collect { value ->
+                            traceCoroutine("emit${valStr { " -> $value" }}") { emit(value) }
+                        }
                     }
                 }
         }
@@ -282,7 +316,7 @@ public fun <T, R> Flow<T>.mapLatestTraced(
     return if (
         Compile.IS_DEBUG && com.android.systemui.Flags.coroutineTracing() && coroutineTracingEnabled
     ) {
-        traceAs("mapLatest:$name").mapLatest { traceCoroutine(name) { transform(it) } }
+        traceAs("$name#mapLatest").mapLatest { traceCoroutine(name) { transform(it) } }
     } else {
         mapLatest(transform)
     }
@@ -310,7 +344,7 @@ internal suspend fun <T> Flow<T>.collectLatestTraced(
     if (
         Compile.IS_DEBUG && com.android.systemui.Flags.coroutineTracing() && coroutineTracingEnabled
     ) {
-        return traceAs("collectLatest:$name").collectLatest { traceCoroutine(name) { action(it) } }
+        return traceAs("collectLatest").collectLatest { traceCoroutine(name) { action(it) } }
     } else {
         collectLatest(action)
     }
