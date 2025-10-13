@@ -34,6 +34,8 @@ import com.google.android.torus.core.engine.TorusEngine
 import com.google.android.torus.core.engine.listener.TorusTouchListener
 import com.google.android.torus.core.wallpaper.listener.LiveWallpaperEventListener
 import com.google.android.torus.core.wallpaper.listener.LiveWallpaperKeyguardEventListener
+import java.io.FileDescriptor
+import java.io.PrintWriter
 import java.lang.ref.WeakReference
 
 /**
@@ -464,6 +466,17 @@ abstract class LiveWallpaper : WallpaperService() {
                 return (wallpaperEngine as LiveWallpaperEventListener).shouldZoomOutWallpaper()
             }
             return false
+        }
+
+        override fun dump(
+            prefix: String?,
+            fd: FileDescriptor?,
+            out: PrintWriter?,
+            args: Array<out String>?,
+        ) {
+            super.dump(prefix, fd, out, args)
+            if (out == null) return
+            wallpaperEngine.dump(prefix, fd, out, args)
         }
 
         fun onWake(extras: Bundle) {

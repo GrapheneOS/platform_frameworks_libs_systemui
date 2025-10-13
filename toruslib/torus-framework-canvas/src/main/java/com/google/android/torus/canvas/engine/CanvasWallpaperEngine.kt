@@ -317,6 +317,12 @@ abstract class CanvasWallpaperEngine(
      *
      * Usage: adb shell dumpsys activity service ${your_wallpaper_service_name}.
      */
+    @Deprecated(
+        message =
+            "Implement TorusEngine.dump instead, which will be called automatically with the" +
+                "default implementation of WallpaperService.dump",
+        replaceWith = ReplaceWith("TorusEngine.dump"),
+    )
     open fun dump(out: PrintWriter) = Unit
 
     private companion object {
