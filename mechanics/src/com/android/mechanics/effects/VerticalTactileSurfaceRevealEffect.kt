@@ -52,7 +52,7 @@ import com.android.mechanics.spec.builder.EffectPlacement
  * - Input tracking is typically direct: [phase2FractionalInput] (default 1.0f) provides a 1:1
  *   mapping ("follows the finger").
  *
- * @param maxCornerSize Defines the maximum corner size, often used as a base for [phase1MarginX].
+ * @param maxCornerSize Defines the maximum corner size.
  * @param guaranteeDistance A distance to ensure the spring displacement completes.
  * @param phase1HeightMin The *input threshold* (as a distance) at which Phase 1 (Horizontal
  *   Expansion) begins. Before this threshold, the component is hidden.
@@ -68,12 +68,12 @@ import com.android.mechanics.spec.builder.EffectPlacement
  */
 data class VerticalTactileSurfaceRevealEffect(
     // Shared configurations
-    val maxCornerSize: Dp = Defaults.MaxCornerSize,
+    val maxCornerSize: () -> Dp = { Defaults.MaxCornerSize },
     val guaranteeDistance: Dp = Defaults.GuaranteeDistance,
 
     // Phase 1: Horizontal expansion
     val phase1HeightMin: Dp = Defaults.Phase1HeightMin,
-    val phase1MarginX: Dp = maxCornerSize,
+    val phase1MarginX: Dp = Defaults.Phase1MarginX,
     val phase1FractionalInput: Float = Defaults.Phase1FractionalInput,
 
     // Phase 2: Vertical expansion
@@ -81,7 +81,6 @@ data class VerticalTactileSurfaceRevealEffect(
     val phase2FractionalInput: Float = Defaults.Phase2FractionalInput,
 ) : Effect.PlaceableBetween {
     init {
-        require(maxCornerSize >= 0.dp)
         require(phase1HeightMin >= 0.dp)
         require(phase2HeightPercentStart in 0f..1f)
     }
@@ -121,9 +120,10 @@ data class VerticalTactileSurfaceRevealEffect(
     }
 
     object Defaults {
-        val Phase1HeightMin: Dp = 8.dp
         val MaxCornerSize: Dp = 32.dp
         val GuaranteeDistance: Dp = 8.dp
+        val Phase1HeightMin: Dp = 8.dp
+        val Phase1MarginX: Dp = 32.dp
         const val Phase1FractionalInput: Float = 0.5f
         const val Phase2HeightPercentStart: Float = 0.5f
         const val Phase2FractionalInput: Float = 1f

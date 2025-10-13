@@ -26,6 +26,7 @@ android_library {
     static_libs: [
         // Private APIs
         "PlatformComposeSceneTransitionLayout",
+        "PlatformMotionTestingComposeValues",
 
         // Public APIs
         "//frameworks/libs/systemui/mechanics:mechanics",
