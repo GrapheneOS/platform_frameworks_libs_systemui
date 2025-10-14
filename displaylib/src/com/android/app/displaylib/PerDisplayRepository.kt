@@ -312,6 +312,7 @@ constructor(
                     if (
                         createInstanceEagerly &&
                             mainThreadForDefaultDisplayEagerlyCreation &&
+                            displayId == DEFAULT_DISPLAY &&
                             !Looper.getMainLooper().isCurrentThread
                     ) {
                         errorLog(
