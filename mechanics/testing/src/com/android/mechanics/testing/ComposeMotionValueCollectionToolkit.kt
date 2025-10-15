@@ -42,7 +42,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import platform.test.motion.MotionTestRule
 import platform.test.motion.compose.runMonotonicClockTest
-import platform.test.motion.golden.FeatureCapture
 import platform.test.motion.golden.FrameId
 import platform.test.motion.golden.TimeSeries
 import platform.test.motion.golden.TimestampFrameId
@@ -113,10 +112,8 @@ object ComposeMotionValueCollectionToolkit :
             frameIds.add(frameId)
 
             collectionCapture.captureCurrentFrame {
-                feature(FeatureCapture("input") { it.currentInput.asDataPoint() })
-                feature(
-                    FeatureCapture("gestureDirection") { it.currentDirection.name.asDataPoint() }
-                )
+                feature("input") { it.currentInput.asDataPoint() }
+                feature("gestureDirection") { it.currentDirection.name.asDataPoint() }
             }
             motionValueCaptures.forEach { it.captureCurrentFrame(capture) }
         }
