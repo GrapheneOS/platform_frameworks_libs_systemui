@@ -182,3 +182,13 @@ flag {
     description: "Support an activity detection sensor to power down the display to save power."
     bug: "402534470"
 }
+
+
+flag {
+    name: "photo_shuffle_flag"
+    namespace: "systemui"
+    description: "Flag for enabling the photo shuffle feature"
+    bug: "445051119"
+}
+
+
