@@ -32,7 +32,8 @@ import kotlinx.coroutines.job
 @Singleton
 class LeakySharedFlow
 @Inject
-constructor(@FixedThread1 private var handlerDispatcher: CoroutineDispatcher) : TracedExperiment() {
+constructor(@param:FixedThread1 private var handlerDispatcher: CoroutineDispatcher) :
+    TracedExperiment() {
 
     override val description: String = "Create a shared flow that cannot be cancelled by the caller"
 

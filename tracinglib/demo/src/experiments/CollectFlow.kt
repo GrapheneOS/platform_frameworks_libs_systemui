@@ -36,9 +36,9 @@ import kotlinx.coroutines.flow.flowOn
 class CollectFlow
 @Inject
 constructor(
-    @FixedThread1 private var dispatcher1: CoroutineDispatcher,
-    @FixedThread2 private var dispatcher2: CoroutineDispatcher,
-    @FixedThread3 private val dispatcher3: CoroutineDispatcher,
+    @param:FixedThread1 private var dispatcher1: CoroutineDispatcher,
+    @param:FixedThread2 private var dispatcher2: CoroutineDispatcher,
+    @param:FixedThread3 private val dispatcher3: CoroutineDispatcher,
 ) : TracedExperiment() {
     override val description: String = "Collect a cold flow with intermediate operators"
 
