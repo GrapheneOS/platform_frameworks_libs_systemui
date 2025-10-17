@@ -60,7 +60,12 @@ public class CustomDynamicColors {
                 this::onShadeInactive,
                 this::onShadeInactiveVariant,
                 this::shadeDisabled,
-                this::overviewBackground
+                this::overviewBackground,
+                this::surfaceEffect0,
+                this::surfaceEffect1,
+                this::surfaceEffect2,
+                this::surfaceEffect3,
+                this::surfaceEffect0Fallback
         );
     }
 
@@ -335,6 +340,56 @@ public class CustomDynamicColors {
                 .build();
     }
 
+
+    public DynamicColor surfaceEffect0() {
+        return new DynamicColor.Builder()
+                .setName("surface_effect_0")
+                .setPalette((s) -> s.primaryPalette)
+                .setTone((s) -> s.isDark ? 20.0 : 90.0)
+                .setIsBackground(true)
+                .setOpacity((s)-> .5)
+                .build();
+    }
+
+    public DynamicColor surfaceEffect1() {
+        return new DynamicColor.Builder()
+                .setName("surface_effect_1")
+                .setPalette((s) -> s.neutralPalette)
+                .setTone((s) -> s.isDark ? 6.0 : 98.0)
+                .setIsBackground(true)
+                .setOpacity((s)-> .54)
+                .build();
+    }
+
+    public DynamicColor surfaceEffect2() {
+        return new DynamicColor.Builder()
+                .setName("surface_effect_2")
+                .setPalette((s) -> s.primaryPalette)
+                .setTone((s) -> s.isDark ? 90.0 : 100.0)
+                .setIsBackground(true)
+                .setOpacity((s)-> s.isDark ? .15 : .32)
+                .build();
+    }
+
+    public DynamicColor surfaceEffect3() {
+        return new DynamicColor.Builder()
+                .setName("surface_effect_3")
+                .setPalette((s) -> s.primaryPalette)
+                .setTone((s) -> s.isDark ? 90.0 : 40.0)
+                .setIsBackground(true)
+                .setOpacity((s)-> s.isDark ? .10 : .15)
+                .build();
+    }
+
+    public DynamicColor surfaceEffect0Fallback() {
+        return new DynamicColor.Builder()
+                .setName("surface_effect_0_fallback")
+                .setPalette((s) -> s.secondaryPalette)
+                .setTone((s) -> s.isDark ? 20.0 : 80.0)
+                .setIsBackground(true)
+                .build();
+    }
+
     private static double findBestToneForChroma(
             double hue, double chroma, double tone, boolean byDecreasingTone) {
         double answer = tone;
@@ -377,4 +432,5 @@ public class CustomDynamicColors {
         double answer = findBestToneForChroma(palette.getHue(), palette.getChroma(), 0, false);
         return MathUtils.clampDouble(lowerBound, upperBound, answer);
     }
+
 }
