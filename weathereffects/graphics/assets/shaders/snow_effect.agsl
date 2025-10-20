@@ -62,15 +62,14 @@ vec4 main(float2 fragCoord) {
     float2 uv = weatherUv / screenSize;
     float2 uvAdjusted = vec2(uv.x, uv.y / screenAspectRatio);
 
-    vec4 colorForeground = foreground.eval(adjustedUv);
     vec4 colorBackground = background.eval(adjustedUv);
+    float foregroundAlpha = foreground.eval(adjustedUv).a;
 
      // Adjusts contrast and brightness.
     float noiseT = triangleNoise(fragCoord.xy + vec2(12.31, 1024.1241));
     colorBackground.rgb =
         imageRangeConversion(colorBackground.rgb, 0.88, 0.02, noiseT * 0.025, intensity);
-    colorForeground.rgb =
-        imageRangeConversion(colorForeground.rgb, 0.88, 0.02, noiseT * 0.025, intensity);
+    vec4 colorForeground = vec4(colorBackground.rgb * foregroundAlpha, foregroundAlpha);
 
     // 1. Draw background.
     vec4 color = colorBackground;
