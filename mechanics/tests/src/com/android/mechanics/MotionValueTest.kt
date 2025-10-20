@@ -50,6 +50,7 @@ import com.android.mechanics.testing.input
 import com.android.mechanics.testing.isStable
 import com.android.mechanics.testing.output
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
@@ -58,6 +59,7 @@ import org.junit.runner.RunWith
 import platform.test.motion.MotionTestRule
 import platform.test.motion.compose.runMonotonicClockTest
 import platform.test.motion.golden.DataPointTypes
+import platform.test.motion.golden.feature
 import platform.test.motion.testing.createGoldenPathManager
 
 @RunWith(AndroidJUnit4::class)
@@ -71,7 +73,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
     @Test
     fun emptySpec_outputMatchesInput_withoutAnimation() =
         motion.goldenTest(
-            spec = MotionSpec.Empty,
+            spec = MotionSpec.Identity,
             verifyTimeSeries = {
                 // Output always matches the input
                 assertThat(output).containsExactlyElementsIn(input).inOrder()
@@ -83,6 +85,48 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
         ) {
             animateValueTo(100f)
         }
+
+    @Test
+    fun unspecifiedSpec_outputIsNan() =
+        motion.goldenTest(
+            spec = MotionSpec.InitiallyUndefined,
+            verifyTimeSeries = {
+                // This must only produce NaN values
+                output.forEach { assertThat(it).isNaN() }
+                // There must never be an ongoing animation.
+                assertThat(isStable).doesNotContain(false)
+                AssertTimeSeriesMatchesGolden()
+            },
+        ) {
+            animateValueTo(100f)
+        }
+
+    @Test
+    fun unspecifiedSpec_atTheBeginning_jumpcutsToFirstValue() =
+        motion.goldenTest(
+            spec = MotionSpec.InitiallyUndefined,
+            verifyTimeSeries = {
+                // There must never be an ongoing animation.
+                assertThat(isStable).doesNotContain(false)
+
+                AssertTimeSeriesMatchesGolden()
+            },
+        ) {
+            animateValueTo(10f, changePerFrame = 5f)
+            spec = MotionSpec.Identity
+            animateValueTo(20f, changePerFrame = 5f)
+        }
+
+    @Test
+    fun unspecifiedSpec_onAlreadyInitializedValue_throws() {
+        assertFailsWith<IllegalArgumentException> {
+            motion.goldenTest(spec = MotionSpec.Identity) {
+                animateValueTo(10f, changePerFrame = 5f)
+                spec = MotionSpec.InitiallyUndefined
+                animateValueTo(20f, changePerFrame = 5f)
+            }
+        }
+    }
 
     // TODO the tests should describe the expected values not only in terms of goldens, but
     //  also explicitly in verifyTimeSeries
@@ -486,7 +530,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
 
     @Test
     fun semantics_returnsNullForUnknownKey() {
-        val underTest = MotionValue({ 1f }, FakeGestureContext, { MotionSpec.Empty })
+        val underTest = MotionValue({ 1f }, FakeGestureContext, { MotionSpec.Identity })
 
         val s1 = SemanticKey<String>("Foo")
 
@@ -532,7 +576,9 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
         motion.goldenTest(
             spec = specBuilder(Mapping.Zero) { fixedValue(breakpoint = 0.5f, value = 1f) },
             createDerived = { primary ->
-                listOf(MotionValue.createDerived(primary, { MotionSpec.Empty }, label = "derived"))
+                listOf(
+                    MotionValue.createDerived(primary, { MotionSpec.Identity }, label = "derived")
+                )
             },
             verifyTimeSeries = {
                 // the output of the derived value must match the primary value
@@ -591,7 +637,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
     @Test
     fun nonFiniteNumbers_segmentChange_skipsAnimation() {
         motion.goldenTest(
-            spec = MotionSpec.Empty,
+            spec = MotionSpec.Identity,
             verifyTimeSeries = {
                 // The mappings produce a non-finite number during a segment change.
                 // The animation thereof is skipped to avoid poisoning the state with non-finite
@@ -641,7 +687,8 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
 
     @Test
     fun keepRunning_concurrentInvocationThrows() = runMonotonicClockTest {
-        val underTest = MotionValue({ 1f }, FakeGestureContext, { MotionSpec.Empty }, label = "Foo")
+        val underTest =
+            MotionValue({ 1f }, FakeGestureContext, { MotionSpec.Identity }, label = "Foo")
         val realJob = launch { underTest.keepRunning() }
         testScheduler.runCurrent()
 
@@ -659,7 +706,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
 
     @Test
     fun debugInspector_sameInstance_whileInUse() {
-        val underTest = MotionValue({ 1f }, FakeGestureContext, { MotionSpec.Empty })
+        val underTest = MotionValue({ 1f }, FakeGestureContext, { MotionSpec.Identity })
 
         val originalInspector = underTest.debugInspector()
         assertThat(underTest.debugInspector()).isSameInstanceAs(originalInspector)
@@ -667,7 +714,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
 
     @Test
     fun debugInspector_newInstance_afterUnused() {
-        val underTest = MotionValue({ 1f }, FakeGestureContext, { MotionSpec.Empty })
+        val underTest = MotionValue({ 1f }, FakeGestureContext, { MotionSpec.Identity })
 
         val originalInspector = underTest.debugInspector()
         originalInspector.dispose()

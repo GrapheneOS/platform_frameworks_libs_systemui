@@ -19,6 +19,7 @@ package com.android.systemui.monet;
 
 import android.annotation.ColorInt;
 import android.app.WallpaperColors;
+import android.content.theming.ThemeStyle;
 import android.graphics.Color;
 
 import com.android.internal.graphics.ColorUtils;
@@ -53,8 +54,8 @@ public class ColorScheme {
     @ColorInt
     private final int mSeed;
     private final boolean mIsDark;
-    @Style.Type
-    private final  int mStyle;
+    @ThemeStyle.Type
+    private final int mStyle;
     private final DynamicScheme mMaterialScheme;
     private final TonalPalette mAccent1;
     private final TonalPalette mAccent2;
@@ -65,7 +66,7 @@ public class ColorScheme {
     private final Hct mProposedSeedHct;
 
 
-    public ColorScheme(@ColorInt int seed, boolean isDark, @Style.Type int style,
+    public ColorScheme(@ColorInt int seed, boolean isDark, @ThemeStyle.Type int style,
             double contrastLevel) {
 
         this.mSeed = seed;
@@ -76,23 +77,23 @@ public class ColorScheme {
         Hct seedHct = Hct.fromInt(
                 seed == Color.TRANSPARENT
                         ? GOOGLE_BLUE
-                        : (style != Style.CONTENT
+                        : (style != ThemeStyle.CONTENT
                                 && mProposedSeedHct.getChroma() < 5
                                 ? GOOGLE_BLUE
                                 : seed));
 
         mMaterialScheme = switch (style) {
-            case Style.SPRITZ -> new SchemeNeutral(seedHct, isDark, contrastLevel);
-            case Style.TONAL_SPOT -> new SchemeTonalSpot(seedHct, isDark, contrastLevel);
-            case Style.VIBRANT -> new SchemeVibrant(seedHct, isDark, contrastLevel);
-            case Style.EXPRESSIVE -> new SchemeExpressive(seedHct, isDark, contrastLevel);
-            case Style.RAINBOW -> new SchemeRainbow(seedHct, isDark, contrastLevel);
-            case Style.FRUIT_SALAD -> new SchemeFruitSalad(seedHct, isDark, contrastLevel);
-            case Style.CONTENT -> new SchemeContent(seedHct, isDark, contrastLevel);
-            case Style.MONOCHROMATIC -> new SchemeMonochrome(seedHct, isDark, contrastLevel);
+            case ThemeStyle.SPRITZ -> new SchemeNeutral(seedHct, isDark, contrastLevel);
+            case ThemeStyle.TONAL_SPOT -> new SchemeTonalSpot(seedHct, isDark, contrastLevel);
+            case ThemeStyle.VIBRANT -> new SchemeVibrant(seedHct, isDark, contrastLevel);
+            case ThemeStyle.EXPRESSIVE -> new SchemeExpressive(seedHct, isDark, contrastLevel);
+            case ThemeStyle.RAINBOW -> new SchemeRainbow(seedHct, isDark, contrastLevel);
+            case ThemeStyle.FRUIT_SALAD -> new SchemeFruitSalad(seedHct, isDark, contrastLevel);
+            case ThemeStyle.CONTENT -> new SchemeContent(seedHct, isDark, contrastLevel);
+            case ThemeStyle.MONOCHROMATIC -> new SchemeMonochrome(seedHct, isDark, contrastLevel);
             // SystemUI Schemes
-            case Style.CLOCK -> new SchemeClock(seedHct, isDark, contrastLevel);
-            case Style.CLOCK_VIBRANT -> new SchemeClockVibrant(seedHct, isDark, contrastLevel);
+            case ThemeStyle.CLOCK -> new SchemeClock(seedHct, isDark, contrastLevel);
+            case ThemeStyle.CLOCK_VIBRANT -> new SchemeClockVibrant(seedHct, isDark, contrastLevel);
             default -> throw new IllegalArgumentException("Unknown style: " + style);
         };
 
@@ -105,19 +106,20 @@ public class ColorScheme {
     }
 
     public ColorScheme(@ColorInt int seed, boolean darkTheme) {
-        this(seed, darkTheme, Style.TONAL_SPOT);
+        this(seed, darkTheme, ThemeStyle.TONAL_SPOT);
     }
 
-    public ColorScheme(@ColorInt int seed, boolean darkTheme, @Style.Type int style) {
+    public ColorScheme(@ColorInt int seed, boolean darkTheme, @ThemeStyle.Type int style) {
         this(seed, darkTheme, style, 0.0);
     }
 
-    public ColorScheme(WallpaperColors wallpaperColors, boolean darkTheme, @Style.Type int style) {
-        this(getSeedColor(wallpaperColors, style != Style.CONTENT), darkTheme, style);
+    public ColorScheme(WallpaperColors wallpaperColors, boolean darkTheme,
+            @ThemeStyle.Type int style) {
+        this(getSeedColor(wallpaperColors, style != ThemeStyle.CONTENT), darkTheme, style);
     }
 
     public ColorScheme(WallpaperColors wallpaperColors, boolean darkTheme) {
-        this(wallpaperColors, darkTheme, Style.TONAL_SPOT);
+        this(wallpaperColors, darkTheme, ThemeStyle.TONAL_SPOT);
     }
 
     public int getBackgroundColor() {
@@ -140,7 +142,7 @@ public class ColorScheme {
         return mSeed;
     }
 
-    @Style.Type
+    @ThemeStyle.Type
     public int getStyle() {
         return mStyle;
     }

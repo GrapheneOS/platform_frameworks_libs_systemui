@@ -75,6 +75,12 @@ internal object DebugSysProps {
                 "persist.debug.coroutine_tracing.count_continuations",
                 false,
             )
+
+    @JvmField
+    val traceFlowValues =
+        Compile.IS_DEBUG &&
+            com.android.systemui.Flags.coroutineTracing() &&
+            SystemProperties.getBoolean("persist.debug.coroutine_tracing.flow_values", false)
 }
 
 /**

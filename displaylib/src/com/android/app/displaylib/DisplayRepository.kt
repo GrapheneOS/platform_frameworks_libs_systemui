@@ -87,7 +87,7 @@ interface DisplayRepository {
     val pendingDisplay: Flow<PendingDisplay?>
 
     /** Whether the default display is currently off. */
-    val defaultDisplayOff: Flow<Boolean>
+    val defaultDisplayOff: StateFlow<Boolean>
 
     /**
      * Given a display ID int, return the corresponding Display object, or null if none exist.
@@ -426,11 +426,15 @@ constructor(
             }
             .debugLog("pendingDisplay")
 
-    override val defaultDisplayOff: Flow<Boolean> =
+    override val defaultDisplayOff: StateFlow<Boolean> =
         displayChangeEvent
             .filter { it == Display.DEFAULT_DISPLAY }
             .map { defaultDisplay.state == Display.STATE_OFF }
-            .distinctUntilChanged()
+            .stateIn(
+                bgApplicationScope,
+                SharingStarted.WhileSubscribed(),
+                defaultDisplay.state == Display.STATE_OFF,
+            )
 
     override fun getDisplay(displayId: Int): Display? {
         val cachedDisplay = getCachedDisplay(displayId)

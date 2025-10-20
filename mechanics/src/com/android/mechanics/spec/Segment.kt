@@ -16,6 +16,8 @@
 
 package com.android.mechanics.spec
 
+import com.android.mechanics.haptics.SegmentHaptics
+
 /**
  * Identifies a segment in a [MotionSpec].
  *
@@ -49,6 +51,7 @@ data class SegmentData(
     val maxBreakpoint: Breakpoint,
     val direction: InputDirection,
     val mapping: Mapping,
+    val haptics: SegmentHaptics,
 ) {
     val key = SegmentKey(minBreakpoint.key, maxBreakpoint.key, direction)
 
@@ -89,6 +92,6 @@ data class SegmentData(
         get() = minBreakpoint.position..maxBreakpoint.position
 
     override fun toString(): String {
-        return "SegmentData(key=$key, range=$range, mapping=$mapping)"
+        return "SegmentData(key=$key, range=$range, mapping=$mapping, segmentHaptics: $haptics)"
     }
 }

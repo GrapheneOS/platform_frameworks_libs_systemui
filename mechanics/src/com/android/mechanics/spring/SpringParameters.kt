@@ -21,6 +21,7 @@ import androidx.compose.ui.util.lerp
 import androidx.compose.ui.util.packFloats
 import androidx.compose.ui.util.unpackFloat1
 import androidx.compose.ui.util.unpackFloat2
+import kotlin.jvm.JvmInline
 import kotlin.math.pow
 
 /**

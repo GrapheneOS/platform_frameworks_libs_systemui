@@ -67,15 +67,16 @@ class RunBlockingTracedTest : TestBase() {
         runTest(totalEvents = 2) {
             expect(1, "1^main")
 
-            val result = runBlockingTraced {
-                delay(1)
-                expect(
-                    2,
-                    "1^main",
-                    "RunBlockingTracedTest\$runBlockingTracedWithDefaultSpanNameAndContext\$1\$invokeSuspend\$\$inlined\$runBlockingTraced\$default\$1",
-                )
-                true
-            }
+            val result =
+                runBlockingTraced(spanName = null, context = EmptyCoroutineContext) {
+                    delay(1)
+                    expect(
+                        2,
+                        "1^main",
+                        "RunBlockingTracedTest\$runBlockingTracedWithDefaultSpanNameAndContext$1\$result$1",
+                    )
+                    true
+                }
             assertTrue(result)
         }
 

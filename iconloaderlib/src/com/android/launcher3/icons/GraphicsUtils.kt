@@ -30,6 +30,8 @@ import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.RectF
 import android.util.Log
@@ -73,6 +75,30 @@ object GraphicsUtils {
             Log.w(TAG, "Could not write bitmap")
             return ByteArray(0)
         }
+    }
+
+    /** Compresses BitmapInfo default shape bitmap to a byte array **/
+    @JvmStatic
+    fun createDefaultFlatBitmap(bitmapInfo: BitmapInfo): ByteArray {
+        // BitmapInfo uses immutable hardware bitmaps, so we need to make a software copy to apply
+        // the default shape mask.
+        val bitmap = bitmapInfo.icon.copy(Bitmap.Config.ARGB_8888, /* isMutable **/ true)
+        val cropBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(cropBitmap)
+
+        var paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.color = Color.BLACK
+        paint.style = Paint.Style.FILL
+        canvas.drawPath(bitmapInfo.defaultIconShape.path, paint)
+
+        paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        paint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.SRC_IN))
+        canvas.drawBitmap(bitmap, 0f, 0f, paint)
+
+        val flatBitmap = flattenBitmap(cropBitmap)
+        cropBitmap.recycle()
+        bitmap.recycle()
+        return flatBitmap
     }
 
     /** Tries to decode the [ByteArray] into a [Bitmap] consuming any parsing errors */

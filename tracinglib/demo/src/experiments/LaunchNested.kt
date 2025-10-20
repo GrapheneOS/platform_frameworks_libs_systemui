@@ -28,8 +28,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 @Singleton
-class LaunchNested @Inject constructor(@FixedThread1 private var dispatcher1: CoroutineDispatcher) :
-    TracedExperiment() {
+class LaunchNested
+@Inject
+constructor(@param:FixedThread1 private var dispatcher1: CoroutineDispatcher) : TracedExperiment() {
     override val description: String = "launch{launch{launch{launch{}}}}"
 
     override suspend fun runExperiment(): Unit = coroutineScope {

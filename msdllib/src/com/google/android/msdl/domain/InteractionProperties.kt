@@ -47,7 +47,7 @@ interface InteractionProperties {
      * @param[vibrationUsageId] Id used to create [android.os.VibrationAttributes]
      */
     data class DynamicVibrationScale(
-        @FloatRange(from = 0.0, to = 1.0) val scale: Float,
+        @param:FloatRange(from = 0.0, to = 1.0) val scale: Float,
         override val vibrationAttributes: VibrationAttributes,
     ) : InteractionProperties
 }

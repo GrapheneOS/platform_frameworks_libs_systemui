@@ -135,7 +135,7 @@ public inline fun <T> traceSection(
     traceTag: Long = Trace.TRACE_TAG_APP,
     name: () -> String?,
     block: () -> T,
- ): T {
+): T {
     contract {
         callsInPlace(name, InvocationKind.AT_MOST_ONCE)
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)

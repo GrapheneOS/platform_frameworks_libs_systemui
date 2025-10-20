@@ -16,11 +16,17 @@
 
 package com.android.systemui.monet;
 
+import static com.google.ux.material.libmonet.dynamiccolor.ToneDeltaPair.DeltaConstraint.FARTHER;
+import static com.google.ux.material.libmonet.dynamiccolor.TonePolarity.RELATIVE_LIGHTER;
+
 import com.google.ux.material.libmonet.dynamiccolor.ContrastCurve;
 import com.google.ux.material.libmonet.dynamiccolor.DynamicColor;
 import com.google.ux.material.libmonet.dynamiccolor.MaterialDynamicColors;
 import com.google.ux.material.libmonet.dynamiccolor.ToneDeltaPair;
 import com.google.ux.material.libmonet.dynamiccolor.TonePolarity;
+import com.google.ux.material.libmonet.hct.Hct;
+import com.google.ux.material.libmonet.palettes.TonalPalette;
+import com.google.ux.material.libmonet.utils.MathUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -119,7 +125,21 @@ public class CustomDynamicColors {
         return new DynamicColor.Builder()
                 .setName("theme_app")
                 .setPalette((s) -> s.isDark ? s.secondaryPalette : s.primaryPalette)
-                .setTone((s) -> s.isDark ? 20.0 : 90.0)
+                .setTone((s) -> s.isDark ? switch (s.variant) {
+                                case TONAL_SPOT, EXPRESSIVE -> tMinC(s.primaryPalette, 20.0, 93.0);
+                                case VIBRANT -> tMinC(s.primaryPalette, 66.0, 93.0);
+                                default -> 20.0;
+                            } : switch (s.variant) {
+                                case TONAL_SPOT -> tMaxC(s.primaryPalette, 0.0, 90.0);
+                                case EXPRESSIVE -> Hct.isCyan(s.primaryPalette.getHue())
+                                        ? 88.0
+                                        : tMaxC(s.primaryPalette, 78.0, 90.0);
+                                case VIBRANT -> Hct.isCyan(s.primaryPalette.getHue())
+                                        ? 88.0
+                                        : tMaxC(s.primaryPalette, 0.0, 66.0);
+                                default -> 90.0;
+                            }
+                )
                 .setIsBackground(true)
                 .build();
     }
@@ -131,7 +151,7 @@ public class CustomDynamicColors {
                 .setTone((s) -> s.isDark ? 80.0 : 30.0)
                 .setIsBackground(false)
                 .setBackground((s) -> themeApp())
-                .setContrastCurve((s) -> new ContrastCurve(3.0, 3.0, 7.0, 10.0))
+                .setContrastCurve((s) -> new ContrastCurve(7, 7, 11, 21))
                 .build();
     }
 
@@ -139,8 +159,14 @@ public class CustomDynamicColors {
         return new DynamicColor.Builder()
                 .setName("theme_app_ring")
                 .setPalette((s) -> s.primaryPalette)
-                .setTone((s) -> 70.0)
+                .setTone((s) -> switch (s.variant) {
+                    case TONAL_SPOT, EXPRESSIVE -> tMaxC(s.primaryPalette, 0.0, 70.0);
+                    case VIBRANT -> tMaxC(s.primaryPalette);
+                    default -> 70.0;
+                })
                 .setIsBackground(true)
+                .setBackground((s) -> mMdc.surfaceContainerHigh())
+                .setContrastCurve((s) -> new ContrastCurve(1.8, 1.8, 3.0, 4.5))
                 .build();
     }
 
@@ -148,11 +174,11 @@ public class CustomDynamicColors {
         return new DynamicColor.Builder()
                 .setName("theme_notif")
                 .setPalette((s) -> s.tertiaryPalette)
-                .setTone((s) -> 80.0)
+                .setTone((s) -> tMinC(s.tertiaryPalette, 80.0, 93))
                 .setBackground((s) -> themeAppRing())
                 .setContrastCurve((s) -> new ContrastCurve(1.0, 1.0, 1.0, 1.0))
-                .setToneDeltaPair((s) -> new ToneDeltaPair(themeNotif(), themeAppRing(), 10.0,
-                        TonePolarity.RELATIVE_LIGHTER, ToneDeltaPair.DeltaConstraint.FARTHER))
+                .setToneDeltaPair((s) -> new ToneDeltaPair(themeNotif(), themeAppRing(), 5.0,
+                        RELATIVE_LIGHTER, FARTHER))
                 .build();
     }
 
@@ -307,5 +333,48 @@ public class CustomDynamicColors {
                 .setTone((s) -> s.isDark ? 35.0 : 80.0)
                 .setIsBackground(true)
                 .build();
+    }
+
+    private static double findBestToneForChroma(
+            double hue, double chroma, double tone, boolean byDecreasingTone) {
+        double answer = tone;
+        Hct bestCandidate = Hct.from(hue, chroma, answer);
+        while (bestCandidate.getChroma() < chroma) {
+            if (tone < 0 || tone > 100) {
+                break;
+            }
+            tone += byDecreasingTone ? -1.0 : 1.0;
+            Hct newCandidate = Hct.from(hue, chroma, tone);
+            if (bestCandidate.getChroma() < newCandidate.getChroma()) {
+                bestCandidate = newCandidate;
+                answer = tone;
+            }
+        }
+        return answer;
+    }
+
+    private static double tMaxC(TonalPalette palette) {
+        return tMaxC(palette, 0, 100);
+    }
+
+    private static double tMaxC(TonalPalette palette, double lowerBound, double upperBound) {
+        return tMaxC(palette, lowerBound, upperBound, 1);
+    }
+
+    private static double tMaxC(
+            TonalPalette palette, double lowerBound, double upperBound, double chromaMultiplier) {
+        double answer =
+                findBestToneForChroma(palette.getHue(), palette.getChroma() * chromaMultiplier, 100,
+                        true);
+        return MathUtils.clampDouble(lowerBound, upperBound, answer);
+    }
+
+    private static double tMinC(TonalPalette palette) {
+        return tMinC(palette, 0, 100);
+    }
+
+    private static double tMinC(TonalPalette palette, double lowerBound, double upperBound) {
+        double answer = findBestToneForChroma(palette.getHue(), palette.getChroma(), 0, false);
+        return MathUtils.clampDouble(lowerBound, upperBound, answer);
     }
 }

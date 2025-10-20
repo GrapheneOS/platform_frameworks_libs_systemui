@@ -50,8 +50,8 @@ import kotlinx.coroutines.job
 class FlowTracingTutorial
 @Inject
 constructor(
-    @FixedThread1 private var dispatcher1: CoroutineDispatcher,
-    @FixedThread2 private var dispatcher2: CoroutineDispatcher,
+    @param:FixedThread1 private var dispatcher1: CoroutineDispatcher,
+    @param:FixedThread2 private var dispatcher2: CoroutineDispatcher,
 ) : Experiment() {
 
     override val description: String = "Flow tracing tutorial"

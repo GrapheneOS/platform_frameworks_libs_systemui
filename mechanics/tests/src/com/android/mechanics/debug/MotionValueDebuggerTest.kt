@@ -17,6 +17,7 @@
 package com.android.mechanics.debug
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,55 +45,55 @@ class MotionValueDebuggerTest {
 
     @Test
     fun debugMotionValue_registersMotionValue_whenAddingToComposition() {
-        val debuggerState = MotionValueDebuggerState()
+        val debuggerState = MotionValueDebugController()
         var hasValue by mutableStateOf(false)
 
         rule.setContent {
-            Box(modifier = Modifier.motionValueDebugger(debuggerState)) {
+            CompositionLocalProvider(LocalMotionValueDebugController provides debuggerState) {
                 if (hasValue) {
                     val toDebug = remember {
-                        MotionValue(input, gestureContext, { MotionSpec.Empty })
+                        MotionValue(input, gestureContext, { MotionSpec.Identity })
                     }
                     Box(modifier = Modifier.debugMotionValue(toDebug))
                 }
             }
         }
 
-        assertThat(debuggerState.observedMotionValues).isEmpty()
+        assertThat(debuggerState.observed).isEmpty()
 
         hasValue = true
         rule.waitForIdle()
 
-        assertThat(debuggerState.observedMotionValues).hasSize(1)
+        assertThat(debuggerState.observed).hasSize(1)
     }
 
     @Test
     fun debugMotionValue_unregistersMotionValue_whenLeavingComposition() {
-        val debuggerState = MotionValueDebuggerState()
+        val debuggerState = MotionValueDebugController()
         var hasValue by mutableStateOf(true)
 
         rule.setContent {
-            Box(modifier = Modifier.motionValueDebugger(debuggerState)) {
+            CompositionLocalProvider(LocalMotionValueDebugController provides debuggerState) {
                 if (hasValue) {
                     val toDebug = remember {
-                        MotionValue(input, gestureContext, { MotionSpec.Empty })
+                        MotionValue(input, gestureContext, { MotionSpec.Identity })
                     }
                     Box(modifier = Modifier.debugMotionValue(toDebug))
                 }
             }
         }
 
-        assertThat(debuggerState.observedMotionValues).hasSize(1)
+        assertThat(debuggerState.observed).hasSize(1)
 
         hasValue = false
         rule.waitForIdle()
-        assertThat(debuggerState.observedMotionValues).isEmpty()
+        assertThat(debuggerState.observed).isEmpty()
     }
 
     @Test
     fun debugMotionValue_noDebugger_isNoOp() {
         rule.setContent {
-            val toDebug = remember { MotionValue(input, gestureContext, { MotionSpec.Empty }) }
+            val toDebug = remember { MotionValue(input, gestureContext, { MotionSpec.Identity }) }
             Box(modifier = Modifier.debugMotionValue(toDebug))
         }
     }

@@ -23,10 +23,8 @@ import com.android.mechanics.spec.builder.MotionBuilderContext
 import com.android.mechanics.spec.builder.spatialMotionSpec
 import com.android.mechanics.testing.ComposeMotionValueToolkit
 import com.android.mechanics.testing.FakeMotionSpecBuilderContext
-import com.android.mechanics.testing.MotionSpecSubject.Companion.assertThat
 import com.android.mechanics.testing.animateValueTo
 import com.android.mechanics.testing.goldenTest
-import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,7 +32,8 @@ import platform.test.motion.MotionTestRule
 import platform.test.motion.testing.createGoldenPathManager
 
 @RunWith(AndroidJUnit4::class)
-class RevealOnThresholdTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Default {
+class VerticalTactileSurfaceRevealEffectTest :
+    MotionBuilderContext by FakeMotionSpecBuilderContext.Default {
 
     private val goldenPathManager =
         createGoldenPathManager("frameworks/libs/systemui/mechanics/tests/goldens")
@@ -42,30 +41,11 @@ class RevealOnThresholdTest : MotionBuilderContext by FakeMotionSpecBuilderConte
     @get:Rule val motion = MotionTestRule(ComposeMotionValueToolkit, goldenPathManager)
 
     @Test
-    fun matchesSpec() {
-        val underTests = spatialMotionSpec(Mapping.Zero) { between(3f, 30f, RevealOnThreshold()) }
-
-        val minSize = RevealOnThreshold.Defaults.MinSize.toPx()
-
-        assertThat(3f + minSize).isLessThan(30f)
-
-        assertThat(underTests)
-            .maxDirection()
-            .breakpoints()
-            .positions()
-            .containsExactly(3f, 3f + minSize, 30f)
-
-        assertThat(underTests)
-            .minDirection()
-            .breakpoints()
-            .positions()
-            .containsExactly(3f, 3f + minSize, 30f)
-    }
-
-    @Test
     fun revealAnimation() {
         motion.goldenTest(
-            spatialMotionSpec(Mapping.Zero) { between(3f, 30f, RevealOnThreshold()) }
+            spatialMotionSpec(Mapping.Zero) {
+                between(3f, 30f, VerticalTactileSurfaceRevealEffect())
+            }
         ) {
             animateValueTo(36f, changePerFrame = 3f)
             awaitStable()
@@ -75,7 +55,9 @@ class RevealOnThresholdTest : MotionBuilderContext by FakeMotionSpecBuilderConte
     @Test
     fun revealAnimation_afterFixedValue() {
         motion.goldenTest(
-            spatialMotionSpec(Mapping.Zero) { between(3f, 30f, RevealOnThreshold()) }
+            spatialMotionSpec(Mapping.Zero) {
+                between(3f, 30f, VerticalTactileSurfaceRevealEffect())
+            }
         ) {
             animateValueTo(36f, changePerFrame = 3f)
             awaitStable()
@@ -85,7 +67,9 @@ class RevealOnThresholdTest : MotionBuilderContext by FakeMotionSpecBuilderConte
     @Test
     fun hideAnimation() {
         motion.goldenTest(
-            spatialMotionSpec(Mapping.Zero) { between(3f, 30f, RevealOnThreshold()) },
+            spatialMotionSpec(Mapping.Zero) {
+                between(3f, 30f, VerticalTactileSurfaceRevealEffect())
+            },
             initialValue = 36f,
             initialDirection = InputDirection.Min,
         ) {
@@ -97,9 +81,14 @@ class RevealOnThresholdTest : MotionBuilderContext by FakeMotionSpecBuilderConte
     @Test
     fun doNothingBeforeThreshold() {
         motion.goldenTest(
-            spatialMotionSpec(Mapping.Zero) { between(3f, 30f, RevealOnThreshold()) }
+            spatialMotionSpec(Mapping.Zero) {
+                between(3f, 30f, VerticalTactileSurfaceRevealEffect())
+            }
         ) {
-            animateValueTo(2f + RevealOnThreshold.Defaults.MinSize.toPx(), changePerFrame = 3f)
+            animateValueTo(
+                2f + VerticalTactileSurfaceRevealEffect.Defaults.Phase1HeightMin.toPx(),
+                changePerFrame = 3f,
+            )
             awaitStable()
         }
     }
@@ -107,11 +96,16 @@ class RevealOnThresholdTest : MotionBuilderContext by FakeMotionSpecBuilderConte
     @Test
     fun hideAnimationOnThreshold() {
         motion.goldenTest(
-            spatialMotionSpec(Mapping.Zero) { between(3f, 30f, RevealOnThreshold()) },
+            spatialMotionSpec(Mapping.Zero) {
+                between(3f, 30f, VerticalTactileSurfaceRevealEffect())
+            },
             initialValue = 36f,
             initialDirection = InputDirection.Min,
         ) {
-            animateValueTo(3f + RevealOnThreshold.Defaults.MinSize.toPx(), changePerFrame = 3f)
+            animateValueTo(
+                3f + VerticalTactileSurfaceRevealEffect.Defaults.Phase1HeightMin.toPx(),
+                changePerFrame = 3f,
+            )
             awaitStable()
         }
     }

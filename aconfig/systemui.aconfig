@@ -50,20 +50,6 @@ flag {
 }
 
 flag {
-    name: "new_customization_picker_ui"
-    namespace: "systemui"
-    description: "Enables the new design of the customization picker UI."
-    bug: "339081035"
-}
-
-flag {
-    name: "ambient_aod"
-    namespace: "systemui"
-    description: "Enables ambient wallpaper and AOD enhancements"
-    bug: "372655702"
-}
-
-flag {
     name: "smartspace_sports_card_background"
     namespace: "systemui"
     description: "Enables Smartspace sports card background protection and related ui updates"
@@ -85,27 +71,6 @@ flag {
   namespace: "lse_desktop_experience"
   description: "Shows the status bar on connected displays"
   bug: "379264862"
-}
-
-flag {
-   name: "lockscreen_custom_clocks"
-   namespace: "systemui"
-   description: "Enable lockscreen custom clocks"
-   bug: "378486437"
-}
-
-flag {
-   name: "clock_reactive_variants"
-   namespace: "systemui"
-   description: "Add reactive variant fonts to some clocks"
-   bug: "343495953"
-}
-
-flag {
-   name: "clock_reactive_smartspace_layout"
-   namespace: "systemui"
-   description: "Smartspace layout logic change for reactive clocks"
-   bug: "343495953"
 }
 
 flag {
@@ -131,13 +96,6 @@ flag {
 }
 
 flag {
-    name: "smartspace_ui_update"
-    namespace: "systemui"
-    description: "Update Smartspace UI"
-    bug: "389741821"
-}
-
-flag {
     name: "smartspace_weather_use_monochrome_font_icons"
     namespace: "systemui"
     description: "Update Smartspace to use monochrome font icons for weather"
@@ -145,14 +103,6 @@ flag {
     metadata {
          purpose: PURPOSE_BUGFIX
     }
-}
-
-flag {
-    name: "smartspace_ui_update_resources"
-    namespace: "systemui"
-    description: "Read-only flag for updating resources for Smartspace UI"
-    bug: "389741821"
-    is_fixed_read_only: true
 }
 
 flag {
@@ -193,10 +143,20 @@ flag {
 }
 
 flag {
-    name: "notification_dot_contrast_border"
-    namespace: "launcher"
-    description: "Draws a small black or white contrast border around notification dots according to the dot color's luminescence."
-    bug: "378990749"
+    name: "enable_lpp_assist_invocation_initial_rumble"
+    namespace: "systemui"
+    description: "Enables the initial rumble haptics on power button long press for launching assistant"
+    bug: "419235496"
+    metadata {
+         purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "enable_gesture_assist_invocation_effect"
+    namespace: "systemui"
+    description: "Enables invocation effect on corner gesture for launching assistant"
+    bug: "417194744"
     metadata {
          purpose: PURPOSE_BUGFIX
     }
@@ -215,3 +175,20 @@ flag {
     description: "Support pan & zoom for extended wallpaper effects"
     bug: "417165168"
 }
+
+flag {
+    name: "aod_inactivity_detection"
+    namespace: "systemui"
+    description: "Support an activity detection sensor to power down the display to save power."
+    bug: "402534470"
+}
+
+
+flag {
+    name: "photo_shuffle_flag"
+    namespace: "systemui"
+    description: "Flag for enabling the photo shuffle feature"
+    bug: "445051119"
+}
+
+

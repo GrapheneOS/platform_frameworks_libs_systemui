@@ -16,6 +16,7 @@
 package com.example.tracing.demo.experiments
 
 import com.android.app.tracing.coroutines.asyncTraced
+import com.android.app.tracing.coroutines.launchTraced
 import com.android.app.tracing.coroutines.traceCoroutine
 import com.android.app.tracing.traceSection
 import com.example.tracing.demo.FixedThread1
@@ -34,56 +35,54 @@ import kotlinx.coroutines.launch
 class CombineDeferred
 @Inject
 constructor(
-    @FixedThread1 private var dispatcher1: CoroutineDispatcher,
-    @FixedThread2 private var dispatcher2: CoroutineDispatcher,
-    @FixedThread3 private val dispatcher3: CoroutineDispatcher,
-) : Experiment() {
+    @param:FixedThread1 private var dispatcher1: CoroutineDispatcher,
+    @param:FixedThread2 private var dispatcher2: CoroutineDispatcher,
+    @param:FixedThread3 private val dispatcher3: CoroutineDispatcher,
+) : TracedExperiment() {
     override val description: String = "async{} then start()"
 
     override suspend fun runExperiment(): Unit = coroutineScope {
-        // deferred10 -> deferred20 -> deferred30
-        val deferred30 =
-            async(start = LAZY, context = dispatcher2) {
-                traceCoroutine("async#30") { forceSuspend("deferred30", 25) }
-            }
-        val deferred20 =
-            async(start = LAZY, context = Dispatchers.Unconfined) {
-                traceCoroutine("async#20") { forceSuspend("deferred20", 25) }
-                traceSection("start30") { deferred30.start() }
-            }
-        val deferred10 =
-            async(start = LAZY, context = dispatcher3) {
-                traceCoroutine("async#10") { forceSuspend("deferred10", 25) }
-                traceSection("start20") { deferred20.start() }
-            }
-
         // deferredA -> deferredB -> deferredC
         val deferredC =
             async(start = LAZY, context = dispatcher2) {
-                traceCoroutine("async#C") { forceSuspend("deferredC", 25) }
+                traceCoroutine("async#C") { forceSuspend("deferredC", 15) }
             }
         val deferredB =
             async(start = LAZY, context = Dispatchers.Unconfined) {
-                traceCoroutine("async#B") { forceSuspend("deferredB", 25) }
+                traceCoroutine("async#B") { forceSuspend("deferredB", 10) }
                 traceSection("startC") { deferredC.start() }
             }
         val deferredA =
             async(start = LAZY, context = dispatcher3) {
-                traceCoroutine("async#A") { forceSuspend("deferredA", 25) }
+                traceCoroutine("async#A") { forceSuspend("deferredA", 5) }
                 traceSection("startB") { deferredB.start() }
             }
 
-        // no dispatcher specified, so will inherit dispatcher from whoever called
-        // run(), meaning the main thread
-        val deferredE =
-            asyncTraced("overridden-scope-name-for-deferredE") {
-                traceCoroutine("async#E") { forceSuspend("deferredE", 25) }
+        // deferredX -> deferredY -> deferredZ
+        val deferredZ =
+            async(start = LAZY, context = dispatcher2) {
+                traceCoroutine("async#Z") { forceSuspend("deferredZ", 15) }
+            }
+        val deferredY =
+            async(start = LAZY, context = Dispatchers.Unconfined) {
+                traceCoroutine("async#Y") { forceSuspend("deferredY", 10) }
+                traceSection("startZ") { deferredZ.start() }
+            }
+        val deferredX =
+            async(start = LAZY, context = dispatcher3) {
+                traceCoroutine("async#X") { forceSuspend("deferredX", 5) }
+                traceSection("startY") { deferredY.start() }
             }
 
-        launch(dispatcher1) {
-            traceSection("start10") { deferred10.start() }
-            traceSection("startA") { deferredA.start() }
-            traceSection("startE") { deferredE.start() }
+        val deferredNamed =
+            asyncTraced("my-async-name", start = LAZY) {
+                traceCoroutine("async#my-name") { forceSuspend("my-name", 25) }
+            }
+
+        launch(dispatcher1) { traceSection("startA") { deferredA.start() } }
+        launchTraced(context = dispatcher1) { traceSection("startX") { deferredX.start() } }
+        launchTraced("my-launch-name", dispatcher1) {
+            traceSection("start-named-async") { deferredNamed.start() }
         }
     }
 }

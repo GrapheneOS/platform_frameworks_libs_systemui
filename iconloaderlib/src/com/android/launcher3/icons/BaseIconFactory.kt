@@ -40,13 +40,14 @@ import com.android.launcher3.icons.IconNormalizer.ICON_VISIBLE_AREA_FACTOR
 import com.android.launcher3.icons.ShadowGenerator.BLUR_FACTOR
 import com.android.launcher3.util.FlagOp
 import com.android.launcher3.util.UserIconInfo
-import com.android.launcher3.util.UserIconInfo.TYPE_MAIN
-import com.android.launcher3.util.UserIconInfo.TYPE_WORK
+import com.android.launcher3.util.UserIconInfo.Companion.TYPE_MAIN
+import com.android.launcher3.util.UserIconInfo.Companion.TYPE_WORK
 import com.android.systemui.shared.Flags.extendibleThemeManager
 import java.lang.ref.WeakReference
 import kotlin.annotation.AnnotationRetention.SOURCE
 import kotlin.math.ceil
 import kotlin.math.max
+import kotlin.math.sqrt
 
 /**
  * This class will be moved to androidx library. There shouldn't be any dependency outside this
@@ -100,21 +101,22 @@ constructor(
             IconOptions().setExtractedColor(color),
         )
 
-    fun createIconBitmap(icon: Bitmap): BitmapInfo =
+    fun createIconBitmap(icon: Bitmap, isFullBleed: Boolean): BitmapInfo =
         if (iconBitmapSize != icon.width || iconBitmapSize != icon.height)
             createBadgedIconBitmap(
                 BitmapDrawable(context.resources, icon),
                 IconOptions()
                     .setWrapNonAdaptiveIcon(false)
                     .setIconScale(1f)
-                    .assumeFullBleedIcon(icon.width == icon.height && !icon.hasAlpha()),
+                    .assumeFullBleedIcon(isFullBleed && isIconFullBleed(icon))
+                    .setDrawFullBleed(isFullBleed && isIconFullBleed(icon)),
             )
         else
             BitmapInfo(
                 icon = icon,
                 color = findDominantColorByHue(icon),
                 defaultIconShape = defaultIconShape,
-                flags = if (icon.hasAlpha()) 0 else BitmapInfo.FLAG_FULL_BLEED,
+                flags = if (isFullBleed && isIconFullBleed(icon)) BitmapInfo.FLAG_FULL_BLEED else 0,
             )
 
     fun createScaledBitmap(icon: Drawable, @BitmapGenerationMode mode: Int): Bitmap =
@@ -244,6 +246,10 @@ constructor(
     private fun UserHandle.isWorkUser() =
         NoopDrawable().let { d -> d !== context.packageManager.getUserBadgedIcon(d, this) }
 
+    private fun isIconFullBleed(icon: Bitmap): Boolean {
+        return icon.height == icon.width && !icon.hasAlpha()
+    }
+
     /**
      * Wraps this drawable in [InsetDrawable] such that the final drawable has square bounds, while
      * preserving the aspect ratio of the source
@@ -271,9 +277,7 @@ constructor(
         icon as? AdaptiveIconDrawable
             ?: AdaptiveIconDrawable(
                     ColorDrawable(options?.wrapperBackgroundColor ?: DEFAULT_WRAPPER_BACKGROUND),
-                    icon.wrapIntoSquareDrawable(
-                        IconNormalizer(iconBitmapSize).getScale(icon) * LEGACY_ICON_SCALE
-                    ),
+                    icon.wrapIntoSquareDrawable(LEGACY_ICON_SCALE),
                 )
                 .apply { setBounds(0, 0, 1, 1) }
 
@@ -453,8 +457,14 @@ constructor(
 
     companion object {
         private const val DEFAULT_WRAPPER_BACKGROUND = Color.WHITE
+
+        // Ratio of icon visible area to full icon size for a square shaped icon
+        private const val MAX_SQUARE_AREA_FACTOR = 375.0 / 576
+
         private val LEGACY_ICON_SCALE =
-            .7f * (1f / (1 + 2 * AdaptiveIconDrawable.getExtraInsetFraction()))
+            sqrt(MAX_SQUARE_AREA_FACTOR).toFloat() *
+                .7f *
+                (1f / (1 + 2 * AdaptiveIconDrawable.getExtraInsetFraction()))
 
         const val MODE_DEFAULT: Int = 0
         const val MODE_WITH_SHADOW: Int = 1

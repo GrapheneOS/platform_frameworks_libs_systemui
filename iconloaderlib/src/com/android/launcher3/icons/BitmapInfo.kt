@@ -176,6 +176,13 @@ data class BitmapInfo(
         }
     }
 
+    /**
+     * Checks for FLAG_FULL_BLEED from factory as well as checking bitmap content to verify.
+     */
+    fun isFullBleed(): Boolean {
+        return flags.hasMask(FLAG_FULL_BLEED)
+    }
+
     /** Interface to be implemented by drawables to customize a BitmapInfo */
     interface Extender {
 

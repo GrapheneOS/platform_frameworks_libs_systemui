@@ -16,6 +16,7 @@
 package com.android.systemui.monet
 
 import android.app.WallpaperColors
+import android.content.theming.ThemeStyle
 import android.graphics.Color
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -113,16 +114,16 @@ class ColorSchemeTest {
                 theme.setAttribute("color", sourceColorHex)
                 mode.appendChild(theme)
 
-                for (styleValue in Style.values()) {
+                for (styleValue in ThemeStyle.values()) {
                     if (
-                        styleValue == Style.CLOCK ||
-                            styleValue == Style.CLOCK_VIBRANT ||
-                            styleValue == Style.CONTENT
+                        styleValue == ThemeStyle.CLOCK ||
+                            styleValue == ThemeStyle.CLOCK_VIBRANT ||
+                            styleValue == ThemeStyle.CONTENT
                     ) {
                         continue
                     }
 
-                    val style = document.createElement(Style.name(styleValue).lowercase())
+                    val style = document.createElement(ThemeStyle.name(styleValue).lowercase())
                     val colorScheme =
                         ColorScheme(
                             WallpaperColors(sourceColor, sourceColor, sourceColor),

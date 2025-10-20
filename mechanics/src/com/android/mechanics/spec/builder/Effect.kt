@@ -17,6 +17,7 @@
 package com.android.mechanics.spec.builder
 
 import com.android.mechanics.spec.BreakpointKey
+import kotlin.jvm.JvmInline
 
 /**
  * Blueprint for a reusable behavior in a [MotionSpec].

@@ -20,6 +20,8 @@ import android.app.WallpaperManager
 import android.app.wallpaper.WallpaperDescription
 import android.service.wallpaper.WallpaperService.Engine
 import com.google.android.torus.core.wallpaper.LiveWallpaper
+import java.io.FileDescriptor
+import java.io.PrintWriter
 
 /**
  * Interface that defines a Live Wallpaper Engine and its different states. You need to implement
@@ -74,4 +76,11 @@ interface TorusEngine {
      * [WallpaperManager.FLAG_LOCK] and/or [WallpaperManager.FLAG_SYSTEM]
      */
     fun onWallpaperFlagsChanged(which: Int) {}
+
+    /**
+     * Override this for dumpsys.
+     *
+     * Usage: adb shell dumpsys activity service ${your_wallpaper_service_name}.
+     */
+    fun dump(prefix: String?, fd: FileDescriptor?, out: PrintWriter, args: Array<out String>?) {}
 }

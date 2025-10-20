@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -46,7 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.fastForEachIndexed
-import com.android.mechanics.MotionValue
+import com.android.mechanics.MotionValueState
 import com.android.mechanics.spec.DirectionalMotionSpec
 import com.android.mechanics.spec.Guarantee
 import com.android.mechanics.spec.InputDirection
@@ -79,7 +80,7 @@ typealias OutputRangeFn =
  */
 @Composable
 fun DebugMotionValueVisualization(
-    motionValue: MotionValue,
+    motionValue: MotionValueState,
     inputRange: ClosedFloatingPointRange<Float>,
     modifier: Modifier = Modifier,
     outputRange: OutputRangeFn = DebugMotionValueVisualization.default,
@@ -87,8 +88,9 @@ fun DebugMotionValueVisualization(
 ) {
     val inspector = remember(motionValue) { motionValue.debugInspector() }
 
-    val computedOutputRange =
-        remember(motionValue.spec, inputRange) { outputRange(motionValue.spec, inputRange) }
+    val spec = remember(motionValue) { derivedStateOf { inspector.frame.spec } }.value
+
+    val computedOutputRange = remember(spec, inputRange) { outputRange(spec, inputRange) }
     DisposableEffect(inspector) { onDispose { inspector.dispose() } }
 
     val colorScheme = MaterialTheme.colorScheme
@@ -96,7 +98,7 @@ fun DebugMotionValueVisualization(
     val specColor = colorScheme.tertiary
     val valueColor = colorScheme.primary
 
-    val primarySpec = motionValue.spec.get(inspector.frame.gestureDirection)
+    val primarySpec = spec.get(inspector.frame.gestureDirection)
     val activeSegment = inspector.frame.segmentKey
 
     Spacer(
@@ -179,7 +181,7 @@ fun Modifier.debugMotionSpecGraph(
  */
 @Composable
 fun Modifier.debugMotionValueGraph(
-    motionValue: MotionValue,
+    motionValue: MotionValueState,
     color: Color,
     inputRange: ClosedFloatingPointRange<Float>,
     outputRange: ClosedFloatingPointRange<Float>,
@@ -241,7 +243,7 @@ fun DirectionalMotionSpec.computeOutputValueRange(
 }
 
 private data class DebugMotionValueGraphElement(
-    val motionValue: MotionValue,
+    val motionValue: MotionValueState,
     val color: Color,
     val inputRange: ClosedFloatingPointRange<Float>,
     val outputRange: ClosedFloatingPointRange<Float>,
@@ -269,7 +271,7 @@ private data class DebugMotionValueGraphElement(
 }
 
 private class DebugMotionValueGraphNode(
-    motionValue: MotionValue,
+    motionValue: MotionValueState,
     var color: Color,
     var inputRange: ClosedFloatingPointRange<Float>,
     var outputRange: ClosedFloatingPointRange<Float>,

@@ -16,6 +16,8 @@
 
 package com.android.mechanics.spec
 
+import com.android.mechanics.haptics.SegmentHaptics
+
 /** Returns a string representation of the [MotionSpec] for debugging by humans. */
 fun MotionSpec.toDebugString(): String {
     return buildString {
@@ -47,6 +49,7 @@ fun DirectionalMotionSpec.toDebugString(): String {
             appendBreakpointLine(breakpoints.first())
             for (i in mappings.indices) {
                 appendMappingLine(mappings[i], indent = 2)
+                appendSegmentHapticsLine(haptics[i], indent = 2)
                 semantics.forEach { appendSemanticsLine(it.key, it.values[i], indent = 4) }
                 appendBreakpointLine(breakpoints[i + 1])
             }
@@ -79,6 +82,11 @@ private fun StringBuilder.appendBreakpointLine(breakpoint: Breakpoint, indent: I
         append(breakpoint.spring.dampingRatio)
     }
 
+    append(" [")
+    append("breakpointHaptics=")
+    append(breakpoint.breakpointHaptics.toString())
+    append("]")
+
     appendLine()
 }
 
@@ -88,7 +96,7 @@ private fun StringBuilder.appendBreakpointKey(key: BreakpointKey) {
         append("|")
     }
     append("id:0x")
-    append(System.identityHashCode(key.identity).toString(16).padStart(8, '0'))
+    append(key.identity.hashCode().toString(16).padStart(8, '0'))
 }
 
 private fun StringBuilder.appendSegmentKey(key: SegmentKey) {
@@ -103,6 +111,15 @@ private fun StringBuilder.appendMappingLine(mapping: Mapping, indent: Int = 0) {
     appendLine()
 }
 
+private fun StringBuilder.appendSegmentHapticsLine(
+    segmentHaptics: SegmentHaptics,
+    indent: Int = 0,
+) {
+    appendIndent(indent)
+    append("segment haptics: $segmentHaptics")
+    appendLine()
+}
+
 private fun StringBuilder.appendSemanticsLine(
     semanticKey: SemanticKey<*>,
     value: Any?,
@@ -112,7 +129,7 @@ private fun StringBuilder.appendSemanticsLine(
 
     append(semanticKey.debugLabel)
     append("[id:0x")
-    append(System.identityHashCode(semanticKey.identity).toString(16).padStart(8, '0'))
+    append(semanticKey.identity.hashCode().toString(16).padStart(8, '0'))
     append("]")
 
     append("=")

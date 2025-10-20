@@ -23,6 +23,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
+import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import com.android.mechanics.spring.SpringParameters
@@ -32,7 +34,8 @@ import com.android.mechanics.spring.SpringParameters
  *
  * See go/motion-system.
  *
- * @see rememberMotionBuilderContext for Compose
+ * @see rememberMotionBuilderContext for Compose (in composition)
+ * @see motionBuilderContext for Compose (in Modifier.Node)
  * @see standardViewMotionBuilderContext for Views
  * @see expressiveViewMotionBuilderContext for Views
  */
@@ -84,6 +87,23 @@ fun rememberMotionBuilderContext(): MotionBuilderContext {
     return remember(density, motionScheme) { ComposeMotionBuilderContext(motionScheme, density) }
 }
 
+/**
+ * [MotionBuilderContext] for building motion specs in a [androidx.compose.ui.Modifier.Node].
+ *
+ * This should be read when the node is attached.
+ */
+fun CompositionLocalConsumerModifierNode.motionBuilderContext(): ComposeMotionBuilderContext {
+    return ComposeMotionBuilderContext(
+        motionScheme = currentValueOf(MaterialTheme.LocalMotionScheme),
+        density = currentValueOf(LocalDensity),
+    )
+}
+
+/**
+ * [MotionBuilderContext] based on Material 3 MotionScheme.
+ *
+ * Note: This will throw if the MotionScheme uses AnimationSpecs other than SpringSpecs.
+ */
 class ComposeMotionBuilderContext(motionScheme: MotionScheme, density: Density) :
     MotionBuilderContext, Density by density {
 

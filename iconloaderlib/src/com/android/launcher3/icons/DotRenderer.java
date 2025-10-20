@@ -21,7 +21,6 @@ import static android.graphics.Paint.ANTI_ALIAS_FLAG;
 import static android.graphics.Paint.FILTER_BITMAP_FLAG;
 
 import static com.android.launcher3.icons.IconNormalizer.ICON_VISIBLE_AREA_FACTOR;
-import static com.android.systemui.shared.Flags.notificationDotContrastBorder;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -63,7 +62,7 @@ public class DotRenderer {
             size = MIN_DOT_SIZE;
         }
         ShadowGenerator.Builder builder = new ShadowGenerator.Builder(Color.TRANSPARENT);
-        builder.ambientShadowAlpha = notificationDotContrastBorder() ? 255 : 88;
+        builder.ambientShadowAlpha = 255;
         mBackgroundWithShadow = builder.setupBlurForSize(size).createPill(size, size);
         mCircleRadius = builder.radius;
 
@@ -147,7 +146,7 @@ public class DotRenderer {
         public void setDotColor(int color) {
             mDotColor = color;
 
-            if (notificationDotContrastBorder() && luminance(color) < LUMINENSCE_LIMIT) {
+            if (luminance(color) < LUMINENSCE_LIMIT) {
                 double[] lab = new double[3];
                 ColorUtils.colorToLAB(color, lab);
                 mDotColor = ColorUtils.LABToColor(100 * LUMINENSCE_LIMIT, lab[1], lab[2]);
