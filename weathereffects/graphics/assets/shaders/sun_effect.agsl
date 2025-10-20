@@ -114,8 +114,9 @@ vec4 main(float2 fragCoord) {
     vec2 sunPos = sunVariation + sunCenter;
     sunPos *= aspectRatioAdj;
 
-    vec4 colorForeground = foreground.eval(adjustedUv);
     vec4 color = background.eval(adjustedUv);
+    float foregroundAlpha = foreground.eval(adjustedUv).a;
+    vec4 colorForeground = vec4(color.rgb * foregroundAlpha, foregroundAlpha);
     // add foreground
     color.rgb = normalBlend(color.rgb, colorForeground.rgb, colorForeground.a);
 

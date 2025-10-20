@@ -103,8 +103,9 @@ vec4 main(float2 fragCoord) {
     vec2 timeForeground = vec2(time.x, time.y);
     vec2 timeBackground = vec2(time.z, time.w);
 
-    vec4 fgd = foreground.eval(adjustedCoord);
+    float foregroundAlpha = foreground.eval(adjustedCoord).a;
     vec4 bgd = background.eval(adjustedCoord);
+    vec4 fgd =  vec4(bgd.rgb * foregroundAlpha, foregroundAlpha);
 
     float dither1 = triangleNoise((fragCoord) * pixelDensity) * 0.006;
     float dither2 = triangleNoise((fragCoord) * pixelDensity) * 0.006;
