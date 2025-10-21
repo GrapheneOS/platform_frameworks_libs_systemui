@@ -35,6 +35,9 @@ android_library {
     kotlincflags: [
         "-Xjvm-default=all",
     ],
+    lint: {
+        baseline_filename: "lint-baseline.xml",
+    },
 }
 
 android_library {
@@ -62,4 +65,7 @@ android_library {
     kotlincflags: [
         "-Xjvm-default=all",
     ],
+    lint: {
+        baseline_filename: "lint-baseline.xml",
+    },
 }
