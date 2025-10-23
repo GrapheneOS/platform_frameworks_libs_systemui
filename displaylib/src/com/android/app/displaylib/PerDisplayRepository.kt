@@ -201,7 +201,7 @@ class PerDisplayInstanceRepositoryImpl<T>
 constructor(
     @param:Assisted override val debugName: String,
     @param:Assisted private val instanceProvider: PerDisplayInstanceProvider<T>,
-    @param:Assisted lifecycleManager: DisplayInstanceLifecycleManager? = null,
+    @Assisted lifecycleManager: DisplayInstanceLifecycleManager? = null,
     @param:DisplayLibMainThread private val mainContext: CoroutineContext,
     @param:DisplayLibBackground private val bgApplicationScope: CoroutineScope,
     private val displayRepository: DisplayRepository,
