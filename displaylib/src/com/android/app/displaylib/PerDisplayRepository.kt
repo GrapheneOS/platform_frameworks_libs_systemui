@@ -199,15 +199,15 @@ interface PerDisplayRepository<T> {
 class PerDisplayInstanceRepositoryImpl<T>
 @AssistedInject
 constructor(
-    @Assisted override val debugName: String,
-    @Assisted private val instanceProvider: PerDisplayInstanceProvider<T>,
-    @Assisted lifecycleManager: DisplayInstanceLifecycleManager? = null,
-    @DisplayLibMainThread private val mainContext: CoroutineContext,
-    @DisplayLibBackground private val bgApplicationScope: CoroutineScope,
+    @param:Assisted override val debugName: String,
+    @param:Assisted private val instanceProvider: PerDisplayInstanceProvider<T>,
+    @param:Assisted lifecycleManager: DisplayInstanceLifecycleManager? = null,
+    @param:DisplayLibMainThread private val mainContext: CoroutineContext,
+    @param:DisplayLibBackground private val bgApplicationScope: CoroutineScope,
     private val displayRepository: DisplayRepository,
     private val initCallback: PerDisplayRepository.InitCallback,
-    @Assisted private val createInstanceEagerly: Boolean = false,
-    @Assisted("mainThreadForDefaultDisplayEagerlyCreation")
+    @param:Assisted private val createInstanceEagerly: Boolean = false,
+    @param:Assisted("mainThreadForDefaultDisplayEagerlyCreation")
     private val mainThreadForDefaultDisplayEagerlyCreation: Boolean = false,
 ) : PerDisplayRepository<T> {
 
