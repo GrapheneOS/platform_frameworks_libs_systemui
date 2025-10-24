@@ -93,11 +93,11 @@ internal fun Modifier.verticalTactileSurfaceReveal(
         )
 
 @VisibleForTesting
-internal class AnimatedValuesForTests {
-    var offsetY = Float.NaN
-    var height = Float.NaN
-    var radius = Float.NaN
-}
+internal data class AnimatedValuesForTests(
+    var offsetY: Float = Float.NaN,
+    var height: Float = Float.NaN,
+    var radius: Float = Float.NaN,
+)
 
 private data class VerticalTactileSurfaceRevealElement(
     val deltaY: Float,
@@ -233,10 +233,8 @@ private class VerticalTactileSurfaceRevealNode(
         return measurable.measure(constraints).run {
             layout(width, height) {
                 placeWithLayer(IntOffset.Zero) {
-                    val heightRevealed =
-                        constraints
-                            .constrainHeight(checkNotNull(revealHeight).output.roundToInt())
-                            .toFloat()
+                    val height1 = checkNotNull(revealHeight).output.roundToInt()
+                    val heightRevealed = constraints.constrainHeight(height1).toFloat()
 
                     if (heightRevealed != lookAheadHeight) {
                         approachGraphicsLayer(heightRevealed)
