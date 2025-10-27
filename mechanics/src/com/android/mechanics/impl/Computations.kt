@@ -33,7 +33,7 @@ import com.android.mechanics.spring.SpringState
 import com.android.mechanics.spring.calculateUpdatedState
 
 internal abstract class Computations : CurrentFrameInput, LastFrameState, StaticConfig {
-    internal class ComputedValues(
+    internal data class ComputedValues(
         val segment: SegmentData,
         val guarantee: GuaranteeState,
         val animation: DiscontinuityAnimation,

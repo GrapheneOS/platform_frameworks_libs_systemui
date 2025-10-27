@@ -36,6 +36,7 @@ import androidx.compose.ui.node.findNearestAncestor
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
+import com.android.compose.animation.scene.ContentScope
 import com.android.mechanics.GestureContext
 import com.android.mechanics.ManagedMotionValue
 import com.android.mechanics.MotionValueCollection
@@ -66,9 +67,6 @@ internal fun DelegatableNode.findMotionDriver(): MotionDriver {
  * to a parent's size changes, such as expanding or collapsing.
  */
 internal interface MotionDriver {
-    /** The [GestureContext] associated with this motion. */
-    val gestureContext: GestureContext
-
     /**
      * The current vertical state of the layout, indicating if it's minimized, maximized, or in
      * transition.
@@ -117,16 +115,23 @@ internal interface MotionDriver {
  * @param label An optional label for debugging and inspector tooling.
  */
 fun Modifier.motionDriver(gestureContext: GestureContext, label: String? = null): Modifier =
-    this then MotionDriverElement(gestureContext = gestureContext, label = label)
+    this then MotionDriverElement(gestureContext = { gestureContext }, label = label)
 
-private data class MotionDriverElement(val gestureContext: GestureContext, val label: String?) :
-    ModifierNodeElement<MotionDriverNode>() {
+fun Modifier.motionDriver(contentScope: ContentScope, label: String? = null): Modifier =
+    this then
+        MotionDriverElement(
+            gestureContext = { contentScope.gestureContextOrDefault() },
+            label = label,
+        )
+
+private data class MotionDriverElement(
+    val gestureContext: () -> GestureContext,
+    val label: String?,
+) : ModifierNodeElement<MotionDriverNode>() {
     override fun create(): MotionDriverNode =
         MotionDriverNode(gestureContext = gestureContext, label = label)
 
-    override fun update(node: MotionDriverNode) {
-        check(node.gestureContext == gestureContext) { "Cannot change the gestureContext" }
-    }
+    override fun update(node: MotionDriverNode) {}
 
     override fun InspectorInfo.inspectableProperties() {
         name = "motionDriver"
@@ -134,7 +139,7 @@ private data class MotionDriverElement(val gestureContext: GestureContext, val l
     }
 }
 
-private class MotionDriverNode(override val gestureContext: GestureContext, label: String?) :
+private class MotionDriverNode(gestureContext: () -> GestureContext, label: String?) :
     Modifier.Node(),
     TraversableNode,
     LayoutModifierNode,
@@ -142,11 +147,11 @@ private class MotionDriverNode(override val gestureContext: GestureContext, labe
     CompositionLocalConsumerModifierNode {
     override val traverseKey: Any = TRAVERSAL_NODE_KEY
     override var verticalState: MotionDriver.State by mutableStateOf(MotionDriver.State.MinValue)
-
     private var driverCoordinates: LayoutCoordinates? = null
     private var lookAheadHeight: Int = 0
     private var input by mutableFloatStateOf(0f)
-    private val motionValues = MotionValueCollection(::input, gestureContext, label = label)
+    private val initialGestureContext = gestureContext()
+    private val motionValues = MotionValueCollection(::input, initialGestureContext, label = label)
 
     override fun onAttach() {
         coroutineScope.launch(Dispatchers.Main.immediate) { motionValues.keepRunning() }

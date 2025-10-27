@@ -86,13 +86,16 @@ vec4 main(float2 fragCoord) {
     // Calculate uv for snow based on transformed coordinates
     float2 uv = transformPoint(transformMatrixWeather, fragCoord) / screenSize;
 
-    vec4 colorForeground = foreground.eval(uvTexture);
+    // Sample foreground alpha (used as a mask) and background color.
+    float foregroundAlpha = foreground.eval(uvTexture).a;
     vec4 color = background.eval(uvTexture);
 
     // Adjusts contrast and brightness.
     float noise = 0.025 * triangleNoise(fragCoord.xy + vec2(12.31, 1024.1241));
     color.rgb = imageRangeConversion(color.rgb, 0.84, 0.02, noise, intensity);
-    colorForeground.rgb = imageRangeConversion(colorForeground.rgb, 0.84, 0.02, noise, intensity);
+
+    // Construct the final color: masked background using foreground's alpha.
+    vec4 colorForeground = vec4(color.rgb * foregroundAlpha, foregroundAlpha);
 
     // Add rotation for the rain (as a default sin(time * 0.05) can be used).
     float variation = wiggle(time - uv.y * 1.1, 0.10);

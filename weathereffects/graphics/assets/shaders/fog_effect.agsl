@@ -51,14 +51,16 @@ vec4 main(float2 fragCoord) {
     float2 uv = transformPoint(transformMatrixWeather, fragCoord) / screenSize;
     uv.y /= screenAspectRatio;
 
-    // Load background and foreground.
-    vec4 fgd = foreground.eval(adjustedCoord);
+    // Sample foreground alpha (used as a mask) and background color at the adjusted coordinate.
+    float fgdAlpha = foreground.eval(adjustedCoord).a;
     vec4 bgd = background.eval(adjustedCoord);
 
     // Adjusts contrast and brightness.
     float noise = 0.025 * triangleNoise(fragCoord.xy + vec2(12.31, 1024.1241));
     bgd.rgb = imageRangeConversion(bgd.rgb, 0.8, 0.02, noise, intensity);
-    fgd.rgb = imageRangeConversion(fgd.rgb, 0.8, 0.02, noise, intensity);
+
+    // Construct the final foreground: masked background color with the sampled alpha.
+    vec4 fgd = vec4(bgd.rgb * fgdAlpha, fgdAlpha);
 
     // Blend them with constant solid fog color.
     bgd.rgb = mix(bgd.rgb, fogScrimColor, 0.14 * intensity * bgd.a);

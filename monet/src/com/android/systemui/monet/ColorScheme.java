@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 @Deprecated
 public class ColorScheme {
     public static final int GOOGLE_BLUE = 0xFF1b6ef3;
+    public static final float CONTRAST = 0.0f;
     private static final float ACCENT1_CHROMA = 48.0f;
     private static final int MIN_CHROMA = 5;
 
@@ -64,6 +65,7 @@ public class ColorScheme {
     private final TonalPalette mNeutral2;
     private final TonalPalette mError;
     private final Hct mProposedSeedHct;
+    private final double mContrast;
 
 
     public ColorScheme(@ColorInt int seed, boolean isDark, @ThemeStyle.Type int style,
@@ -72,6 +74,7 @@ public class ColorScheme {
         this.mSeed = seed;
         this.mIsDark = isDark;
         this.mStyle = style;
+        this.mContrast = contrastLevel;
 
         mProposedSeedHct = Hct.fromInt(seed);
         Hct seedHct = Hct.fromInt(
@@ -317,6 +320,37 @@ public class ColorScheme {
         }
 
         return seeds;
+    }
+
+    /**
+     * Checks is this ColorScheme is equivalent to another
+     *
+     * @param otherScheme The other ColorScheme to compare with
+     */
+    public boolean hasSamePalette(ColorScheme otherScheme) {
+        return this.getAccent1().allShadesMapped
+                .equals(otherScheme.getAccent1().allShadesMapped)
+                && this.getAccent2().allShadesMapped
+                .equals(otherScheme.getAccent2().allShadesMapped)
+                && this.getAccent3().allShadesMapped
+                .equals(otherScheme.getAccent3().allShadesMapped)
+                && this.getNeutral1().allShadesMapped
+                .equals(otherScheme.getNeutral1().allShadesMapped)
+                && this.getNeutral2().allShadesMapped
+                .equals(otherScheme.getNeutral2().allShadesMapped)
+                && this.getError().allShadesMapped
+                .equals(otherScheme.getError().allShadesMapped);
+    }
+
+    /**
+     * Checks is this ColorScheme is equivalent to another
+     *
+     * @param otherScheme The other ColorScheme to compare with
+     */
+    public boolean hasSameProperties(ColorScheme otherScheme) {
+        if (otherScheme.mStyle != this.mStyle) return false;
+        if (otherScheme.mSeed != this.mSeed) return false;
+        return otherScheme.mContrast == this.mContrast;
     }
 
     /**
