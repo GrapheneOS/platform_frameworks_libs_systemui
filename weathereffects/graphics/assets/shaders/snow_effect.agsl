@@ -75,7 +75,7 @@ vec4 main(float2 fragCoord) {
     vec4 color = colorBackground;
 
     // Add slight tint to the background.
-    color.rgb = normalBlendNotPremultiplied(color.rgb, bgdTint.rgb, bgdTint.a);
+    color.rgb = normalBlendNotPremultiplied(color.rgb, bgdTint.rgb, bgdTint.a * intensity);
 
     // 2. Generate snow layers behind the subject.
     if (colorForeground.a == 0) {
