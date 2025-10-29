@@ -49,7 +49,15 @@ class RainEffect(
             initialSurfaceSize,
             SizeF(background.width.toFloat(), background.height.toFloat()),
         ),
-) : WeatherEffectBase(foreground, background, initialSurfaceSize, initialMatrix) {
+    isPanAndZoomInExtendedWallpaperEffectsEnabled: Boolean,
+) :
+    WeatherEffectBase(
+        foreground,
+        background,
+        initialSurfaceSize,
+        initialMatrix,
+        isPanAndZoomInExtendedWallpaperEffectsEnabled,
+    ) {
 
     private val rainPaint = Paint().also { it.shader = rainConfig.colorGradingShader }
     // Outline buffer is set with bitmap size, so we need to multiply blur radius by scale to get

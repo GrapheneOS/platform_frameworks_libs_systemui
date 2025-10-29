@@ -40,8 +40,8 @@ import com.android.wallpaper.weathereffects.graphics.snow.SnowEffect
 import com.android.wallpaper.weathereffects.graphics.snow.SnowEffectConfig
 import com.android.wallpaper.weathereffects.graphics.sun.SunEffect
 import com.android.wallpaper.weathereffects.graphics.sun.SunEffectConfig
+import com.android.wallpaper.weathereffects.graphics.utils.MatrixUtils.centerCropMatrix
 import com.android.wallpaper.weathereffects.provider.WallpaperInfoContract
-import com.android.wallpaper.weathereffects.sensor.UserPresenceController
 import com.android.wallpaper.weathereffects.shared.model.WallpaperImageModel
 import com.google.android.torus.canvas.engine.CanvasWallpaperEngine
 import com.google.android.torus.core.wallpaper.listener.LiveWallpaperEventListener
@@ -83,10 +83,7 @@ class WeatherEngine(
     private var effectTargetIntensity: Float = 1f
     private var effectIntensity: Float = 0f
 
-    private var userPresenceController =
-        UserPresenceController(context) { newUserPresence, oldUserPresence ->
-            onUserPresenceChange(newUserPresence, oldUserPresence)
-        }
+    private val isPanAndZoomInExtendedWallpaperEffectsEnabled = false
 
     init {
         /* Load assets. */
@@ -129,7 +126,6 @@ class WeatherEngine(
         if (activeEffect != null) {
             if (shouldTriggerUpdate()) startUpdateLoop()
         }
-        userPresenceController.start(context.mainExecutor)
     }
 
     override fun onUpdate(deltaMillis: Long, frameTimeNanos: Long) {
@@ -142,7 +138,6 @@ class WeatherEngine(
         stopUpdateLoop()
         collectWallpaperImageJob?.cancel()
         activeEffect?.reset()
-        userPresenceController.stop()
     }
 
     override fun onDestroy(isLastActiveInstance: Boolean) {
@@ -151,7 +146,7 @@ class WeatherEngine(
     }
 
     override fun onKeyguardGoingAway() {
-        userPresenceController.onKeyguardGoingAway()
+        // No-op.
     }
 
     override fun onKeyguardAppearing() {}
@@ -173,11 +168,11 @@ class WeatherEngine(
     override fun computeWallpaperColors(): WallpaperColors? = backgroundColor
 
     override fun onWake(extras: Bundle) {
-        userPresenceController.setWakeState(true)
+        // No-op.
     }
 
     override fun onSleep(extras: Bundle) {
-        userPresenceController.setWakeState(false)
+        // No-op.
     }
 
     fun setTargetIntensity(@FloatRange(from = 0.0, to = 1.0) intensity: Float) {
@@ -196,7 +191,11 @@ class WeatherEngine(
     ) {
         activeEffect?.release()
         activeEffect = null
-
+        val initialMatrix =
+            centerCropMatrix(
+                screenSize.toSizeF(),
+                SizeF(background.width.toFloat(), background.height.toFloat()),
+            )
         when (weatherEffect) {
             WallpaperInfoContract.WeatherEffect.RAIN -> {
                 val rainConfig =
@@ -209,6 +208,8 @@ class WeatherEngine(
                         effectIntensity,
                         screenSize.toSizeF(),
                         context.mainExecutor,
+                        initialMatrix,
+                        isPanAndZoomInExtendedWallpaperEffectsEnabled,
                     )
             }
             WallpaperInfoContract.WeatherEffect.FOG -> {
@@ -222,6 +223,8 @@ class WeatherEngine(
                         background,
                         effectIntensity,
                         screenSize.toSizeF(),
+                        initialMatrix,
+                        isPanAndZoomInExtendedWallpaperEffectsEnabled,
                     )
             }
 
@@ -236,6 +239,8 @@ class WeatherEngine(
                         background,
                         effectIntensity,
                         screenSize.toSizeF(),
+                        initialMatrix,
+                        isPanAndZoomInExtendedWallpaperEffectsEnabled,
                     )
             }
 
@@ -250,6 +255,8 @@ class WeatherEngine(
                         effectIntensity,
                         screenSize.toSizeF(),
                         context.mainExecutor,
+                        initialMatrix,
+                        isPanAndZoomInExtendedWallpaperEffectsEnabled,
                     )
             }
             WallpaperInfoContract.WeatherEffect.SUN -> {
@@ -262,6 +269,8 @@ class WeatherEngine(
                         background,
                         effectIntensity,
                         screenSize.toSizeF(),
+                        initialMatrix,
+                        isPanAndZoomInExtendedWallpaperEffectsEnabled,
                     )
             }
             else -> {
@@ -279,13 +288,6 @@ class WeatherEngine(
     }
 
     private fun Size.toSizeF(): SizeF = SizeF(width.toFloat(), height.toFloat())
-
-    private fun onUserPresenceChange(
-        newUserPresence: UserPresenceController.UserPresence,
-        oldUserPresence: UserPresenceController.UserPresence,
-    ) {
-        playIntensityFadeOutAnimation(getAnimationType(newUserPresence, oldUserPresence))
-    }
 
     private fun updateCurrentIntensity(intensity: Float = effectIntensity) {
         if (effectIntensity != intensity) {
@@ -351,35 +353,6 @@ class WeatherEngine(
                 }
                 start()
             }
-    }
-
-    private fun getAnimationType(
-        newPresence: UserPresenceController.UserPresence,
-        oldPresence: UserPresenceController.UserPresence,
-    ): AnimationType {
-        if (shouldSkipIntensityOutAnimation()) {
-            return AnimationType.NONE
-        }
-        when (oldPresence) {
-            UserPresenceController.UserPresence.AWAY -> {
-                if (
-                    newPresence == UserPresenceController.UserPresence.LOCKED ||
-                        newPresence == UserPresenceController.UserPresence.ACTIVE
-                ) {
-                    return AnimationType.WAKE
-                }
-            }
-            UserPresenceController.UserPresence.LOCKED -> {
-                if (newPresence == UserPresenceController.UserPresence.ACTIVE) {
-                    return AnimationType.UNLOCK
-                }
-            }
-            else -> {
-                // No-op.
-            }
-        }
-
-        return AnimationType.NONE
     }
 
     private fun updateWallpaperColors(background: Bitmap) {
