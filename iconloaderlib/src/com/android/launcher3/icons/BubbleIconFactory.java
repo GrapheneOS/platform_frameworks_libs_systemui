@@ -13,10 +13,11 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.Icon;
 import android.os.Build;
-import android.os.UserHandle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.android.launcher3.util.UserIconInfo;
 
 /**
  * Factory for creating normalized bubble icons and app badges.
@@ -87,7 +88,7 @@ public class BubbleIconFactory extends BaseIconFactory {
      * Creates the BitmapInfo for the app bubble. If the user is managed, the badge will be
      * included in the drawable.
      */
-    public BitmapInfo getAppBubbleBitmapInfo(@NonNull Drawable appIcon, UserHandle user) {
+    public BitmapInfo getAppBubbleBitmapInfo(@NonNull Drawable appIcon, UserIconInfo user) {
         return createBadgedIconBitmap(
                 appIcon, new IconOptions()
                         .setBitmapGenerationMode(MODE_WITH_SHADOW)
@@ -98,9 +99,9 @@ public class BubbleIconFactory extends BaseIconFactory {
 
     /**
      * Returns a {@link BitmapInfo} for the app-badge that is shown on top of each bubble. This
-     * will include the workprofile indicator on the badge if appropriate.
+     * will include the profile indicator on the badge if appropriate.
      */
-    public BitmapInfo getBadgeBitmap(Drawable appIcon, UserHandle user,
+    public BitmapInfo getBadgeBitmap(Drawable appIcon, UserIconInfo user,
             boolean isImportantConversation) {
         if (appIcon instanceof AdaptiveIconDrawable ad) {
             appIcon = new CircularAdaptiveIcon(ad.getBackground(), ad.getForeground());
