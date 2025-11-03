@@ -23,7 +23,6 @@ import android.graphics.Matrix
 import android.graphics.RuntimeShader
 import android.graphics.Shader
 import android.util.SizeF
-import com.android.systemui.shared.Flags.panAndZoomInExtendedWallpaperEffects
 import com.android.wallpaper.weathereffects.graphics.utils.GraphicsUtils
 import com.android.wallpaper.weathereffects.graphics.utils.MatrixAndValues
 import com.android.wallpaper.weathereffects.graphics.utils.MatrixUtils.calculateTransformDifference
@@ -43,6 +42,7 @@ abstract class WeatherEffectBase(
     protected var surfaceSize: SizeF,
     // TODO(b/435215686): change to Map<Size, Matrix> to support different surfaceSize
     protected val initialCropMatrix: Matrix,
+    protected val isPanAndZoomInExtendedWallpaperEffectsEnabled: Boolean,
 ) : WeatherEffect {
     protected val cropMatrix = MatrixAndValues(initialCropMatrix)
 
@@ -75,7 +75,7 @@ abstract class WeatherEffectBase(
             return
         }
         positionMatrix.set(matrix)
-        if (!panAndZoomInExtendedWallpaperEffects()) {
+        if (!isPanAndZoomInExtendedWallpaperEffectsEnabled) {
             // When image is always center aligned, we have scale and translation info in
             // positionMatrix
             bitmapScale = getScaleFromMatrixValues(positionMatrix.values)
