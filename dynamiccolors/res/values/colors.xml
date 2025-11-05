@@ -85,7 +85,6 @@
     <color name="materialColorSecondaryFixedDim">@android:color/system_secondary_fixed_dim</color>
     <color name="materialColorTertiaryFixed">@android:color/system_tertiary_fixed</color>
     <color name="materialColorTertiaryFixedDim">@android:color/system_tertiary_fixed_dim</color>
-
     <color name="customColorBrandA">@androidprv:color/system_brand_a_light</color>
     <color name="customColorBrandB">@androidprv:color/system_brand_b_light</color>
     <color name="customColorBrandC">@androidprv:color/system_brand_c_light</color>
@@ -102,6 +101,11 @@
     <color name="customColorShadeActive">@androidprv:color/system_shade_active_light</color>
     <color name="customColorShadeDisabled">@androidprv:color/system_shade_disabled_light</color>
     <color name="customColorShadeInactive">@androidprv:color/system_shade_inactive_light</color>
+    <color name="customColorSurfaceEffect0">@androidprv:color/system_surface_effect_0_light</color>
+    <color name="customColorSurfaceEffect0Fallback">@androidprv:color/system_surface_effect_0_fallback_light</color>
+    <color name="customColorSurfaceEffect1">@androidprv:color/system_surface_effect_1_light</color>
+    <color name="customColorSurfaceEffect2">@androidprv:color/system_surface_effect_2_light</color>
+    <color name="customColorSurfaceEffect3">@androidprv:color/system_surface_effect_3_light</color>
     <color name="customColorThemeApp">@androidprv:color/system_theme_app_light</color>
     <color name="customColorThemeAppRing">@androidprv:color/system_theme_app_ring_light</color>
     <color name="customColorThemeNotif">@androidprv:color/system_theme_notif_light</color>
