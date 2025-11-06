@@ -22,10 +22,10 @@ android_test {
 
     srcs: [
         "src/**/*.kt",
-        ":tracinglib-core-srcs",
     ],
 
     static_libs: [
+        "tracinglib-platform",
         "androidx.annotation_annotation",
         "androidx.benchmark_benchmark-common",
         "androidx.benchmark_benchmark-junit4",
@@ -40,6 +40,7 @@ android_test {
         "platform-test-rules",
         "com_android_systemui_flags_lib",
     ],
+    associates: ["tracinglib-platform"],
 
     data: [":perfetto_artifacts"],
 
