@@ -29,6 +29,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.withContext
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 
@@ -38,11 +39,9 @@ class FlagDisabledTest : TestBase() {
 
     @Test
     fun tracingDisabledWhenFlagIsOff() = runTest {
-        assertFalse(
-            com.android.systemui.Flags.coroutineTracing() &&
-                Compile.IS_DEBUG &&
-                coroutineTracingEnabled
-        )
+        assertFalse(com.android.systemui.Flags.coroutineTracing())
+        assertTrue(Compile.IS_DEBUG)
+        assertTrue(coroutineTracingEnabled) // sysprop enabled, but aconfig flag is off
         assertNull(traceThreadLocal.get())
         withContext(createCoroutineTracingContext(testMode = true)) {
             assertNull(traceThreadLocal.get())

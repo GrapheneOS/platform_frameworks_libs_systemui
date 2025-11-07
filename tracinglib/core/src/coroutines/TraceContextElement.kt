@@ -53,20 +53,39 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
  */
 @PublishedApi internal val traceThreadLocal: TraceDataThreadLocal = TraceDataThreadLocal()
 
+/**
+ * Object for holding the values of debug sysprops, which are used for modifying the behavior of
+ * coroutine tracing. The sysprops are read when the library was first initialized.
+ */
 @PublishedApi
 internal object DebugSysProps {
+    /**
+     * Value of `persist.debug.coroutine_tracing` sysprop
+     *
+     * @see TraceContextElement
+     */
     @JvmField
     val coroutineTracingEnabled =
         Compile.IS_DEBUG &&
             com.android.systemui.Flags.coroutineTracing() &&
             SystemProperties.getBoolean("persist.debug.coroutine_tracing", false)
 
+    /**
+     * Value of `persist.debug.coroutine_tracing.walk_stack` sysprop
+     *
+     * @see TraceContextElement
+     */
     @JvmField
     val stackWalkerAlwaysEnabled =
         Compile.IS_DEBUG &&
             com.android.systemui.Flags.coroutineTracing() &&
             SystemProperties.getBoolean("persist.debug.coroutine_tracing.walk_stack", true)
 
+    /**
+     * Value of `persist.debug.coroutine_tracing.count_continuations` sysprop
+     *
+     * @see TraceContextElement
+     */
     @JvmField
     val continuationCountingAlwaysEnabled =
         Compile.IS_DEBUG &&
@@ -76,6 +95,47 @@ internal object DebugSysProps {
                 false,
             )
 
+    /**
+     * Value of `persist.debug.coroutine_tracing.inherit_slices` sysprop
+     *
+     * @see TraceContextElement
+     */
+    @JvmField
+    val inheritParentSlices =
+        Compile.IS_DEBUG &&
+            com.android.systemui.Flags.coroutineTracing() &&
+            SystemProperties.getBoolean("persist.debug.coroutine_tracing.inherit_slices", false)
+
+    /**
+     * Value of `persist.debug.coroutine_tracing.dump_init_stack` sysprop
+     *
+     * @see TraceContextElement
+     */
+    @JvmField
+    val dumpInitStack =
+        Compile.IS_DEBUG &&
+            com.android.systemui.Flags.coroutineTracing() &&
+            SystemProperties.getBoolean("persist.debug.coroutine_tracing.dump_init_stack", false)
+
+    /**
+     * Value of `persist.debug.coroutine_tracing.dump_continuation_stack` sysprop
+     *
+     * @see TraceContextElement
+     */
+    @JvmField
+    val dumpContinuationStack =
+        Compile.IS_DEBUG &&
+            com.android.systemui.Flags.coroutineTracing() &&
+            SystemProperties.getBoolean(
+                "persist.debug.coroutine_tracing.dump_continuation_stack",
+                false,
+            )
+
+    /**
+     * Value of `persist.debug.coroutine_tracing.flow_values` sysprop
+     *
+     * @see TraceContextElement
+     */
     @JvmField
     val traceFlowValues =
         Compile.IS_DEBUG &&
@@ -85,26 +145,9 @@ internal object DebugSysProps {
 
 /**
  * Returns a new [TraceContextElement] (or [EmptyCoroutineContext] if `coroutine_tracing` feature is
- * flagged off). This context should only be installed on root coroutines (e.g. when constructing a
- * `CoroutineScope`). The context will be copied automatically to child scopes and thus should not
- * be passed to children explicitly.
+ * flagged off). This context should only be installed in root [CoroutineScopes][CoroutineScope].
  *
- * [TraceContextElement] should be installed on the root, and [CoroutineTraceName] on the children.
- *
- * For example, the following snippet will add trace sections to indicate that `C` is a child of
- * `B`, and `B` was started by `A`. Perfetto will post-process this information to show that: `A ->
- * B -> C`
- *
- * ```
- * val scope = CoroutineScope(createCoroutineTracingContext("A")
- * scope.launch(nameCoroutine("B")) {
- *     // ...
- *     launch(nameCoroutine("C")) {
- *         // ...
- *     }
- *     // ...
- * }
- * ```
+ * See [TraceContextElement] for explanation of proper usage.
  *
  * **NOTE:** The sysprops `persist.debug.coroutine_tracing.walk_stack` and
  * `persist.debug.coroutine_tracing.count_continuations` can be used to override the parameters
@@ -130,9 +173,7 @@ internal object DebugSysProps {
  *   machinery. These checks are expensive and should only be used for testing. 3) omits "coroutine
  *   execution" trace slices, and omits coroutine metadata slices. If [testMode] is enabled,
  *   [countContinuations] and [countDepth] are ignored.
- * @param shouldIgnoreClassName lambda that takes binary class name (as returned from
- *   [StackFrame.getClassName] and returns true if it should be ignored (e.g. search for relevant
- *   class name should continue) or false otherwise.
+ * @see TraceContextElement
  */
 public fun createCoroutineTracingContext(
     name: String = "UnnamedScope",
@@ -140,20 +181,21 @@ public fun createCoroutineTracingContext(
     countDepth: Boolean = false,
     testMode: Boolean = false,
     walkStackForDefaultNames: Boolean = false,
-    shouldIgnoreClassName: ((String) -> Boolean)? = null,
 ): CoroutineContext {
     return if (
         Compile.IS_DEBUG && com.android.systemui.Flags.coroutineTracing() && coroutineTracingEnabled
     ) {
         TraceContextElement(
+            // Minor perf optimization: no need to create TraceData() for root scopes since all
+            // launches require creation of child via [copyForChild] or [mergeForChild].
+            // Alos, we will use `contextTraceData = null` to indicate this is a root TCE.
+            contextTraceData = null,
             name = name,
-            isRoot = true,
             countContinuations =
                 !testMode &&
                     (countContinuations || DebugSysProps.continuationCountingAlwaysEnabled),
             walkStackForDefaultNames =
                 walkStackForDefaultNames || DebugSysProps.stackWalkerAlwaysEnabled,
-            shouldIgnoreClassName = shouldIgnoreClassName,
             parentId = null,
             inheritedTracePrefix = if (testMode) "" else null,
             coroutineDepth = if (!testMode && countDepth) 0 else -1,
@@ -222,11 +264,58 @@ internal open class CoroutineTraceName(internal val name: String?) : CoroutineCo
 
 private fun nextRandomInt(): Int = ThreadLocalRandom.current().nextInt(1, Int.MAX_VALUE)
 
+internal class StackDump : Throwable()
+
 /**
- * Used for tracking parent-child relationship of coroutines and persisting [TraceData] when
- * coroutines are suspended and resumed.
+ * Coroutine context element for tracking parent-child relationships of coroutines and persisting
+ * [TraceData] when coroutines are suspended and resumed.
  *
- * This is internal machinery for [traceCoroutine] and should not be used directly.
+ * To use [TraceContextElement] call [createCoroutineTracingContext] and add the returned to your
+ * root [CoroutineScope]. This will cause new coroutines in that scope (such as those created by
+ * coroutine builder APIs such as [launch][kotlinx.coroutines.launch] and
+ * [async][kotlinx.coroutines.async]) to _copy_ this trace context element into the newly created
+ * child coroutine.
+ *
+ * Note: you should only ever need to call [createCoroutineTracingContext] _once_ per root
+ * `CoroutineScope. To name the child coroutine, add [CoroutineTraceName] to the child's coroutine
+ * context under construction. For example, the following would name the child coroutine
+ * "name-for-child".
+ *
+ * ```
+ * val scope = CoroutineScope(createCoroutineTracingContext("name-of-root"))
+ * scope.launch(CoroutineTraceName("name-for-child")) {
+ *   traceCoroutine("delay for 10ms") {
+ *     delay(10)
+ *   }
+ * }
+ * ```
+ *
+ * To make the process of naming children easier, this library provides APIs such as [launchTraced],
+ * which takes a string and adds it to a [CoroutineTraceName] before launching. The `launch` call in
+ * the above snippet is equivalent to:
+ * ```
+ * import com.android.app.tracing.coroutines.launchTraced
+ * ...
+ * scope.launchTraced("name-for-child") {
+ *   ...
+ * }
+ * ```
+ *
+ * The behavior of `TraceContextElement` will vary depending on which system properties are set:
+ * - `persist.debug.coroutine_tracing`: enable the coroutine tracing feature. Note: any application
+ *   using this library will need to be restarted for this to take effect.
+ * - `persist.debug.coroutine_tracing.walk_stack`: whether to walk the stack to infer a name for the
+ *   coroutine.
+ * - `persist.debug.coroutine_tracing.inherit_slices`: If set, coroutine-local slices from the
+ *   parent are passed to the child. NOTE: If parent later closes a slice, it won't be reflected in
+ *   the child coroutine. Also, slices named ~ will be used as a separator between the inherited
+ *   slices and the child's.
+ * - `persist.debug.coroutine_tracing.count_continuations`: Include a count of the number of times
+ *   the coroutine was resumed, e.g. `;n=1234;`, inside the `coroutine execution;` slice.
+ * - `persist.debug.coroutine_tracing.dump_init_stack`: If set, dump the call-stack at the time
+ *   copy/merge for child is called.
+ * - `persist.debug.coroutine_tracing.dump_continuation_stack`: If set, dump the call stack on each
+ *   coroutine resumption.
  *
  * @param name The name of the current coroutine. Since this should only be installed on top-level
  *   coroutines, this should be the name of the root [CoroutineScope].
@@ -248,11 +337,10 @@ private fun nextRandomInt(): Int = ThreadLocalRandom.current().nextInt(1, Int.MA
 @SuppressLint("UnclosedTrace")
 @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
 internal class TraceContextElement(
+    internal val contextTraceData: TraceData?,
     name: String,
-    private val isRoot: Boolean,
     countContinuations: Boolean,
     private val walkStackForDefaultNames: Boolean,
-    private val shouldIgnoreClassName: ((String) -> Boolean)?,
     parentId: Int?,
     inheritedTracePrefix: String?,
     coroutineDepth: Int,
@@ -274,6 +362,8 @@ internal class TraceContextElement(
 
     private var continuationId = if (usePerfettoSdk) nextRandomInt() else 0
 
+    private var initStack: String? = null
+
     init {
         val traceSection = "TCE#init;$nameWithId"
         debug { traceSection }
@@ -282,12 +372,10 @@ internal class TraceContextElement(
         } else {
             Trace.traceBegin(Trace.TRACE_TAG_APP, traceSection) // begin: "TCE#init"
         }
+        if (DebugSysProps.dumpInitStack) {
+            initStack = StackDump().stackTraceToString()
+        }
     }
-
-    // Minor perf optimization: no need to create TraceData() for root scopes since all launches
-    // require creation of child via [copyForChild] or [mergeForChild].
-    internal val contextTraceData: TraceData? =
-        if (isRoot) null else TraceData(currentId, strictMode = inheritedTracePrefix != null)
 
     private var coroutineTraceName: String =
         if (inheritedTracePrefix == null) {
@@ -343,12 +431,16 @@ internal class TraceContextElement(
         val oldState = storage.data
         if (oldState === contextTraceData) return oldState
         if (usePerfettoSdk) {
-            PerfettoTrace.begin(
+            val slice =
+                PerfettoTrace.begin(
                     PerfettoTraceConfig.COROUTINE_CATEGORY,
                     coroutineTraceName + if (continuationCount < 0) "" else continuationCount,
                 )
-                .setTerminatingFlow(continuationId.toLong())
-                .emit()
+            initStack?.let { slice.addArg("init_stack", it) }
+            if (DebugSysProps.dumpContinuationStack) {
+                slice.addArg("continuation_stack", StackDump().stackTraceToString())
+            }
+            slice.setTerminatingFlow(continuationId.toLong()).emit()
             continuationId = nextRandomInt()
         } else {
             Trace.traceBegin(Trace.TRACE_TAG_APP, coroutineTraceName)
@@ -388,7 +480,7 @@ internal class TraceContextElement(
      * ```
      */
     override fun restoreThreadContext(context: CoroutineContext, oldState: TraceData?) {
-        debug { "TCE#restore;$nameWithId restoring=${oldState?.currentId}" }
+        debug { "TCE#restore;$nameWithId restoring=${System.identityHashCode(oldState)}" }
         // We not use the `TraceData` object here because it may have been modified on another
         // thread after the last suspension point. This is why we use a [TraceStateHolder]:
         // so we can end the correct number of trace sections, restoring the thread to its state
@@ -421,53 +513,60 @@ internal class TraceContextElement(
         debug { mergeForChildTraceMessage }
         try {
             Trace.traceBegin(Trace.TRACE_TAG_APP, mergeForChildTraceMessage) // begin: TCE#merge
-            return createChildContext(overwritingElement[CoroutineTraceName]?.name)
+            // Only names from `CoroutineTraceName` should be used for the child coroutine.
+            // The name of a merged `TraceContextElement` should be ignored, as should its
+            // parameters.
+            val other = overwritingElement
+            return createChildContext(
+                if (other is CoroutineTraceName && other !is TraceContextElement) {
+                    other.name
+                } else {
+                    null
+                }
+            )
         } finally {
             Trace.traceEnd(Trace.TRACE_TAG_APP) // end: TCE#merge
         }
     }
 
     private fun createChildContext(name: String?): TraceContextElement {
+        val testMode = childCoroutineCount != null
         return TraceContextElement(
+            contextTraceData =
+                TraceData(
+                    initialSlices =
+                        if (DebugSysProps.inheritParentSlices)
+                            traceThreadLocal.get()?.data?.slices?.clone().also {
+                                // Add a slice to separate the current coroutine elements from the
+                                // parent elements that existed at the time this coroutine was
+                                // started.
+                                it?.push("~")
+                            }
+                        else null,
+                    strictMode = testMode,
+                ),
             name =
-                if (name == null && walkStackForDefaultNames)
-                    walkStackForClassName(shouldIgnoreClassName)
+                if (name == null && walkStackForDefaultNames) walkStackForClassName()
                 else name ?: "",
-            isRoot = false,
             countContinuations = continuationCount >= 0,
             walkStackForDefaultNames = walkStackForDefaultNames,
-            shouldIgnoreClassName = shouldIgnoreClassName,
             parentId = currentId,
             inheritedTracePrefix =
-                if (childCoroutineCount != null) {
+                if (testMode) {
+                    val currentTceIsRoot = contextTraceData == null
                     val childCount = childCoroutineCount.incrementAndGet()
-                    "${if (isRoot) "" else "$coroutineTraceName:"}$childCount^"
+                    "${if (currentTceIsRoot) "" else "$coroutineTraceName:"}$childCount^"
                 } else null,
             coroutineDepth = childDepth,
         )
     }
 }
 
-/**
- * Get a name for the trace section include the name of the call site.
- *
- * @param additionalDropPredicate additional checks for whether class should be ignored
- */
-private fun walkStackForClassName(additionalDropPredicate: ((String) -> Boolean)? = null): String {
+/** Get a name for the trace section include the name of the call site. */
+private fun walkStackForClassName(): String {
     Trace.traceBegin(Trace.TRACE_TAG_APP, "walkStackForClassName")
     try {
-        var frame = ""
-        StackWalker.getInstance().walk { s: Stream<StackFrame> ->
-            s.dropWhile { f: StackFrame ->
-                    val className = f.className
-                    className.startsWith("kotlin") ||
-                        className.startsWith("com.android.app.tracing.") ||
-                        (additionalDropPredicate != null && additionalDropPredicate(className))
-                }
-                .findFirst()
-                .ifPresent { frame = it.className.substringAfterLast(".") + "." + it.methodName }
-        }
-        return frame
+        return StackWalker.getInstance().walk { stackStream -> parseStackForName(stackStream) }
     } catch (e: Exception) {
         if (DEBUG) Log.e(TAG, "Error walking stack to infer a trace name", e)
         return ""
@@ -476,9 +575,18 @@ private fun walkStackForClassName(additionalDropPredicate: ((String) -> Boolean)
     }
 }
 
-private const val UNEXPECTED_TRACE_DATA_ERROR_MESSAGE =
-    "Overwriting context element with non-empty trace data. There should only be one " +
-        "TraceContextElement per coroutine, and it should be installed in the root scope. "
+internal fun parseStackForName(stackStream: Stream<StackFrame>): String {
+    val sb = StringBuilder()
+    stackStream.forEach { f: StackFrame ->
+        if (f.methodName == "invokeSuspend") {
+            if (!sb.isEmpty()) {
+                sb.append("<~")
+            }
+            sb.append(f.className.substringAfterLast('.'))
+        }
+    }
+    return sb.toString()
+}
 
 @PublishedApi internal const val COROUTINE_EXECUTION: String = "coroutine execution;"
 
