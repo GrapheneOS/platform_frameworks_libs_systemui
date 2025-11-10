@@ -16,13 +16,6 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-// TODO(b/240432457): Replace with library once `-Xfriend-paths` is supported by Soong
-filegroup {
-    name: "tracinglib-core-srcs",
-    srcs: ["src/**/*.kt"],
-    visibility: ["//frameworks/libs/systemui/tracinglib:__subpackages__"],
-}
-
 java_library {
     name: "tracinglib-platform",
     static_libs: [
@@ -34,5 +27,5 @@ java_library {
         "-Xjvm-default=all",
         "-Xexplicit-api=strict",
     ],
-    srcs: [":tracinglib-core-srcs"],
+    srcs: ["src/**/*.kt"],
 }

@@ -13,10 +13,10 @@
 // limitations under the License.
 buildscript {
     ext.versions = [
-            'gradle'       : '8.1.0',
-            'minSdk'       : 34,
-            'targetSdk'    : 34,
-            'compileSdk'   : 34,
+            'gradle'       : '8.9.2',
+            'minSdk'       : 36,
+            'targetSdk'    : 36,
+            'compileSdk'   : 36,
             'buildTools'   : '30.0.3',
             'kotlin'       : '1.6.21',
             'ktx'          : '1.10.1',
@@ -26,11 +26,12 @@ buildscript {
             'androidXRun'  : '1.1.0-alpha4',
             'guava'        : '31.0.1-android',
             'filament'     : '1.12.5',
-            'dagger'       : '2.44',
+            'dagger'       : '2.51',
             'material'     : '1.9.0',
             'junit'        : '4.13.2',
             'androidXTest' : '1.5.0',
             'mockito'      : '2.28.3',
+            'jacoco'       : '0.8.11',
     ]
 
     repositories {
@@ -40,7 +41,7 @@ buildscript {
 
     dependencies {
         classpath "com.android.tools.build:gradle:$versions.gradle"
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.0"
     }
 }
 
@@ -56,11 +57,11 @@ apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.kotlin.kapt'
 
 android {
-    namespace 'com.google.android.wallpaper.weathereffects'
+    namespace 'com.android.wallpaper.weathereffects'
     compileSdk versions.compileSdk
 
     defaultConfig {
-        applicationId 'com.google.android.wallpaper.weathereffects'
+        applicationId 'com.android.wallpaper.weathereffects'
         minSdk versions.minSdk
         targetSdk versions.targetSdk
         versionCode 1
@@ -101,6 +102,7 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             testCoverageEnabled true
+            debuggable true
         }
 
         release {
@@ -111,12 +113,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
     }
 
     kotlinOptions {
-        jvmTarget = '17'
+        jvmTarget = '21'
     }
 
     testOptions {

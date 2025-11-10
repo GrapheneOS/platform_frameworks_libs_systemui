@@ -44,7 +44,15 @@ class FogEffect(
             initialSurfaceSize,
             SizeF(background.width.toFloat(), background.height.toFloat()),
         ),
-) : WeatherEffectBase(foreground, background, initialSurfaceSize, initialMatrix) {
+    isPanAndZoomInExtendedWallpaperEffectsEnabled: Boolean,
+) :
+    WeatherEffectBase(
+        foreground,
+        background,
+        initialSurfaceSize,
+        initialMatrix,
+        isPanAndZoomInExtendedWallpaperEffectsEnabled,
+    ) {
 
     private val fogPaint = Paint().also { it.shader = fogConfig.colorGradingShader }
 

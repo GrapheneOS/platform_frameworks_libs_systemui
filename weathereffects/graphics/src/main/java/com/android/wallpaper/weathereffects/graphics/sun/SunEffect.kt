@@ -43,12 +43,15 @@ class SunEffect(
             initialSurfaceSize,
             SizeF(background.width.toFloat(), background.height.toFloat()),
         ),
+    isPanAndZoomInExtendedWallpaperEffectsEnabled: Boolean,
 ) :
     WeatherEffectBase(
         foreground = foreground,
         background = background,
         surfaceSize = initialSurfaceSize,
         initialCropMatrix = initialMatrix,
+        isPanAndZoomInExtendedWallpaperEffectsEnabled =
+            isPanAndZoomInExtendedWallpaperEffectsEnabled,
     ) {
 
     private val sunnyPaint = Paint().also { it.shader = sunConfig.colorGradingShader }
