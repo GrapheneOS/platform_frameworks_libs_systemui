@@ -187,3 +187,10 @@ flag {
     description: "Cue Bar receives data from Android Context Engine and is rendered in Taskbar."
     bug: "437417091"
 }
+
+flag {
+    name: "workspace_items_label_hidden"
+    namespace: "launcher"
+    description: "Gives the user the option to hide app icon labels on the workspace"
+    bug: "456634299"
+}
