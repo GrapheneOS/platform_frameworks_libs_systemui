@@ -265,8 +265,7 @@ internal class TraceContextElement(
         )
 
     private val currentId: Int = nextRandomInt()
-    private val nameWithId =
-        "${if (isRoot) "ROOT-" else ""}$name;c=$currentId;p=${parentId ?: "none"}"
+    private val nameWithId = "$name;c=$currentId;p=${parentId ?: "none"}"
 
     // Don't use Perfetto SDK when inherited trace prefixes are used since it is a feature only
     // intended for testing, and only the `android.os.Trace` APIs currently have test shadows:
@@ -412,7 +411,7 @@ internal class TraceContextElement(
             Trace.traceBegin(Trace.TRACE_TAG_APP, copyForChildTraceMessage) // begin: TCE#copy
             // Root is a special case in which the name is copied to the child by default.
             // Otherwise, everything launched on a coroutine would have an empty name by default
-            return createChildContext(if (isRoot) name else null)
+            return createChildContext(null)
         } finally {
             Trace.traceEnd(Trace.TRACE_TAG_APP) // end: TCE#copy
         }
