@@ -46,7 +46,7 @@ class NestedCoroutineTracingTest : TestBase() {
             launchTraced("launch#$n", start = CoroutineStart.UNDISPATCHED) {
                 traceCoroutine("a") {
                     if (n == 350) {
-                        val expectedBeforeDelay = mutableListOf("main")
+                        val expectedBeforeDelay = mutableListOf("")
                         repeat(n + 1) {
                             expectedBeforeDelay.add("launch#$it")
                             expectedBeforeDelay.add("a")

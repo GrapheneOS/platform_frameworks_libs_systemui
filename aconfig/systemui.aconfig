@@ -36,13 +36,6 @@ flag {
 }
 
 flag {
-  name: "new_touchpad_gestures_tutorial"
-  namespace: "systemui"
-  description: "Enables new interactive tutorial for learning touchpad gestures"
-  bug: "309928033"
-}
-
-flag {
     name: "three_button_corner_swipe"
     namespace: "systemui"
     description: "Allow the Assistant corner swipe gesture while in 3 button mode"
@@ -133,16 +126,6 @@ flag {
 }
 
 flag {
-    name: "enable_lpp_assist_invocation_haptic_effect"
-    namespace: "systemui"
-    description: "Enables haptics for the invocation effect on power button long press for launching assistant"
-    bug: "412325043"
-    metadata {
-         purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "enable_lpp_assist_invocation_initial_rumble"
     namespace: "systemui"
     description: "Enables the initial rumble haptics on power button long press for launching assistant"
@@ -196,4 +179,11 @@ flag {
     namespace: "launcher_search"
     description: "Cue Bar receives data from Android Context Engine and is rendered in Taskbar."
     bug: "437417091"
+}
+
+flag {
+    name: "workspace_items_label_hidden"
+    namespace: "launcher"
+    description: "Gives the user the option to hide app icon labels on the workspace"
+    bug: "456634299"
 }

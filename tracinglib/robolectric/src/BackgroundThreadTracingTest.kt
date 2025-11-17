@@ -47,7 +47,7 @@ class BackgroundThreadTracingTest : TestBase() {
         runTest(finalEvent = 5) {
             val originalDispatcher = currentCoroutineContext()[CoroutineDispatcher]!!
             val otherScope = scope.plus(bgThread1)
-            expect(1, "1^main")
+            expect(1, "1^")
             otherScope
                 .launchTraced("AAA") {
                     expect(2, "2^AAA")
@@ -66,7 +66,7 @@ class BackgroundThreadTracingTest : TestBase() {
     fun withContext_reentryToSameContext() =
         runTest(totalEvents = 10) {
             val otherScope = scope.plus(bgThread1)
-            expect("1^main")
+            expect("1^")
             otherScope
                 .launchTraced("AAA") {
                     expect("2^AAA")
@@ -93,6 +93,6 @@ class BackgroundThreadTracingTest : TestBase() {
                     expect("2^AAA")
                 }
                 .join()
-            expect("1^main")
+            expect("1^")
         }
 }

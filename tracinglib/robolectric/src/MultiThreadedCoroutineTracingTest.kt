@@ -46,12 +46,12 @@ class MultiThreadedCoroutineTracingTest : TestBase() {
         val thread2 = bgThread2
         // Do NOT assert order. Doing so will make this test flaky due to its use of
         // Dispatchers.Unconfined
-        expect("1^main")
+        expect("1^")
         launchTraced("unconfined-launch", Dispatchers.Unconfined) {
                 launchTraced("thread2-launch", thread2) {
                     traceCoroutine("thread2-inner") {
                         barrier3.await()
-                        expect("1^main:1^unconfined-launch:1^thread2-launch", "thread2-inner")
+                        expect("1^:1^unconfined-launch:1^thread2-launch", "thread2-inner")
                         barrier2.complete(Unit)
                     }
                 }
@@ -60,14 +60,14 @@ class MultiThreadedCoroutineTracingTest : TestBase() {
                         barrier2.await()
                         expectAny(
                             arrayOf(
-                                "1^main",
-                                "1^main:1^unconfined-launch:2^default-launch",
+                                "1^",
+                                "1^:1^unconfined-launch:2^default-launch",
                                 "default-inner",
                             ),
                             arrayOf(
-                                "1^main:1^unconfined-launch:3^thread1-launch",
+                                "1^:1^unconfined-launch:3^thread1-launch",
                                 "thread1-inner",
-                                "1^main:1^unconfined-launch:2^default-launch",
+                                "1^:1^unconfined-launch:2^default-launch",
                                 "default-inner",
                             ),
                         )
@@ -77,25 +77,25 @@ class MultiThreadedCoroutineTracingTest : TestBase() {
                 launchTraced("thread1-launch", thread1) {
                     traceCoroutine("thread1-inner") {
                         barrier1.await()
-                        expect("1^main:1^unconfined-launch:3^thread1-launch", "thread1-inner")
+                        expect("1^:1^unconfined-launch:3^thread1-launch", "thread1-inner")
                         barrier2.complete(Unit)
                     }
                 }
                 withContextTraced("unconfined-withContext", Dispatchers.Unconfined) {
-                    expect("1^main", "1^main:1^unconfined-launch", "unconfined-withContext")
+                    expect("1^", "1^:1^unconfined-launch", "unconfined-withContext")
                     barrier1.complete(Unit)
-                    expect("1^main", "1^main:1^unconfined-launch", "unconfined-withContext")
+                    expect("1^", "1^:1^unconfined-launch", "unconfined-withContext")
                 }
             }
             .join()
-        expect("1^main")
+        expect("1^")
     }
 
     @Test
     fun nestedUpdateAndRestoreOnSingleThread_unconfinedDispatcher() =
         runTest(finalEvent = 5) {
             traceCoroutine("parent-span") {
-                expect(1, "1^main", "parent-span")
+                expect(1, "1^", "parent-span")
                 launch(Dispatchers.Unconfined) {
                     // This may appear unusual, but it is expected behavior:
                     //   1) The parent has an open trace section called "parent-span".
@@ -110,17 +110,17 @@ class MultiThreadedCoroutineTracingTest : TestBase() {
                     // [parent's active trace sections]
                     //               /           \      [new trace section for child scope]
                     //              /             \                \
-                    expect(2, "1^main", "parent-span", "1^main:1^")
+                    expect(2, "1^", "parent-span", "1^:1^")
                     traceCoroutine("child-span") {
-                        expect(3, "1^main", "parent-span", "1^main:1^", "child-span")
+                        expect(3, "1^", "parent-span", "1^:1^", "child-span")
                         delay(10) // <-- delay will give parent a chance to restore its context
                         // After a delay, the parent resumes, finishing its trace section, so we are
                         // left with only those in the child's scope
-                        expect(5, "1^main:1^", "child-span")
+                        expect(5, "1^:1^", "child-span")
                     }
                 }
             }
-            expect(4, "1^main") // <-- because of the delay above, this is not the last event
+            expect(4, "1^") // <-- because of the delay above, this is not the last event
         }
 
     /** @see nestedUpdateAndRestoreOnSingleThread_unconfinedDispatcher */
@@ -128,17 +128,17 @@ class MultiThreadedCoroutineTracingTest : TestBase() {
     fun nestedUpdateAndRestoreOnSingleThread_undispatchedLaunch() {
         val barrier = CompletableDeferred<Unit>()
         runTest(finalEvent = 4) {
-            expect(1, "1^main")
+            expect(1, "1^")
             traceCoroutine("parent-span") {
                 launch(start = CoroutineStart.UNDISPATCHED) {
                     traceCoroutine("child-span") {
-                        expect(2, "1^main", "parent-span", "1^main:1^", "child-span")
+                        expect(2, "1^", "parent-span", "1^:1^", "child-span")
                         barrier.await() // <-- give parent a chance to restore its context
-                        expect(4, "1^main:1^", "child-span")
+                        expect(4, "1^:1^", "child-span")
                     }
                 }
             }
-            expect(3, "1^main")
+            expect(3, "1^")
             barrier.complete(Unit)
         }
     }
@@ -148,22 +148,22 @@ class MultiThreadedCoroutineTracingTest : TestBase() {
         runTest(finalEvent = 4) {
             val channel = Channel<Int>()
             val thread1 = bgThread1
-            expect("1^main")
+            expect("1^")
             traceCoroutine("hello") {
-                expect(1, "1^main", "hello")
+                expect(1, "1^", "hello")
                 launch(thread1) {
-                    expect(2, "1^main:1^")
+                    expect(2, "1^:1^")
                     traceCoroutine("world") {
-                        expect("1^main:1^", "world")
+                        expect("1^:1^", "world")
                         channel.send(1)
-                        expect(3, "1^main:1^", "world")
+                        expect(3, "1^:1^", "world")
                     }
                 }
-                expect("1^main", "hello")
+                expect("1^", "hello")
             }
-            expect("1^main")
+            expect("1^")
             assertEquals(1, channel.receive())
-            expect(4, "1^main")
+            expect(4, "1^")
         }
 
     @Test
@@ -188,7 +188,7 @@ class MultiThreadedCoroutineTracingTest : TestBase() {
                         assertNotNull(traceThreadLocal.get())
                         finishedLaunches.send(it)
                     }
-                    expect("1^main:1^")
+                    expect("1^:1^")
                 }
             }
             // Resume half the coroutines that are waiting on this channel
@@ -206,35 +206,35 @@ class MultiThreadedCoroutineTracingTest : TestBase() {
     @Test
     fun nestedTraceSectionsMultiThreaded() = runTest {
         launchTraced("launch#1", bgThread1) {
-            expect("1^main:1^launch#1")
+            expect("1^:1^launch#1")
             delay(1L)
-            traceCoroutine("span-1") { expect("1^main:1^launch#1", "span-1") }
-            expect("1^main:1^launch#1")
-            expect("1^main:1^launch#1")
+            traceCoroutine("span-1") { expect("1^:1^launch#1", "span-1") }
+            expect("1^:1^launch#1")
+            expect("1^:1^launch#1")
             launchTraced("launch#2", bgThread2) {
-                expect("1^main:1^launch#1:1^launch#2")
+                expect("1^:1^launch#1:1^launch#2")
                 delay(1L)
-                traceCoroutine("span-2") { expect("1^main:1^launch#1:1^launch#2", "span-2") }
-                expect("1^main:1^launch#1:1^launch#2")
-                expect("1^main:1^launch#1:1^launch#2")
+                traceCoroutine("span-2") { expect("1^:1^launch#1:1^launch#2", "span-2") }
+                expect("1^:1^launch#1:1^launch#2")
+                expect("1^:1^launch#1:1^launch#2")
                 launchTraced("launch#3", bgThread1) {
                     // "launch#3" is dropped because context has a TraceContextElement.
                     // The CoroutineScope (i.e. `this` in `this.launch {}`) should have a
                     // TraceContextElement, but using TraceContextElement in the passed context is
                     // incorrect.
-                    expect("1^main:1^launch#1:1^launch#2:1^launch#3")
+                    expect("1^:1^launch#1:1^launch#2:1^launch#3")
                     launchTraced("launch#4", bgThread1) {
-                        expect("1^main:1^launch#1:1^launch#2:1^launch#3:1^launch#4")
+                        expect("1^:1^launch#1:1^launch#2:1^launch#3:1^launch#4")
                     }
                 }
             }
-            expect("1^main:1^launch#1")
+            expect("1^:1^launch#1")
         }
-        expect("1^main")
+        expect("1^")
 
         // Launching without the trace extension won't result in traces
-        launch(bgThread1) { expect("1^main:2^") }
-        launch(bgThread2) { expect("1^main:3^") }
+        launch(bgThread1) { expect("1^:2^") }
+        launch(bgThread2) { expect("1^:3^") }
     }
 
     @Test
@@ -243,36 +243,36 @@ class MultiThreadedCoroutineTracingTest : TestBase() {
         val channel = Channel<Int>()
         val job =
             launchTraced("#1", thread1) {
-                expect("1^main:1^#1")
+                expect("1^:1^#1")
                 var i = 0
                 while (isActive) {
-                    expect("1^main:1^#1")
+                    expect("1^:1^#1")
                     channel.send(i++)
-                    expect("1^main:1^#1")
+                    expect("1^:1^#1")
                     // when withContext is passed the same scope, it takes a fast path, dispatching
                     // immediately. This means that in subsequent loops, if we do not handle reentry
                     // correctly in TraceContextElement, the trace may become deeply nested:
                     // "#1", "#1", "#1", ... "#2"
                     withContext(thread1) {
-                        expect("1^main:1^#1")
+                        expect("1^:1^#1")
                         traceCoroutine("#2") {
-                            expect("1^main:1^#1", "#2")
+                            expect("1^:1^#1", "#2")
                             channel.send(i++)
-                            expect("1^main:1^#1", "#2")
+                            expect("1^:1^#1", "#2")
                         }
-                        expect("1^main:1^#1")
+                        expect("1^:1^#1")
                     }
                 }
             }
         repeat(1000) {
-            expect("1^main")
+            expect("1^")
             traceCoroutine("receive") {
-                expect("1^main", "receive")
+                expect("1^", "receive")
                 val receivedVal = channel.receive()
                 assertEquals(it, receivedVal)
-                expect("1^main", "receive")
+                expect("1^", "receive")
             }
-            expect("1^main")
+            expect("1^")
         }
         job.cancel()
     }
