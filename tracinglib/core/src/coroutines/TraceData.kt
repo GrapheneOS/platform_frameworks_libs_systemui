@@ -34,7 +34,7 @@ import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
  *
  * @see traceCoroutine
  */
-private typealias TraceSection = String
+internal typealias TraceSection = String
 
 /** Use a final subclass to avoid virtual calls (b/316642146). */
 @PublishedApi
@@ -129,7 +129,7 @@ internal class TraceStorage(internal var data: TraceData?) {
         data = contextTraceData
         val n = ++contIndex
         if (DEBUG) Trace.traceCounter(Trace.TRACE_TAG_APP, debugCounterTrack!!, n)
-        if (n < 0 || MAX_THREAD_LOCAL_STACK_SIZE <= n) return // fail-safe
+        if (n !in 0..<MAX_THREAD_LOCAL_STACK_SIZE) return // fail-safe
         var size = openSliceCount.size
         if (n >= size) {
             size = max(2 * size, MAX_THREAD_LOCAL_STACK_SIZE)
@@ -162,16 +162,18 @@ internal class TraceStorage(internal var data: TraceData?) {
  * Used for storing trace sections so that they can be added and removed from the currently running
  * thread when the coroutine is suspended and resumed.
  *
- * @property currentId ID of associated TraceContextElement
  * @property strictMode Whether to add additional checks to the coroutine machinery, throwing a
  *   `ConcurrentModificationException` if TraceData is modified from the wrong thread. This should
  *   only be set for testing.
  * @see traceCoroutine
  */
 @PublishedApi
-internal class TraceData(internal val currentId: Int, private val strictMode: Boolean) {
+internal class TraceData(
+    private val strictMode: Boolean,
+    initialSlices: ArrayDeque<TraceSection>?,
+) {
 
-    internal lateinit var slices: ArrayDeque<TraceSection>
+    internal var slices: ArrayDeque<TraceSection>? = initialSlices
 
     /**
      * Adds current trace slices back to the current thread. Called when coroutine is resumed.
@@ -181,9 +183,9 @@ internal class TraceData(internal val currentId: Int, private val strictMode: Bo
     internal fun beginAllOnThread(): Byte {
         if (Trace.isTagEnabled(Trace.TRACE_TAG_APP)) {
             strictModeCheck()
-            if (::slices.isInitialized) {
+            slices?.let {
                 var count: Byte = 0
-                slices.descendingIterator().forEach { sectionName ->
+                it.descendingIterator().forEach { sectionName ->
                     beginSlice(name = sectionName)
                     count++
                 }
@@ -201,10 +203,8 @@ internal class TraceData(internal val currentId: Int, private val strictMode: Bo
      */
     internal fun beginSpan(name: String) {
         strictModeCheck()
-        if (!::slices.isInitialized) {
-            slices = ArrayDeque<TraceSection>(4)
-        }
-        slices.push(name)
+        val curSlices = slices ?: ArrayDeque<TraceSection>(4).also { slices = it }
+        curSlices.push(name)
         beginSlice(name = name)
     }
 
@@ -218,23 +218,23 @@ internal class TraceData(internal val currentId: Int, private val strictMode: Bo
     internal fun endSpan(): Boolean {
         strictModeCheck()
         // Should never happen, but we should be defensive rather than crash the whole application
-        if (::slices.isInitialized && !slices.isEmpty()) {
-            slices.pop()
-            endSlice()
-            return true
-        } else if (strictMode) {
-            throw IllegalStateException(INVALID_SPAN_END_CALL_ERROR_MESSAGE)
+        slices.let {
+            if (it != null && !it.isEmpty()) {
+                it.pop()
+                endSlice()
+                return true
+            } else if (strictMode) {
+                throw IllegalStateException(INVALID_SPAN_END_CALL_ERROR_MESSAGE)
+            }
+            return false
         }
-        return false
     }
 
     public override fun toString(): String =
         if (DEBUG) {
-            if (::slices.isInitialized) {
-                "{${slices.joinToString(separator = "\", \"", prefix = "\"", postfix = "\"")}}"
-            } else {
-                "{<uninitialized>}"
-            } + "@${hashCode()}"
+            (slices?.let {
+                "{${it.joinToString(separator = "\", \"", prefix = "\"", postfix = "\"")}}"
+            } ?: "{<uninitialized>}") + "@${hashCode()}"
         } else super.toString()
 
     private fun strictModeCheck() {
