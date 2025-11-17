@@ -102,6 +102,9 @@ The behavior of coroutine tracing can be further fine-tuned using the following 
 
  - `persist.debug.coroutine_tracing.walk_stack`
  - `persist.debug.coroutine_tracing.count_continuations`
+ - `persist.debug.coroutine_tracing.inherit_slices`
+ - `persist.debug.coroutine_tracing.dump_init_stack`
+ - `persist.debug.coroutine_tracing.dump_continuation_stack`
 
 See [`createCoroutineTracingContext()`](core/src/coroutines/TraceContextElement.kt) for
 documentation.

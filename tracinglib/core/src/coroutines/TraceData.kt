@@ -45,7 +45,7 @@ internal class TraceDataThreadLocal : ThreadLocal<TraceStorage?>() {
                 com.android.systemui.Flags.coroutineTracing() &&
                 coroutineTracingEnabled
         ) {
-            TraceStorage(null)
+            TraceStorage()
         } else {
             null
         }
@@ -53,17 +53,13 @@ internal class TraceDataThreadLocal : ThreadLocal<TraceStorage?>() {
 }
 
 /**
- * There should only be one instance of this class per thread.
- *
- * @param openSliceCount ThreadLocal counter for how many open trace sections there are on the
- *   current thread. This is needed because it is possible that on a multi-threaded dispatcher, one
- *   of the threads could be slow, and [TraceContextElement.restoreThreadContext] might be invoked
- *   _after_ the coroutine has already resumed and modified [TraceData] - either adding or removing
- *   trace sections and changing the count. If we did not store this thread-locally, then we would
- *   incorrectly end too many or too few trace sections.
+ * There should only be one instance of this class per thread. This class is stored in a
+ * [ThreadLocal] variable.
  */
 @PublishedApi
-internal class TraceStorage(internal var data: TraceData?) {
+internal class TraceStorage() {
+    /** Open trace sections on the current thread for the current coroutine. */
+    internal var data: TraceData? = null
 
     /**
      * Counter for tracking which index to use in the [continuationIds] and [openSliceCount] arrays.
@@ -82,9 +78,16 @@ internal class TraceStorage(internal var data: TraceData?) {
      * current [data] must be closed. The overwriting [data] will handle updating itself when
      * [TraceContextElement.updateThreadContext] is called for it.
      *
-     * Expected nesting should never exceed 255, so use a [ByteArray]. If nesting _does_ exceed 255,
-     * it indicates there is already something very wrong with the trace, so we will not waste CPU
-     * cycles error checking.
+     * This is needed because on a multi-threaded dispatcher, one of the threads could be slow, and
+     * [restoreThreadContext][TraceContextElement.restoreThreadContext] might be invoked _after_ the
+     * coroutine has already resumed and modified [TraceData] (either adding or removing trace
+     * sections, thus changing the count). If we do not store this count, then we might incorrectly
+     * end too many or too few trace sections.
+     *
+     * Expected nesting should never exceed 255, so use a [ByteArray] to save memory. If nesting
+     * _does_ exceed 255, it indicates there is something very wrong with the trace that will be
+     * apparent when it's viewed in Perfetto, so we will not bother wasting CPU cycles to error
+     * check that condition.
      */
     private var openSliceCount = ByteArray(INITIAL_THREAD_LOCAL_STACK_SIZE)
 

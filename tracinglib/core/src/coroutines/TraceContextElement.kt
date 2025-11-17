@@ -217,6 +217,15 @@ private object PerfettoTraceConfig {
     }
 }
 
+/**
+ * Context element for naming _new_ coroutines. When a [CoroutineTraceName] is merged with a
+ * [TraceContextElement], the new child's copy of the `TraceContextElement` will be assigned a name
+ * equal to this context element's [name].
+ *
+ * `CoroutineTraceName` should not be confused with
+ * [CoroutineName][kotlinx.coroutines.CoroutineName]; they are separate context elements with
+ * different purposes.
+ */
 @PublishedApi
 internal open class CoroutineTraceName(internal val name: String?) : CoroutineContext.Element {
     companion object Key : CoroutineContext.Key<CoroutineTraceName>
@@ -481,10 +490,12 @@ internal class TraceContextElement(
      */
     override fun restoreThreadContext(context: CoroutineContext, oldState: TraceData?) {
         debug { "TCE#restore;$nameWithId restoring=${System.identityHashCode(oldState)}" }
-        // We not use the `TraceData` object here because it may have been modified on another
-        // thread after the last suspension point. This is why we use a [TraceStateHolder]:
-        // so we can end the correct number of trace sections, restoring the thread to its state
-        // prior to the last call to [updateThreadContext].
+        /**
+         * We not use the [TraceData] object here because it may have been modified on another
+         * thread after the last suspension point. This is why we use a [TraceStorage] object
+         * instead: so we can end the correct number of trace sections, restoring the thread to its
+         * state prior to the last call to [updateThreadContext].
+         */
         val storage = traceThreadLocal.get() ?: return
         if (storage.data === oldState) return
         val contId = storage.restoreDataForSuspension(oldState)
@@ -562,7 +573,11 @@ internal class TraceContextElement(
     }
 }
 
-/** Get a name for the trace section include the name of the call site. */
+/**
+ * Walks the stack to create a name for a coroutine based on the suspend functions in the call
+ * stack. This is used to automatically generate a descriptive name when one isn't provided
+ * explicitly.
+ */
 private fun walkStackForClassName(): String {
     Trace.traceBegin(Trace.TRACE_TAG_APP, "walkStackForClassName")
     try {
