@@ -40,7 +40,7 @@ class RunBlockingTracedTest : TestBase() {
             val result =
                 runBlockingTraced({ "hello" }) {
                     delay(1)
-                    expect(2, "1^", "hello")
+                    expect(2, "1^", "runBlocking:hello")
                     true
                 }
 
@@ -55,7 +55,7 @@ class RunBlockingTracedTest : TestBase() {
             val result =
                 runBlockingTraced(spanName = "hello", context = EmptyCoroutineContext) {
                     delay(1)
-                    expect(2, "1^", "hello")
+                    expect(2, "1^", "runBlocking:hello")
                     true
                 }
 
@@ -73,7 +73,7 @@ class RunBlockingTracedTest : TestBase() {
                     expect(
                         2,
                         "1^",
-                        "RunBlockingTracedTest\$runBlockingTracedWithDefaultSpanNameAndContext$1\$result$1",
+                        "runBlocking:RunBlockingTracedTest\$runBlockingTracedWithDefaultSpanNameAndContext$1\$result$1",
                     )
                     true
                 }
@@ -89,7 +89,7 @@ class RunBlockingTracedTest : TestBase() {
                 runBlockingTraced(spanName = { "OuterSpan" }) {
                     traceSection("InnerSpan") {
                         delay(1)
-                        expect(2, "1^", "OuterSpan", "InnerSpan")
+                        expect(2, "1^", "runBlocking:OuterSpan", "InnerSpan")
                         true
                     }
                 }
