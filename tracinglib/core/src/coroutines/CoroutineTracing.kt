@@ -163,22 +163,22 @@ public suspend inline fun <T> withContextTraced(
 }
 
 /** @see kotlinx.coroutines.runBlocking */
-public fun <T> runBlockingTraced(
-    spanName: () -> String? = { null },
+public inline fun <T> runBlockingTraced(
+    crossinline spanName: () -> String,
     context: CoroutineContext = EmptyCoroutineContext,
-    block: suspend CoroutineScope.() -> T,
+    noinline block: suspend CoroutineScope.() -> T,
 ): T {
     contract {
         callsInPlace(spanName, InvocationKind.AT_MOST_ONCE)
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
-    return traceSection(spanName) { runBlocking(context, block) }
+    return traceSection({ "runBlocking:${spanName()}" }) { runBlocking(context, block) }
 }
 
 /** @see kotlinx.coroutines.runBlocking */
 public fun <T> runBlockingTraced(
-    spanName: String?,
-    context: CoroutineContext,
+    spanName: String? = null,
+    context: CoroutineContext = EmptyCoroutineContext,
     block: suspend CoroutineScope.() -> T,
 ): T {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
