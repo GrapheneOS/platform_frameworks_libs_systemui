@@ -593,7 +593,7 @@ private fun walkStackForClassName(): String {
 internal fun parseStackForName(stackStream: Stream<StackFrame>): String {
     val sb = StringBuilder()
     stackStream.forEach { f: StackFrame ->
-        if (f.methodName == "invokeSuspend") {
+        if (f.methodName.startsWith("invokeSuspend")) {
             if (!sb.isEmpty()) {
                 sb.append("<~")
             }

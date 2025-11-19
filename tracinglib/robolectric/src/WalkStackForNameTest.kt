@@ -132,7 +132,7 @@ com.android.app.tracing.coroutines.StackDump
     @Test
     fun testWalkStackForClassName3() {
         checkStackName(
-            $$"ChannelFlow$collect$2<~CombineKt$combineInternal$2$1<~GlobalSnapshotManager$ensureStarted$1",
+            $$"ChannelFlow$collect$2<~CombineKt$combineInternal$2$1<~SnapshotStateKt__SnapshotFlowKt$snapshotFlow$1<~GlobalSnapshotManager$ensureStarted$1",
             $$$"""
 com.android.app.tracing.coroutines.StackDump
 	at com.android.app.tracing.coroutines.TraceContextElement.<init>(TraceContextElement.kt:314)
