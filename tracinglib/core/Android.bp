@@ -24,7 +24,7 @@ java_library {
         "compilelib",
     ],
     kotlincflags: [
-        "-Xjvm-default=all",
+        "-jvm-default=no-compatibility",
         "-Xexplicit-api=strict",
     ],
     srcs: ["src/**/*.kt"],
