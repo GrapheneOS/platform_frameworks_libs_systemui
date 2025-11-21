@@ -141,6 +141,7 @@ class CoroutineTracingMachineryTest : TestBase() {
                 countContinuations = false,
                 walkStackForDefaultNames = false,
                 parentId = null,
+                usePerfettoSdk = false,
                 inheritedTracePrefix = "",
                 coroutineDepth = -1,
             )

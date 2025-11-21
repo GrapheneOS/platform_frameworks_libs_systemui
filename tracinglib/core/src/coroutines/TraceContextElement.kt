@@ -22,6 +22,7 @@ import android.os.SystemProperties
 import android.os.Trace
 import android.util.Log
 import com.android.app.tracing.coroutines.DebugSysProps.coroutineTracingEnabled
+import com.android.internal.dev.perfetto.sdk.PerfettoTrace as PerfettoTraceV3
 import com.android.systemui.util.Compile
 import java.lang.StackWalker.StackFrame
 import java.util.concurrent.ThreadLocalRandom
@@ -179,6 +180,7 @@ public fun createCoroutineTracingContext(
     name: String = "UnnamedScope",
     countContinuations: Boolean = false,
     countDepth: Boolean = false,
+    usePerfettoSdk: Boolean = true,
     testMode: Boolean = false,
     walkStackForDefaultNames: Boolean = false,
 ): CoroutineContext {
@@ -197,23 +199,14 @@ public fun createCoroutineTracingContext(
             walkStackForDefaultNames =
                 walkStackForDefaultNames || DebugSysProps.stackWalkerAlwaysEnabled,
             parentId = null,
+            // Only the `android.os.Trace` APIs currently have test shadows, so do not allow
+            // Perfetto SDK usage when testMode=true
+            usePerfettoSdk = !testMode && usePerfettoSdk,
             inheritedTracePrefix = if (testMode) "" else null,
             coroutineDepth = if (!testMode && countDepth) 0 else -1,
         )
     } else {
         EmptyCoroutineContext
-    }
-}
-
-private object PerfettoTraceConfig {
-    // cc = coroutine continuations
-    @JvmField val COROUTINE_CATEGORY: PerfettoTrace.Category = PerfettoTrace.Category("cc")
-
-    init {
-        if (android.os.Flags.perfettoSdkTracingV2()) {
-            PerfettoTrace.register(/* isBackendInProcess */ false)
-            COROUTINE_CATEGORY.register()
-        }
     }
 }
 
@@ -271,7 +264,9 @@ internal open class CoroutineTraceName(internal val name: String?) : CoroutineCo
     }
 }
 
-private fun nextRandomInt(): Int = ThreadLocalRandom.current().nextInt(1, Int.MAX_VALUE)
+private fun nextRandomLong(): Long {
+    return ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE)
+}
 
 internal class StackDump : Throwable()
 
@@ -326,11 +321,10 @@ internal class StackDump : Throwable()
  * - `persist.debug.coroutine_tracing.dump_continuation_stack`: If set, dump the call stack on each
  *   coroutine resumption.
  *
+ * @property contextTraceData [TraceData] to be saved to thread-local storage.
  * @param name The name of the current coroutine. Since this should only be installed on top-level
  *   coroutines, this should be the name of the root [CoroutineScope].
- * @property contextTraceData [TraceData] to be saved to thread-local storage.
- * @property config Configuration parameters
- * @param parentId The ID of the parent coroutine, as defined in [BaseTraceElement]
+ * @param parentId The ID of the parent coroutine
  * @param inheritedTracePrefix Prefix containing metadata for parent scopes. Each child is separated
  *   by a `:` and prefixed by a counter indicating the ordinal of this child relative to its
  *   siblings. Thus, the prefix such as `root-name:3^child-name` would indicate this is the 3rd
@@ -340,7 +334,7 @@ internal class StackDump : Throwable()
  *   containing the original [TraceContextElement] from which this [TraceContextElement] was copied.
  *   If -1, counting depth is disabled
  * @see createCoroutineTracingContext
- * @see nameCoroutine
+ * @see CoroutineTraceName
  * @see traceCoroutine
  */
 @SuppressLint("UnclosedTrace")
@@ -350,7 +344,8 @@ internal class TraceContextElement(
     name: String,
     countContinuations: Boolean,
     private val walkStackForDefaultNames: Boolean,
-    parentId: Int?,
+    parentId: Long?,
+    private val usePerfettoSdk: Boolean = true,
     inheritedTracePrefix: String?,
     coroutineDepth: Int,
 ) : CopyableThreadContextElement<TraceData?>, CoroutineTraceName(name), CoroutineContext.Element {
@@ -361,15 +356,10 @@ internal class TraceContextElement(
             { it as? TraceContextElement },
         )
 
-    private val currentId: Int = nextRandomInt()
+    private val currentId: Long = nextRandomLong()
     private val nameWithId = "$name;c=$currentId;p=${parentId ?: "none"}"
 
-    // Don't use Perfetto SDK when inherited trace prefixes are used since it is a feature only
-    // intended for testing, and only the `android.os.Trace` APIs currently have test shadows:
-    private val usePerfettoSdk =
-        android.os.Flags.perfettoSdkTracingV2() && inheritedTracePrefix == null
-
-    private var continuationId = if (usePerfettoSdk) nextRandomInt() else 0
+    private var continuationId: Long = if (usePerfettoSdk) nextRandomLong() else 0
 
     private var initStack: String? = null
 
@@ -377,7 +367,13 @@ internal class TraceContextElement(
         val traceSection = "TCE#init;$nameWithId"
         debug { traceSection }
         if (usePerfettoSdk) {
-            PerfettoTrace.begin(PerfettoTraceConfig.COROUTINE_CATEGORY, traceSection).emit()
+            if (PerfettoTrace.isCcCategoryEnabled()) {
+                if (PerfettoTrace.IS_USE_SDK_TRACING_API_V3) {
+                    PerfettoTraceV3.begin(PerfettoTrace.CC_CATEGORY_V3, traceSection).emit()
+                } else {
+                    PerfettoTrace.begin(PerfettoTrace.CC_CATEGORY, traceSection).emit()
+                }
+            }
         } else {
             Trace.traceBegin(Trace.TRACE_TAG_APP, traceSection) // begin: "TCE#init"
         }
@@ -407,9 +403,13 @@ internal class TraceContextElement(
 
     init {
         if (usePerfettoSdk) {
-            PerfettoTrace.end(PerfettoTraceConfig.COROUTINE_CATEGORY)
-                .setFlow(continuationId.toLong())
-                .emit()
+            if (PerfettoTrace.isCcCategoryEnabled()) {
+                if (PerfettoTrace.IS_USE_SDK_TRACING_API_V3) {
+                    PerfettoTraceV3.end(PerfettoTrace.CC_CATEGORY_V3).setFlow(continuationId).emit()
+                } else {
+                    PerfettoTrace.end(PerfettoTrace.CC_CATEGORY).setFlow(continuationId).emit()
+                }
+            }
         } else {
             Trace.traceEnd(Trace.TRACE_TAG_APP) // end: "TCE#init"
         }
@@ -440,17 +440,25 @@ internal class TraceContextElement(
         val oldState = storage.data
         if (oldState === contextTraceData) return oldState
         if (usePerfettoSdk) {
-            val slice =
-                PerfettoTrace.begin(
-                    PerfettoTraceConfig.COROUTINE_CATEGORY,
-                    coroutineTraceName + if (continuationCount < 0) "" else continuationCount,
-                )
-            initStack?.let { slice.addArg("init_stack", it) }
-            if (DebugSysProps.dumpContinuationStack) {
-                slice.addArg("continuation_stack", StackDump().stackTraceToString())
+            if (PerfettoTrace.isCcCategoryEnabled()) {
+                val name = coroutineTraceName + if (continuationCount < 0) "" else continuationCount
+                if (PerfettoTrace.IS_USE_SDK_TRACING_API_V3) {
+                    val slice = PerfettoTraceV3.begin(PerfettoTrace.CC_CATEGORY_V3, name)
+                    initStack?.let { slice.addArg("init_stack", it) }
+                    if (DebugSysProps.dumpContinuationStack) {
+                        slice.addArg("continuation_stack", StackDump().stackTraceToString())
+                    }
+                    slice.setTerminatingFlow(continuationId).emit()
+                } else {
+                    val slice = PerfettoTrace.begin(PerfettoTrace.CC_CATEGORY, name)
+                    initStack?.let { slice.addArg("init_stack", it) }
+                    if (DebugSysProps.dumpContinuationStack) {
+                        slice.addArg("continuation_stack", StackDump().stackTraceToString())
+                    }
+                    slice.setTerminatingFlow(continuationId).emit()
+                }
             }
-            slice.setTerminatingFlow(continuationId.toLong()).emit()
-            continuationId = nextRandomInt()
+            continuationId = nextRandomLong()
         } else {
             Trace.traceBegin(Trace.TRACE_TAG_APP, coroutineTraceName)
         }
@@ -500,9 +508,11 @@ internal class TraceContextElement(
         if (storage.data === oldState) return
         val contId = storage.restoreDataForSuspension(oldState)
         if (usePerfettoSdk) {
-            PerfettoTrace.end(PerfettoTraceConfig.COROUTINE_CATEGORY)
-                .setFlow(contId.toLong())
-                .emit()
+            if (PerfettoTrace.IS_USE_SDK_TRACING_API_V3) {
+                PerfettoTraceV3.end(PerfettoTrace.CC_CATEGORY_V3).setFlow(contId).emit()
+            } else {
+                PerfettoTrace.end(PerfettoTrace.CC_CATEGORY).setFlow(contId).emit()
+            }
         } else {
             Trace.traceEnd(Trace.TRACE_TAG_APP) // end: coroutineTraceName
         }
@@ -562,6 +572,7 @@ internal class TraceContextElement(
             countContinuations = continuationCount >= 0,
             walkStackForDefaultNames = walkStackForDefaultNames,
             parentId = currentId,
+            usePerfettoSdk = !testMode && usePerfettoSdk,
             inheritedTracePrefix =
                 if (testMode) {
                     val currentTceIsRoot = contextTraceData == null

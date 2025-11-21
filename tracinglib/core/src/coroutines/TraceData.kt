@@ -91,9 +91,7 @@ internal class TraceStorage() {
      */
     private var openSliceCount = ByteArray(INITIAL_THREAD_LOCAL_STACK_SIZE)
 
-    private var continuationIds: IntArray? =
-        if (android.os.Flags.perfettoSdkTracingV2()) IntArray(INITIAL_THREAD_LOCAL_STACK_SIZE)
-        else null
+    private var continuationIds: LongArray = LongArray(INITIAL_THREAD_LOCAL_STACK_SIZE)
 
     private val debugCounterTrack: String? =
         if (DEBUG) "TCE#${Thread.currentThread().threadId()}" else null
@@ -128,7 +126,7 @@ internal class TraceStorage() {
     }
 
     /** Update [data] for continuation */
-    fun updateDataForContinuation(contextTraceData: TraceData?, contId: Int) {
+    fun updateDataForContinuation(contextTraceData: TraceData?, contId: Long) {
         data = contextTraceData
         val n = ++contIndex
         if (DEBUG) Trace.traceCounter(Trace.TRACE_TAG_APP, debugCounterTrack!!, n)
@@ -137,14 +135,14 @@ internal class TraceStorage() {
         if (n >= size) {
             size = max(2 * size, MAX_THREAD_LOCAL_STACK_SIZE)
             openSliceCount = openSliceCount.copyInto(ByteArray(size))
-            continuationIds = continuationIds?.copyInto(IntArray(size))
+            continuationIds = continuationIds.copyInto(LongArray(size))
         }
         openSliceCount[n] = data?.beginAllOnThread() ?: 0
-        if (0 < contId) continuationIds?.set(n, contId)
+        if (0 < contId) continuationIds[n] = contId
     }
 
     /** Update [data] for suspension */
-    fun restoreDataForSuspension(oldState: TraceData?): Int {
+    fun restoreDataForSuspension(oldState: TraceData?): Long {
         data = oldState
         val n = contIndex--
         if (DEBUG) Trace.traceCounter(Trace.TRACE_TAG_APP, debugCounterTrack!!, n)
@@ -157,7 +155,7 @@ internal class TraceStorage() {
                 i++
             }
         }
-        return continuationIds?.let { if (n < it.size) it[n] else null } ?: 0
+        return continuationIds.let { if (n < it.size) it[n] else null } ?: 0
     }
 }
 
