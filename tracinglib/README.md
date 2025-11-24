@@ -9,15 +9,15 @@ other unrelated work executes on the thread.
 To address this, we introduce a function `traceCoroutine("name") { ... }` that can be used for
 tracing sections of coroutine code. When invoked, a trace section with the given name will start
 immediately, and its name will also be written to an object in thread-local storage which is managed
-by an object in the current `CoroutineContext`, making it safe, "coroutine-local" storage. When the
-coroutine suspends, all trace sections will end immediately. When resumed, the coroutine will read
-the names of the previous sections from coroutine-local storage, and it will begin the sections
-again.
+by a `TraceContextElement` in the coroutine's context, making it safe, "coroutine-local" storage.
+When the coroutine suspends, all trace sections will end immediately. When resumed, the coroutine
+will read the names of the previous sections from coroutine-local storage, and it will begin the
+sections again.
 
 For example, the following coroutine code will be traced as follows:
 
 ```
-traceCoroutine("Slice A") {
+traceCoroutine("Slice") {
   println("Start")
   delay(10)
   println("End")
@@ -29,15 +29,13 @@ Thread #1 |  [==== Slice ====]          [==== Slice ====]
                ^ "Start" printed          ^ "End" printed
 ```
 
-If multiple threads are used, it would be as follows:
+If it's run on a multi-threaded dispatcher, it might appear as follows:
 
 ```
 traceCoroutine("Slice") {
   println("Start")
   delay(10)
-  withContext(backgroundThread) {
-    println("End")
-  }
+  println("End")
 }
 ```
 
@@ -54,7 +52,7 @@ This library also provides wrappers for some of the coroutine functions provided
 `launch { traceCoroutine("my-launch") { /* block */ } }`, you can instead write:
 `launchTraced("my-launch") { /* block */ }`.
 
-It also provides a wrapper for tracing `Flow` collections. For example,
+It also provides a wrapper for tracing `Flow`. For example,
 
 ```
 val coldFlow = flow {
@@ -63,7 +61,7 @@ val coldFlow = flow {
   emit(3)
 }
 
-coldFlow.collect("F") {
+coldFlow.traceAs("name").collect {
   println(it)
   yield()
 }
@@ -72,9 +70,9 @@ coldFlow.collect("F") {
 Would be traced as follows:
 
 ```
-Thread #1 |  [===== collect:F =====]    [=== collect:F ====]    [===== collect:F =====]
-          |    [= collect:F:emit =]     [= collect:F:emit =]    [= collect:F:emit =]
-          |            ^ "1" printed           ^ "2" printed            ^ "3" printed
+Thread #1 |  [=== name#collect ===]  [== name#collect ==]  [== name#collect ==]
+          |       [= emit   =]           [= emit =]           [= emit =]
+          |         ^ "1" printed          ^ "2" printed        ^ "3" printed
 ```
 
 # Building and Running
@@ -102,8 +100,11 @@ adb shell am restart
 
 The behavior of coroutine tracing can be further fine-tuned using the following sysprops:
 
- - `persist.debug.coroutine_tracing.walk_stack_override`
- - `persist.debug.coroutine_tracing.count_continuations_override`
+ - `persist.debug.coroutine_tracing.walk_stack`
+ - `persist.debug.coroutine_tracing.count_continuations`
+ - `persist.debug.coroutine_tracing.inherit_slices`
+ - `persist.debug.coroutine_tracing.dump_init_stack`
+ - `persist.debug.coroutine_tracing.dump_continuation_stack`
 
 See [`createCoroutineTracingContext()`](core/src/coroutines/TraceContextElement.kt) for
 documentation.

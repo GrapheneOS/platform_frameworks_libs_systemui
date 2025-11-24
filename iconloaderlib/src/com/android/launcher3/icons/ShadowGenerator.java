@@ -16,18 +16,12 @@
 
 package com.android.launcher3.icons;
 
-import static com.android.launcher3.icons.GraphicsUtils.setColorAlphaBound;
-
 import android.graphics.Bitmap;
 import android.graphics.BlurMaskFilter;
 import android.graphics.BlurMaskFilter.Blur;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.RectF;
 
 /**
  * Utility class to add shadows to bitmaps.
@@ -97,81 +91,6 @@ public class ShadowGenerator {
             out.restoreToCount(save);
 
             mDrawPaint.setMaskFilter(null);
-        }
-    }
-
-    public static class Builder {
-
-        public final RectF bounds = new RectF();
-        public final int color;
-
-        public int ambientShadowAlpha = AMBIENT_SHADOW_ALPHA;
-
-        public float shadowBlur;
-
-        public float keyShadowDistance;
-        public int keyShadowAlpha = KEY_SHADOW_ALPHA;
-        public float radius;
-
-        public Builder(int color) {
-            this.color = color;
-        }
-
-        public Builder setupBlurForSize(int height) {
-            if (ENABLE_SHADOWS) {
-                shadowBlur = height * 1f / 24;
-                keyShadowDistance = height * 1f / 16;
-            } else {
-                shadowBlur = 0;
-                keyShadowDistance = 0;
-            }
-            return this;
-        }
-
-        public Bitmap createPill(int width, int height) {
-            return createPill(width, height, height / 2f);
-        }
-
-        public Bitmap createPill(int width, int height, float r) {
-            radius = r;
-
-            int centerX = Math.round(width / 2f + shadowBlur);
-            int centerY = Math.round(radius + shadowBlur + keyShadowDistance);
-            int center = Math.max(centerX, centerY);
-            bounds.set(0, 0, width, height);
-            bounds.offsetTo(center - width / 2f, center - height / 2f);
-
-            int size = center * 2;
-            return BitmapRenderer.createHardwareBitmap(size, size, this::drawShadow);
-        }
-
-        public void drawShadow(Canvas c) {
-            Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-            p.setColor(color);
-
-            if (ENABLE_SHADOWS) {
-                // Key shadow
-                p.setShadowLayer(shadowBlur, 0, keyShadowDistance,
-                        setColorAlphaBound(Color.BLACK, keyShadowAlpha));
-                c.drawRoundRect(bounds, radius, radius, p);
-
-                // Ambient shadow
-                p.setShadowLayer(shadowBlur, 0, 0,
-                        setColorAlphaBound(Color.BLACK, ambientShadowAlpha));
-                c.drawRoundRect(bounds, radius, radius, p);
-            }
-
-            if (Color.alpha(color) < 255) {
-                // Clear any content inside the pill-rect for translucent fill.
-                p.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-                p.clearShadowLayer();
-                p.setColor(Color.BLACK);
-                c.drawRoundRect(bounds, radius, radius, p);
-
-                p.setXfermode(null);
-                p.setColor(color);
-                c.drawRoundRect(bounds, radius, radius, p);
-            }
         }
     }
 }

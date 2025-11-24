@@ -27,4 +27,7 @@ android_library {
         "com.android.mediaprovider",
         "com.android.nfcservices",
     ],
+    lint: {
+        baseline_filename: "lint-baseline.xml",
+    },
 }

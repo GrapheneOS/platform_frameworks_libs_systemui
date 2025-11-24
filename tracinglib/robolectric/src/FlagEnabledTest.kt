@@ -70,7 +70,7 @@ class FlagEnabledTest : TestBase() {
                         lazyStringCalled,
                     )
                     val traceData = traceThreadLocal.get()!!.data as TraceData
-                    assertEquals(traceData.slices.size, 1)
+                    assertEquals(traceData.slices?.size, 1)
                 }
             }
         }
