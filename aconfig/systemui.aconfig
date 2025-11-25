@@ -116,16 +116,6 @@ flag {
 }
 
 flag {
-    name: "enable_lpp_assist_invocation_effect"
-    namespace: "systemui"
-    description: "Enables invocation effect on power button long press for launching assistant"
-    bug: "396099245"
-    metadata {
-         purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "enable_lpp_assist_invocation_initial_rumble"
     namespace: "systemui"
     description: "Enables the initial rumble haptics on power button long press for launching assistant"
