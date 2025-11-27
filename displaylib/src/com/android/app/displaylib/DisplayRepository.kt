@@ -55,7 +55,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.scan
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 
 /** Repository for providing access to display related information and events. */
@@ -182,9 +181,10 @@ constructor(
                 )
                 awaitClose { displayManager.unregisterDisplayListener(callback) }
             }
+            .conflate()
             .onStart { emit(DisplayEvent.Changed(Display.DEFAULT_DISPLAY)) }
             .debugLog("allDisplayEvents")
-            .shareIn(bgApplicationScope, started = SharingStarted.Lazily)
+            .flowOn(backgroundCoroutineDispatcher)
 
     override val displayChangeEvent: Flow<Int> =
         allDisplayEvents.filterIsInstance<DisplayEvent.Changed>().map { event -> event.displayId }
