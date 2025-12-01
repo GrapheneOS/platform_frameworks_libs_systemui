@@ -1,28 +1,12 @@
 package: "com.android.systemui.shared"
 container: "system"
 
+# go/keep-sorted start block=yes newline_separated=yes by_regex=name:\s*"([^"]+)"
 flag {
-    name: "example_shared_flag"
+    name: "aod_inactivity_detection"
     namespace: "systemui"
-    description: "An Example Flag"
-    bug: "308482106"
-}
-
-flag {
-    name: "shade_allow_back_gesture"
-    namespace: "systemui"
-    description: "Allow Back Gestures in Shade"
-    bug: "309545085"
-}
-
-flag {
-    name: "enable_home_delay"
-    namespace: "systemui"
-    description: "Enables fix that exposes signal to notify the completion of the RRO loading."
-    bug: "307507412"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
+    description: "Support an activity detection sensor to power down the display to save power."
+    bug: "402534470"
 }
 
 flag {
@@ -36,49 +20,10 @@ flag {
 }
 
 flag {
-    name: "three_button_corner_swipe"
-    namespace: "systemui"
-    description: "Allow the Assistant corner swipe gesture while in 3 button mode"
-    bug: "361651619"
-}
-
-flag {
-    name: "smartspace_sports_card_background"
-    namespace: "systemui"
-    description: "Enables Smartspace sports card background protection and related ui updates"
-    bug: "380285747"
-    metadata {
-         purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "screenshot_context_url"
-    namespace: "systemui"
-    description: "Include optional app-provided context URL when sharing a screenshot."
-    bug: "242791070"
-}
-
-flag {
-  name: "status_bar_connected_displays"
-  namespace: "lse_desktop_experience"
-  description: "Shows the status bar on connected displays"
-  bug: "379264862"
-}
-
-flag {
-    name: "extended_wallpaper_effects"
-    namespace: "systemui"
-    description: "Enables extended wallpaper effects"
-    bug: "334125919"
-}
-
-
-flag {
-    name: "use_preferred_image_editor"
-    namespace: "systemui"
-    description: "Prefer the editor in config_preferredScreenshotEditor if component is present/enabled on the system"
-    bug: "391401141"
+    name: "cue_bar_ace_migration"
+    namespace: "launcher_search"
+    description: "Cue Bar receives data from Android Context Engine and is rendered in Taskbar."
+    bug: "437417091"
 }
 
 flag {
@@ -89,39 +34,22 @@ flag {
 }
 
 flag {
-    name: "smartspace_weather_use_monochrome_font_icons"
+    name: "enable_gesture_assist_invocation_effect"
     namespace: "systemui"
-    description: "Update Smartspace to use monochrome font icons for weather"
-    bug: "389957594"
+    description: "Enables invocation effect on corner gesture for launching assistant"
+    bug: "417194744"
     metadata {
          purpose: PURPOSE_BUGFIX
     }
 }
 
 flag {
-    name: "smartspace_semantic_weather_data"
+    name: "enable_home_delay"
     namespace: "systemui"
-    description: "Support semantic weather data and its rendering in Smartspace"
-    bug: "416745891"
-}
-
-flag {
-    name: "smartspace_aqi_updated_design"
-    namespace: "systemui"
-    description: "Enable updated design for aqi in Smartspace"
-    bug: "435016376"
+    description: "Enables fix that exposes signal to notify the completion of the RRO loading."
+    bug: "307507412"
     metadata {
-         purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "enable_lpp_assist_invocation_effect"
-    namespace: "systemui"
-    description: "Enables invocation effect on power button long press for launching assistant"
-    bug: "396099245"
-    metadata {
-         purpose: PURPOSE_BUGFIX
+        purpose: PURPOSE_BUGFIX
     }
 }
 
@@ -136,13 +64,24 @@ flag {
 }
 
 flag {
-    name: "enable_gesture_assist_invocation_effect"
+    name: "enable_recents_in_taskbar"
+    namespace: "launcher"
+    description: "Replace hybrid hotseat app predictions with strictly Recent Apps"
+    bug: "315354060"
+}
+
+flag {
+    name: "example_shared_flag"
     namespace: "systemui"
-    description: "Enables invocation effect on corner gesture for launching assistant"
-    bug: "417194744"
-    metadata {
-         purpose: PURPOSE_BUGFIX
-    }
+    description: "An Example Flag"
+    bug: "308482106"
+}
+
+flag {
+    name: "extended_wallpaper_effects"
+    namespace: "systemui"
+    description: "Enables extended wallpaper effects"
+    bug: "334125919"
 }
 
 flag {
@@ -160,14 +99,6 @@ flag {
 }
 
 flag {
-    name: "aod_inactivity_detection"
-    namespace: "systemui"
-    description: "Support an activity detection sensor to power down the display to save power."
-    bug: "402534470"
-}
-
-
-flag {
     name: "photo_shuffle_flag"
     namespace: "systemui"
     description: "Flag for enabling the photo shuffle feature"
@@ -175,10 +106,75 @@ flag {
 }
 
 flag {
-    name: "cue_bar_ace_migration"
-    namespace: "launcher_search"
-    description: "Cue Bar receives data from Android Context Engine and is rendered in Taskbar."
-    bug: "437417091"
+    name: "screenshot_context_url"
+    namespace: "systemui"
+    description: "Include optional app-provided context URL when sharing a screenshot."
+    bug: "242791070"
+}
+
+flag {
+    name: "shade_allow_back_gesture"
+    namespace: "systemui"
+    description: "Allow Back Gestures in Shade"
+    bug: "309545085"
+}
+
+flag {
+    name: "smartspace_aqi_updated_design"
+    namespace: "systemui"
+    description: "Enable updated design for aqi in Smartspace"
+    bug: "435016376"
+    metadata {
+         purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "smartspace_semantic_weather_data"
+    namespace: "systemui"
+    description: "Support semantic weather data and its rendering in Smartspace"
+    bug: "416745891"
+}
+
+flag {
+    name: "smartspace_sports_card_background"
+    namespace: "systemui"
+    description: "Enables Smartspace sports card background protection and related ui updates"
+    bug: "380285747"
+    metadata {
+         purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "smartspace_weather_use_monochrome_font_icons"
+    namespace: "systemui"
+    description: "Update Smartspace to use monochrome font icons for weather"
+    bug: "389957594"
+    metadata {
+         purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+  name: "status_bar_connected_displays"
+  namespace: "lse_desktop_experience"
+  description: "Shows the status bar on connected displays"
+  bug: "379264862"
+}
+
+flag {
+    name: "three_button_corner_swipe"
+    namespace: "systemui"
+    description: "Allow the Assistant corner swipe gesture while in 3 button mode"
+    bug: "361651619"
+}
+
+flag {
+    name: "use_preferred_image_editor"
+    namespace: "systemui"
+    description: "Prefer the editor in config_preferredScreenshotEditor if component is present/enabled on the system"
+    bug: "391401141"
 }
 
 flag {
@@ -187,10 +183,4 @@ flag {
     description: "Gives the user the option to hide app icon labels on the workspace"
     bug: "456634299"
 }
-
-flag {
-    name: "enable_recents_in_taskbar"
-    namespace: "launcher"
-    description: "Replace hybrid hotseat app predictions with strictly Recent Apps"
-    bug: "315354060"
-}
+# go/keep-sorted end
