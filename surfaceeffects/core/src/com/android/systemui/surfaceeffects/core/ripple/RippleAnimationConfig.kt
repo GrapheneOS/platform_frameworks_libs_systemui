@@ -17,6 +17,8 @@
 package com.android.systemui.surfaceeffects.core.ripple
 
 import android.graphics.Color
+import androidx.compose.runtime.Immutable
+import com.android.systemui.surfaceeffects.core.ripple.RippleShader.Companion.DEFAULT_RIPPLE_EFFECT_DURATION
 
 /**
  * A struct that holds the ripple animation configurations.
@@ -26,9 +28,10 @@ import android.graphics.Color
  * single animation (e.g. Change color or opacity during the animation). Note that this data class
  * is pulled out to make the [RippleAnimation] constructor succinct.
  */
+@Immutable
 data class RippleAnimationConfig(
     val rippleShape: RippleShader.RippleShape = RippleShader.RippleShape.CIRCLE,
-    val duration: Long = 0L,
+    val duration: Long = DEFAULT_RIPPLE_EFFECT_DURATION,
     val centerX: Float = 0f,
     val centerY: Float = 0f,
     val maxWidth: Float = 0f,
@@ -42,4 +45,47 @@ data class RippleAnimationConfig(
     val sparkleRingFadeParams: RippleShader.FadeParams? = null,
     val centerFillFadeParams: RippleShader.FadeParams? = null,
     val shouldDistort: Boolean = true,
-)
+    val blurStart: Float = DEFAULT_BLUR_START,
+    val blurEnd: Float = DEFAULT_BLUR_END,
+) {
+    // back compatible with java usage
+    constructor(
+        rippleShape: RippleShader.RippleShape,
+        duration: Long,
+        centerX: Float,
+        centerY: Float,
+        maxWidth: Float,
+        maxHeight: Float,
+        pixelDensity: Float,
+        color: Int,
+        opacity: Int,
+        sparkleStrength: Float,
+        baseRingFadeParams: RippleShader.FadeParams?,
+        sparkleRingFadeParams: RippleShader.FadeParams?,
+        centerFillFadeParams: RippleShader.FadeParams?,
+        shouldDistort: Boolean = true,
+    ) : this(
+        rippleShape = rippleShape,
+        duration = duration,
+        centerX = centerX,
+        centerY = centerY,
+        maxWidth = maxWidth,
+        maxHeight = maxHeight,
+        pixelDensity = pixelDensity,
+        color = color,
+        opacity = opacity,
+        sparkleStrength = sparkleStrength,
+        baseRingFadeParams = baseRingFadeParams,
+        sparkleRingFadeParams = sparkleRingFadeParams,
+        centerFillFadeParams = centerFillFadeParams,
+        shouldDistort = shouldDistort,
+        blurStart = DEFAULT_BLUR_START,
+        blurEnd = DEFAULT_BLUR_END,
+    )
+
+    companion object {
+        const val DISTORTION_MULTIPLIER = 75f
+        const val DEFAULT_BLUR_START = 1.25f
+        const val DEFAULT_BLUR_END = 0.5f
+    }
+}

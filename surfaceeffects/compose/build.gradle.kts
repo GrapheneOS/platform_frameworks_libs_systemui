@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.android.systemui.surfaceeffects.core"
+    namespace = "com.android.systemui.surfaceeffects.compose"
     compileSdk = 33
 
     defaultConfig {
@@ -13,6 +13,7 @@ android {
 
     sourceSets {
         getByName("main") {
+            manifest.srcFile("AndroidManifest.xml")
             java.srcDirs("src")
             kotlin.srcDirs("src")
         }
@@ -29,9 +30,9 @@ android {
 }
 
 dependencies {
-    api(libs.androidx.annotation)
-    api(libs.androidx.core.animation)
-    api(libs.androidx.core.ktx)
-    api(libs.compose.runtime)
+    api(project(":SurfaceEffectsCoreLib"))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.animation)
 }
 
