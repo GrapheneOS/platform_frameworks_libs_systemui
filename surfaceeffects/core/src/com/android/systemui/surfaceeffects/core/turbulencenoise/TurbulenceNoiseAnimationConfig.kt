@@ -16,11 +16,9 @@
 package com.android.systemui.surfaceeffects.core.turbulencenoise
 
 import android.graphics.Color
-import androidx.compose.runtime.Immutable
 import java.util.Random
 
 /** Turbulence noise animation configuration. */
-@Immutable
 data class TurbulenceNoiseAnimationConfig(
     /** The number of grids that is used to generate noise. */
     val gridCount: Float = DEFAULT_NOISE_GRID_COUNT,
@@ -57,7 +55,6 @@ data class TurbulenceNoiseAnimationConfig(
     val screenColor: Int = DEFAULT_SCREEN_COLOR,
     val width: Float = 0f,
     val height: Float = 0f,
-    /** Noise will start fading out with `fadeOutDuration` after maxDuration passes */
     val maxDuration: Float = DEFAULT_MAX_DURATION_IN_MILLIS,
     val fadeInDuration: Float = DEFAULT_FADING_DURATION_IN_MILLIS,
     val fadeOutDuration: Float = DEFAULT_FADING_DURATION_IN_MILLIS,
