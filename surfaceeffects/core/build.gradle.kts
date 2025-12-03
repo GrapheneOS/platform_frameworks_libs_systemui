@@ -32,6 +32,5 @@ dependencies {
     api(libs.androidx.annotation)
     api(libs.androidx.core.animation)
     api(libs.androidx.core.ktx)
-    api(libs.compose.runtime)
 }
 
