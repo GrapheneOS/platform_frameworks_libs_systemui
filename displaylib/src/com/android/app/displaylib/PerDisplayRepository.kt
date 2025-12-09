@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 /**
@@ -120,8 +121,8 @@ interface PerDisplayRepository<T> {
         if (instance == null) {
             Log.e(
                 "PerDisplayRepository",
-                """<$debugName> getOrDefault: instance for display with id $displayId returned 
-                    |null. The display likely doesn't exist anymore. Returning an instance for the 
+                """<$debugName> getOrDefault: instance for display with id $displayId returned
+                    |null. The display likely doesn't exist anymore. Returning an instance for the
                     |default display."""
                     .trimMargin(),
             )
@@ -228,6 +229,7 @@ constructor(
                     lifecycleAllowedDisplayIds.intersect(connectedDisplays)
                 }
             }
+            .map { it.ifEmpty { setOf(DEFAULT_DISPLAY) } }
             .stateInTraced(
                 "allowed displays for $debugName",
                 bgApplicationScope,
