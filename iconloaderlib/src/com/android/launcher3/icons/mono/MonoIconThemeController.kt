@@ -21,12 +21,15 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Bitmap.Config.ALPHA_8
 import android.graphics.Bitmap.Config.HARDWARE
+import android.graphics.BlendMode.SRC
 import android.graphics.BlendMode.SRC_IN
 import android.graphics.BlendModeColorFilter
 import android.graphics.Canvas
+import android.graphics.ColorFilter
+import android.graphics.Paint
+import android.graphics.PixelFormat.TRANSLUCENT
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.AdaptiveIconDrawable.getExtraInsetFraction
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.InsetDrawable
@@ -150,15 +153,78 @@ class MonoIconThemeController(
 
         val themedBitmap = info?.themedBitmap as? MonoThemedBitmap ?: return originalIcon
         val colors = themedBitmap.getUpdatedColors(context)
+        val bgColor = colors[0]
+        val fgColor = colors[1]
 
-        // Inject a previously generated monochrome icon
-        // Use BitmapDrawable instead of FastBitmapDrawable so that the colorState is
-        // preserved in constantState
-        // Inset the drawable according to the AdaptiveIconDrawable layers
-        val monoDrawable =
-            BitmapDrawable(themedBitmap.mono).apply {
-                colorFilter = BlendModeColorFilter(colors[1], SRC_IN)
+        // Put foreground + background layers together in foreground, with correct insets.
+        // Then we can put on top of background of same color, to blend for intended parallax.
+        val opaqueForeground = LayerDrawable(arrayOf(
+            ScaledMonoDrawable(themedBitmap.mono).apply {
+                colorFilter = BlendModeColorFilter(bgColor, SRC)
+            },
+            ScaledMonoDrawable(themedBitmap.mono).apply {
+                    colorFilter = BlendModeColorFilter(fgColor, SRC_IN)
+                }
+        ))
+        // create new background color by combing fg and bg colors to match overall foreground.
+        // TODO: color doesn't always perfectly match the foreground.
+        val parallaxBackground = ColorDrawable(bgColor).apply {
+            colorFilter = BlendModeColorFilter(fgColor, SRC_IN)
+        }
+        return AdaptiveIconDrawable(parallaxBackground, opaqueForeground)
+    }
+
+
+    /**
+     * Scaled drawable for [MonoThemedBitmap] to render content at correct, pre-zoomed
+     * scale and insets for the content.
+     */
+    private class ScaledMonoDrawable(
+        private val bitmap: Bitmap,
+        private var paint: Paint
+    ) : Drawable() {
+
+        private val scale: Float = 1f / (1f + 2 * getExtraInsetFraction())
+
+        constructor(bitmap: Bitmap) :
+            this(bitmap, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
+
+        override fun draw(canvas: Canvas) {
+            val count = canvas.save()
+            val bounds = bounds
+            canvas.scale(scale, scale, bounds.exactCenterX(), bounds.exactCenterY())
+            canvas.drawBitmap(bitmap, null, bounds, paint)
+            canvas.restoreToCount(count)
+        }
+
+        override fun setAlpha(alpha: Int) {
+            if (paint.alpha != alpha) {
+                paint.alpha = alpha
+                invalidateSelf()
             }
-        return AdaptiveIconDrawable(ColorDrawable(colors[0]), monoDrawable)
+        }
+
+        override fun getAlpha(): Int = paint.alpha
+
+        override fun setColorFilter(colorFilter: ColorFilter?) {
+            paint.colorFilter = colorFilter
+            invalidateSelf()
+        }
+
+        override fun getColorFilter(): ColorFilter? = paint.colorFilter
+
+        @Deprecated("Deprecated in Java")
+        override fun getOpacity(): Int = TRANSLUCENT
+
+        override fun getConstantState(): ConstantState = ScaledMonoState(bitmap, paint)
+
+
+        data class ScaledMonoState(val bitmap: Bitmap, val paint: Paint) : ConstantState() {
+            override fun newDrawable(): Drawable {
+                // Create a new drawable with a copy of the paint to ensure independence.
+                return ScaledMonoDrawable(bitmap, Paint(paint))
+            }
+            override fun getChangingConfigurations(): Int = 0
+        }
     }
 }
