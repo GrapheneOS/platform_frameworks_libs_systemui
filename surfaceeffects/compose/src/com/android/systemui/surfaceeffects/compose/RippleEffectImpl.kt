@@ -81,7 +81,6 @@ class RippleEffectNode(var shaderConfig: RippleAnimationConfig, var triggerKey: 
 
     override fun onAttach() {
         runtimeShader.applyConfig(shaderConfig)
-        startProgressAnimatableJob()
     }
 
     /**
