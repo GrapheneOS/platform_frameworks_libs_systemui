@@ -17,6 +17,7 @@
 package com.android.systemui.surfaceeffects.compose
 
 import androidx.compose.ui.Modifier
+import com.android.systemui.surfaceeffects.core.dwellrippleeffect.DwellEffectConfig
 import com.android.systemui.surfaceeffects.core.ripple.RippleAnimationConfig
 import com.android.systemui.surfaceeffects.core.turbulencenoise.TurbulenceNoiseAnimationConfig
 import com.android.systemui.surfaceeffects.core.turbulencenoise.TurbulenceNoiseShader
@@ -133,4 +134,18 @@ fun Modifier.rippleEllipseEffect(
     triggerKey: Int = 0,
 ): Modifier {
     return rippleEffectImpl(shaderConfig = shaderConfig, triggerKey = triggerKey)
+}
+
+/**
+ * Add dwell ripple effect
+ *
+ * @param isExpanding True means expanding, false means retracting.
+ * @param dwellEffectConfig The configuration ([DwellEffectConfig]) defining the radius, color of
+ *   the dwell ripple.
+ */
+fun Modifier.dwellRippleEffect(
+    isExpanding: Boolean,
+    dwellEffectConfig: DwellEffectConfig,
+): Modifier {
+    return dwellEffectImpl(dwellEffectConfig, isExpanding)
 }
