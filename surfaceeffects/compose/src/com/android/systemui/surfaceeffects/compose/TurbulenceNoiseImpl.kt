@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.CacheDrawModifierNode
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.layer.CompositingStrategy
@@ -35,6 +36,7 @@ import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
+import com.android.systemui.surfaceeffects.compose.RippleEffectNodeElement.Companion
 import com.android.systemui.surfaceeffects.core.turbulencenoise.TurbulenceNoiseAnimationConfig
 import com.android.systemui.surfaceeffects.core.turbulencenoise.TurbulenceNoiseShader
 import com.android.systemui.surfaceeffects.core.turbulencenoise.TurbulenceNoiseShader.Companion.BACKGROUND_UNIFORM
@@ -51,12 +53,15 @@ import kotlinx.coroutines.launch
  *   colors, and grid size etc.
  * @param isEnabled A boolean controlling the fade-in (enabled) or fade-out (disabled) of the
  *   effect.
+ * @param onAnimationFinished A callback triggered exclusively when the fade-out animation
+ *   completes. This is not invoked during the initial fade-in or while the effect is active.
  */
 internal fun Modifier.turbulenceNoiseImpl(
     shaderType: TurbulenceNoiseShader.Companion.Type,
     shaderConfig: TurbulenceNoiseAnimationConfig,
     isEnabled: Boolean,
-) = this then TurbulenceNoiseNodeElement(shaderType, shaderConfig, isEnabled)
+    onAnimationFinished: () -> Unit,
+) = this then TurbulenceNoiseNodeElement(shaderType, shaderConfig, isEnabled, onAnimationFinished)
 
 /**
  * [DrawModifierNode] implementation for the turbulence noise effect.
@@ -64,13 +69,17 @@ internal fun Modifier.turbulenceNoiseImpl(
  * @property shaderType The static type of noise effect being rendered.
  * @property shaderConfig The configuration for the noise.
  * @property isEnabled Controls the visibility fade state.
+ * @property onAnimationFinished A callback triggered exclusively when the fade-out animation
+ *   completes. This is not invoked during the initial fade-in or while the effect is active.
  */
 @VisibleForTesting
 class TurbulenceNoiseNode(
     val shaderType: TurbulenceNoiseShader.Companion.Type,
     var shaderConfig: TurbulenceNoiseAnimationConfig,
     var isEnabled: Boolean,
+    val onAnimationFinished: () -> Unit,
 ) : DelegatingNode() {
+    private var lastSize = Size(0f, 0f)
     internal val runtimeShader = TurbulenceNoiseShader(shaderType)
     private val shaderBrush = ShaderBrush(runtimeShader)
     private val isOverlay = shaderType == TurbulenceNoiseShader.Companion.Type.SIMPLEX_NOISE_SIMPLE
@@ -92,6 +101,17 @@ class TurbulenceNoiseNode(
             CacheDrawModifierNode {
                 val noiseGraphicsLayer = obtainGraphicsLayer()
                 onDrawWithContent {
+                    val targetSize =
+                        if (shaderConfig.width != 0f && shaderConfig.height != 0f) {
+                            Size(shaderConfig.width, shaderConfig.height)
+                        } else {
+                            size
+                        }
+                    if (lastSize != targetSize) {
+                        runtimeShader.setSize(targetSize.width, targetSize.height)
+                        lastSize = targetSize
+                    }
+                    runtimeShader.setPixelDensity(density)
                     val maxDuration = shaderConfig.maxDuration
                     val timeElapsed = rawProgress * maxDuration / 1000
                     val noiseMoveX =
@@ -131,8 +151,10 @@ class TurbulenceNoiseNode(
 
     override fun onAttach() {
         runtimeShader.applyConfig(shaderConfig)
-        startProgressAnimatableJob()
-        startFadingAnimatableJob()
+        if (isEnabled) {
+            startProgressAnimatableJob()
+            startFadingAnimatableJob()
+        }
     }
 
     internal fun startProgressAnimatableJob() {
@@ -156,6 +178,7 @@ class TurbulenceNoiseNode(
                                     shaderConfig.fadeOutDuration,
                             )
                     }
+                    onAnimationFinished()
                 }
             }
     }
@@ -179,6 +202,7 @@ class TurbulenceNoiseNode(
                         fadingProgress = value
                     }
                     progressAnimatableJob?.cancel()
+                    onAnimationFinished()
                 }
             }
     }
@@ -189,11 +213,14 @@ data class TurbulenceNoiseNodeElement(
     val shaderType: TurbulenceNoiseShader.Companion.Type,
     val shaderConfig: TurbulenceNoiseAnimationConfig,
     val isEnabled: Boolean,
+    val onAnimationFinished: () -> Unit,
 ) : ModifierNodeElement<TurbulenceNoiseNode>() {
     @VisibleForTesting lateinit var node: TurbulenceNoiseNode
 
     override fun create(): TurbulenceNoiseNode {
-        return TurbulenceNoiseNode(shaderType, shaderConfig, isEnabled).also { node = it }
+        return TurbulenceNoiseNode(shaderType, shaderConfig, isEnabled, onAnimationFinished).also {
+            node = it
+        }
     }
 
     override fun update(node: TurbulenceNoiseNode) {

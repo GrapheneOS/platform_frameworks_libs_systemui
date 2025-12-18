@@ -27,15 +27,19 @@ import com.android.systemui.surfaceeffects.core.turbulencenoise.TurbulenceNoiseS
  *
  * @param shaderConfig The configuration defining the noise movement, color, and grid size.
  * @param isEnabled A boolean to enable (fade-in) or disable (fade-out) the effect.
+ * @param onAnimationFinished A callback that will be invoked when the fading-out animation is
+ *   finished.
  */
 fun Modifier.simplexNoiseEffect(
     shaderConfig: TurbulenceNoiseAnimationConfig,
     isEnabled: Boolean = true,
+    onAnimationFinished: () -> Unit = {},
 ): Modifier {
     return this.turbulenceNoiseImpl(
         TurbulenceNoiseShader.Companion.Type.SIMPLEX_NOISE,
         shaderConfig = shaderConfig,
         isEnabled = isEnabled,
+        onAnimationFinished = onAnimationFinished,
     )
 }
 
@@ -44,15 +48,19 @@ fun Modifier.simplexNoiseEffect(
  *
  * @param shaderConfig The configuration defining the noise movement, color, and grid size.
  * @param isEnabled A boolean to enable (fade-in) or disable (fade-out) the effect.
+ * @param onAnimationFinished A callback that will be invoked when the fading-out animation is
+ *   finished.
  */
 fun Modifier.simpleSimplexNoiseEffect(
     shaderConfig: TurbulenceNoiseAnimationConfig,
     isEnabled: Boolean = true,
+    onAnimationFinished: () -> Unit = {},
 ): Modifier {
     return this.turbulenceNoiseImpl(
         TurbulenceNoiseShader.Companion.Type.SIMPLEX_NOISE_SIMPLE,
         shaderConfig = shaderConfig,
         isEnabled = isEnabled,
+        onAnimationFinished = onAnimationFinished,
     )
 }
 
@@ -61,15 +69,19 @@ fun Modifier.simpleSimplexNoiseEffect(
  *
  * @param shaderConfig The configuration defining the noise movement, color, and grid size.
  * @param isEnabled A boolean to enable (fade-in) or disable (fade-out) the effect.
+ * @param onAnimationFinished A callback that will be invoked when the fading-out animation is
+ *   finished.
  */
 fun Modifier.sparkleNoiseEffect(
     shaderConfig: TurbulenceNoiseAnimationConfig,
     isEnabled: Boolean = true,
+    onAnimationFinished: () -> Unit = {},
 ): Modifier {
     return this.turbulenceNoiseImpl(
         TurbulenceNoiseShader.Companion.Type.SIMPLEX_NOISE_SPARKLE,
         shaderConfig = shaderConfig,
         isEnabled = isEnabled,
+        onAnimationFinished = onAnimationFinished,
     )
 }
 
@@ -79,15 +91,19 @@ fun Modifier.sparkleNoiseEffect(
  * @param shaderConfig The configuration defining the noise movement, color, and grid size. Defaults
  *   to a standard configuration.
  * @param isEnabled A boolean to enable (fade-in) or disable (fade-out) the effect.
+ * @param onAnimationFinished A callback that will be invoked when the fading-out animation is
+ *   finished.
  */
 fun Modifier.fractalNoiseEffect(
     shaderConfig: TurbulenceNoiseAnimationConfig = TurbulenceNoiseAnimationConfig(),
     isEnabled: Boolean = true,
+    onAnimationFinished: () -> Unit = {},
 ): Modifier {
     return this.turbulenceNoiseImpl(
         TurbulenceNoiseShader.Companion.Type.SIMPLEX_NOISE_FRACTAL,
         shaderConfig = shaderConfig,
         isEnabled = isEnabled,
+        onAnimationFinished = onAnimationFinished,
     )
 }
 
@@ -96,14 +112,21 @@ fun Modifier.fractalNoiseEffect(
  *
  * @param shaderConfig The configuration ([RippleAnimationConfig]) defining the size, fade, and
  *   color of the ripple.
- * @param triggerKey An integer key that, when changed, restarts the ripple animation from the
- *   beginning. Defaults to 0.
+ * @param isEnabled When `true`, the ripple animation will start. The caller is responsible for
+ *   setting this to `false` in preparation for a subsequent trigger.
+ * @param onAnimationFinished A callback that will be invoked when the animation is finished. This
+ *   can be used to reset [isEnabled] to `false`.
  */
 fun Modifier.rippleCircleEffect(
     shaderConfig: RippleAnimationConfig,
-    triggerKey: Int = 0,
+    isEnabled: Boolean = true,
+    onAnimationFinished: () -> Unit = {},
 ): Modifier {
-    return rippleEffectImpl(shaderConfig = shaderConfig, triggerKey = triggerKey)
+    return rippleEffectImpl(
+        shaderConfig = shaderConfig,
+        isEnabled = isEnabled,
+        onAnimationFinished = onAnimationFinished,
+    )
 }
 
 /**
@@ -111,14 +134,21 @@ fun Modifier.rippleCircleEffect(
  *
  * @param shaderConfig The configuration ([RippleAnimationConfig]) defining the size, fade, and
  *   color of the ripple.
- * @param triggerKey An integer key that, when changed, restarts the ripple animation from the
- *   beginning. Defaults to 0.
+ * @param isEnabled When `true`, the ripple animation will start. The caller is responsible for
+ *   setting this to `false` in preparation for a subsequent trigger.
+ * @param onAnimationFinished A callback that will be invoked when the animation is finished. This
+ *   can be used to reset [isEnabled] to `false`.
  */
 fun Modifier.rippleRoundedBoxEffect(
     shaderConfig: RippleAnimationConfig,
-    triggerKey: Int = 0,
+    isEnabled: Boolean = true,
+    onAnimationFinished: () -> Unit = {},
 ): Modifier {
-    return rippleEffectImpl(shaderConfig = shaderConfig, triggerKey = triggerKey)
+    return rippleEffectImpl(
+        shaderConfig = shaderConfig,
+        isEnabled = isEnabled,
+        onAnimationFinished = onAnimationFinished,
+    )
 }
 
 /**
@@ -126,26 +156,40 @@ fun Modifier.rippleRoundedBoxEffect(
  *
  * @param shaderConfig The configuration ([RippleAnimationConfig]) defining the size, fade, and
  *   color of the ripple.
- * @param triggerKey An integer key that, when changed, restarts the ripple animation from the
- *   beginning. Defaults to 0.
+ * @param isEnabled When `true`, the ripple animation will start. The caller is responsible for
+ *   setting this to `false` in preparation for a subsequent trigger.
+ * @param onAnimationFinished A callback that will be invoked when the animation is finished. This
+ *   can be used to reset [isEnabled] to `false`.
  */
 fun Modifier.rippleEllipseEffect(
     shaderConfig: RippleAnimationConfig,
-    triggerKey: Int = 0,
+    isEnabled: Boolean = true,
+    onAnimationFinished: () -> Unit = {},
 ): Modifier {
-    return rippleEffectImpl(shaderConfig = shaderConfig, triggerKey = triggerKey)
+    return rippleEffectImpl(
+        shaderConfig = shaderConfig,
+        isEnabled = isEnabled,
+        onAnimationFinished = onAnimationFinished,
+    )
 }
 
 /**
- * Add dwell ripple effect
+ * Add dwell ripple effect.
  *
- * @param isExpanding True means expanding, false means retracting.
  * @param dwellEffectConfig The configuration ([DwellEffectConfig]) defining the radius, color of
  *   the dwell ripple.
+ * @param isExpanding True means expanding, false means retracting.
+ * @param onAnimationFinished A callback that will be invoked when the retract animation is
+ *   finished.
  */
 fun Modifier.dwellRippleEffect(
-    isExpanding: Boolean,
     dwellEffectConfig: DwellEffectConfig,
+    isExpanding: Boolean,
+    onAnimationFinished: () -> Unit = {},
 ): Modifier {
-    return dwellEffectImpl(dwellEffectConfig, isExpanding)
+    return dwellEffectImpl(
+        shaderConfig = dwellEffectConfig,
+        isExpanding = isExpanding,
+        onAnimationFinished = onAnimationFinished,
+    )
 }
