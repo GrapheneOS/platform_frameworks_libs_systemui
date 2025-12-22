@@ -106,13 +106,6 @@ flag {
 }
 
 flag {
-    name: "screenshot_context_url"
-    namespace: "systemui"
-    description: "Include optional app-provided context URL when sharing a screenshot."
-    bug: "242791070"
-}
-
-flag {
     name: "shade_allow_back_gesture"
     namespace: "systemui"
     description: "Allow Back Gestures in Shade"
