@@ -42,21 +42,35 @@ import kotlinx.coroutines.launch
  *
  * @param shaderConfig The configuration ([DwellEffectConfig]) defining radius, color, and duration,
  *   etc.
- * @param isExpanding A boolean controlling the expanding or retracting of the effect.
+ * @param isExpanding A state trigger that drives the animation; set to `true` to initiate the
+ *   expansion and `false` to initiate the retraction.
+ * @param onAnimationFinished A callback triggered exclusively upon the completion of the retraction
+ *   phase. Note: This callback is not invoked when the expansion phase finishes; it is intended for
+ *   cleanup or state resetting after the effect fully disappears.
  */
 @VisibleForTesting
-fun Modifier.dwellEffectImpl(shaderConfig: DwellEffectConfig, isExpanding: Boolean) =
-    this then DwellEffectNodeElement(shaderConfig, isExpanding)
+fun Modifier.dwellEffectImpl(
+    shaderConfig: DwellEffectConfig,
+    isExpanding: Boolean,
+    onAnimationFinished: () -> Unit,
+) = this then DwellEffectNodeElement(shaderConfig, isExpanding, onAnimationFinished)
 
 /**
  * [DrawModifierNode] implementation for the dwell ripple effect.
  *
  * @property shaderConfig The configuration for the dwell ripple effect.
- * @property isExpanding Controls the expanding or retracting process of the dwell ripple effect.
+ * @property isExpanding A state trigger that drives the animation; set to `true` to initiate the
+ *   expansion and `false` to initiate the retraction.
+ * @property onAnimationFinished A callback triggered exclusively upon the completion of the
+ *   retraction phase. Note: This callback is not invoked when the expansion phase finishes; it is
+ *   intended for cleanup or state resetting after the effect fully disappears.
  */
 @VisibleForTesting
-class DwellEffectNode(var shaderConfig: DwellEffectConfig, var isExpanding: Boolean) :
-    DrawModifierNode, Modifier.Node() {
+class DwellEffectNode(
+    var shaderConfig: DwellEffectConfig,
+    var isExpanding: Boolean,
+    val onAnimationFinished: () -> Unit,
+) : DrawModifierNode, Modifier.Node() {
     @VisibleForTesting val runtimeShader = DwellRippleShader()
     var easing = LinearEasing
     private val shaderBrush = ShaderBrush(runtimeShader)
@@ -96,6 +110,9 @@ class DwellEffectNode(var shaderConfig: DwellEffectConfig, var isExpanding: Bool
                 ) {
                     progress = value
                 }
+                if (!isExpanding) {
+                    onAnimationFinished()
+                }
             }
     }
 
@@ -133,12 +150,15 @@ class DwellEffectNode(var shaderConfig: DwellEffectConfig, var isExpanding: Bool
 }
 
 @VisibleForTesting
-data class DwellEffectNodeElement(val shaderConfig: DwellEffectConfig, val isExpanding: Boolean) :
-    ModifierNodeElement<DwellEffectNode>() {
+data class DwellEffectNodeElement(
+    val shaderConfig: DwellEffectConfig,
+    val isExpanding: Boolean,
+    val onAnimationFinished: () -> Unit,
+) : ModifierNodeElement<DwellEffectNode>() {
     @VisibleForTesting lateinit var node: DwellEffectNode
 
     override fun create(): DwellEffectNode {
-        return DwellEffectNode(shaderConfig, isExpanding).also { node = it }
+        return DwellEffectNode(shaderConfig, isExpanding, onAnimationFinished).also { node = it }
     }
 
     override fun update(node: DwellEffectNode) {
