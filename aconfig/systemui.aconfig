@@ -171,13 +171,6 @@ flag {
 }
 
 flag {
-    name: "use_preferred_image_editor"
-    namespace: "systemui"
-    description: "Prefer the editor in config_preferredScreenshotEditor if component is present/enabled on the system"
-    bug: "391401141"
-}
-
-flag {
     name: "workspace_items_label_hidden"
     namespace: "launcher"
     description: "Gives the user the option to hide app icon labels on the workspace"
