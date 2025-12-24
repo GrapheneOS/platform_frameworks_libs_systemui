@@ -106,13 +106,6 @@ flag {
 }
 
 flag {
-    name: "screenshot_context_url"
-    namespace: "systemui"
-    description: "Include optional app-provided context URL when sharing a screenshot."
-    bug: "242791070"
-}
-
-flag {
     name: "shade_allow_back_gesture"
     namespace: "systemui"
     description: "Allow Back Gestures in Shade"
@@ -168,13 +161,6 @@ flag {
     namespace: "systemui"
     description: "Allow the Assistant corner swipe gesture while in 3 button mode"
     bug: "361651619"
-}
-
-flag {
-    name: "use_preferred_image_editor"
-    namespace: "systemui"
-    description: "Prefer the editor in config_preferredScreenshotEditor if component is present/enabled on the system"
-    bug: "391401141"
 }
 
 flag {

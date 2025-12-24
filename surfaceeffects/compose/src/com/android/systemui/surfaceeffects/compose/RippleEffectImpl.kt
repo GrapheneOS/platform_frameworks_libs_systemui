@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.node.DrawModifierNode
@@ -40,21 +41,35 @@ import kotlinx.coroutines.launch
  *
  * @param shaderConfig The immutable configuration ([RippleAnimationConfig]) defining size, fade,
  *   and color.
- * @param triggerKey An integer key that, when changed, restarts the ripple animation from the
- *   beginning (0% progress).
+ * @param isEnabled Transitioning this from `false` to `true` starts the ripple sequence. To allow
+ *   for re-triggering, the caller must reset this value to `false` after the animation concludes.
+ * @param onAnimationFinished A callback executed immediately upon the completion of the ripple
+ *   animation. This is the recommended hook for the caller to reset [isEnabled] to `false`,
+ *   readying the node for its next invocation.
  */
-internal fun Modifier.rippleEffectImpl(shaderConfig: RippleAnimationConfig, triggerKey: Int) =
-    this then RippleEffectNodeElement(shaderConfig, triggerKey)
+internal fun Modifier.rippleEffectImpl(
+    shaderConfig: RippleAnimationConfig,
+    isEnabled: Boolean,
+    onAnimationFinished: () -> Unit,
+) = this then RippleEffectNodeElement(shaderConfig, isEnabled, onAnimationFinished)
 
 /**
  * [DrawModifierNode] implementation for the ripple effect.
  *
  * @property shaderConfig The static configuration for the ripple.
- * @property triggerKey An integer key used to detect when the animation should be restarted.
+ * @property isEnabled Transitioning this from `false` to `true` starts the ripple sequence. To
+ *   allow for re-triggering, the caller must reset this value to `false` after the animation
+ *   concludes.
+ * @property onAnimationFinished A callback executed immediately upon the completion of the ripple
+ *   animation. This is the recommended hook for the caller to reset [isEnabled] to `false`,
+ *   readying the node for its next invocation.
  */
 @VisibleForTesting
-class RippleEffectNode(var shaderConfig: RippleAnimationConfig, var triggerKey: Int) :
-    DrawModifierNode, Modifier.Node() {
+class RippleEffectNode(
+    var shaderConfig: RippleAnimationConfig,
+    var isEnabled: Boolean,
+    val onAnimationFinished: () -> Unit,
+) : DrawModifierNode, Modifier.Node() {
     val shaderType = shaderConfig.rippleShape
     val runtimeShader = RippleShader(shaderConfig.rippleShape)
     private val shaderBrush = ShaderBrush(runtimeShader)
@@ -67,7 +82,25 @@ class RippleEffectNode(var shaderConfig: RippleAnimationConfig, var triggerKey: 
      * shader uniforms based on animation progress immediately before drawing.
      */
     override fun ContentDrawScope.draw() {
+        // If consumer doesn't define the size explicitly, we'll use the canvas size
+        val targetSize =
+            if (shaderConfig.maxWidth != 0f && shaderConfig.maxHeight != 0f) {
+                Size(shaderConfig.maxWidth, shaderConfig.maxHeight)
+            } else {
+                size
+            }
+        val width = targetSize.width
+        val height = targetSize.height
+        val maxEdgeRadius =
+            maxOf(
+                shaderConfig.centerX,
+                shaderConfig.centerY,
+                width - shaderConfig.centerX,
+                height - shaderConfig.centerY,
+            )
+        runtimeShader.rippleSize.setMaxSize(maxEdgeRadius * 2, maxEdgeRadius * 2)
         runtimeShader.time = rawProgress * shaderConfig.duration
+        runtimeShader.pixelDensity = density
         runtimeShader.rawProgress = rawProgress
         runtimeShader.distortionStrength =
             if (shaderConfig.shouldDistort) {
@@ -81,6 +114,9 @@ class RippleEffectNode(var shaderConfig: RippleAnimationConfig, var triggerKey: 
 
     override fun onAttach() {
         runtimeShader.applyConfig(shaderConfig)
+        if (isEnabled) {
+            startProgressAnimatableJob()
+        }
     }
 
     /**
@@ -99,16 +135,21 @@ class RippleEffectNode(var shaderConfig: RippleAnimationConfig, var triggerKey: 
                 ) {
                     rawProgress = value
                 }
+                onAnimationFinished()
             }
     }
 }
 
 @VisibleForTesting
-data class RippleEffectNodeElement(val shaderConfig: RippleAnimationConfig, var triggerKey: Int) :
-    ModifierNodeElement<RippleEffectNode>() {
+data class RippleEffectNodeElement(
+    val shaderConfig: RippleAnimationConfig,
+    var isEnabled: Boolean,
+    val onAnimationFinished: () -> Unit,
+) : ModifierNodeElement<RippleEffectNode>() {
     @VisibleForTesting lateinit var node: RippleEffectNode
 
-    override fun create() = RippleEffectNode(shaderConfig, triggerKey).also { node = it }
+    override fun create() =
+        RippleEffectNode(shaderConfig, isEnabled, onAnimationFinished).also { node = it }
 
     override fun update(node: RippleEffectNode) {
         val shaderTypeChanged = node.shaderType != shaderConfig.rippleShape
@@ -117,20 +158,20 @@ data class RippleEffectNodeElement(val shaderConfig: RippleAnimationConfig, var 
                 "Changing shaderType on an existing RippleEffect" +
                     " is not supported. This requires the surrounding Composable to to force " +
                     "detaching/re-attaching the effect. Old: ${node.shaderType}, " +
-                    "New: ${ shaderConfig.rippleShape}"
+                    "New: ${shaderConfig.rippleShape}"
             )
         }
 
         val configChanged = node.shaderConfig != shaderConfig
-        val triggerKeyChanged = node.triggerKey != triggerKey
+        val isEnabledChanged = node.isEnabled != isEnabled
 
         node.shaderConfig = shaderConfig
-        node.triggerKey = triggerKey
+        node.isEnabled = isEnabled
 
         if (configChanged) {
             node.runtimeShader.applyConfig(shaderConfig)
         }
-        if (triggerKeyChanged) {
+        if (isEnabledChanged && isEnabled) {
             node.startProgressAnimatableJob()
         }
     }
@@ -138,7 +179,7 @@ data class RippleEffectNodeElement(val shaderConfig: RippleAnimationConfig, var 
     override fun InspectorInfo.inspectableProperties() {
         name = "RippleEffect"
         properties["config"] = shaderConfig
-        properties["triggerKey"] = triggerKey
+        properties["isEnabled"] = isEnabled
     }
 
     companion object {
