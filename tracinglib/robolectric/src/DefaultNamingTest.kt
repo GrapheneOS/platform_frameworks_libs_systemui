@@ -18,7 +18,6 @@
 
 package com.android.test.tracing.coroutines
 
-import android.platform.test.annotations.EnableFlags
 import com.android.app.tracing.coroutines.asyncTraced
 import com.android.app.tracing.coroutines.flow.collectLatestTraced
 import com.android.app.tracing.coroutines.flow.collectTraced
@@ -27,7 +26,6 @@ import com.android.app.tracing.coroutines.flow.mapTraced
 import com.android.app.tracing.coroutines.flow.transformTraced
 import com.android.app.tracing.coroutines.launchTraced
 import com.android.app.tracing.coroutines.withContextTraced
-import com.android.systemui.Flags.FLAG_COROUTINE_TRACING
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -45,7 +43,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /** Tests behavior of default names using reflection */
-@EnableFlags(FLAG_COROUTINE_TRACING)
 class DefaultNamingTest : TestBase() {
 
     @Test

@@ -16,16 +16,13 @@
 
 package com.android.test.tracing.coroutines
 
-import android.platform.test.annotations.EnableFlags
 import com.android.app.tracing.coroutines.parseStackForName
-import com.android.systemui.Flags.FLAG_COROUTINE_TRACING
 import java.lang.StackWalker.StackFrame
 import java.lang.invoke.MethodType
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /** Tests behavior of default names using reflection */
-@EnableFlags(FLAG_COROUTINE_TRACING)
 class WalkStackForNameTest : TestBase() {
 
     @Test

@@ -18,14 +18,12 @@
 
 package com.android.test.tracing.coroutines
 
-import android.platform.test.annotations.EnableFlags
 import com.android.app.tracing.coroutines.CoroutineTraceName
 import com.android.app.tracing.coroutines.TraceContextElement
 import com.android.app.tracing.coroutines.coroutineScopeTraced
 import com.android.app.tracing.coroutines.launchTraced
 import com.android.app.tracing.coroutines.traceCoroutine
 import com.android.app.tracing.coroutines.withContextTraced
-import com.android.systemui.Flags.FLAG_COROUTINE_TRACING
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -41,7 +39,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-@EnableFlags(FLAG_COROUTINE_TRACING)
 class CoroutineTracingTest : TestBase() {
 
     @Test

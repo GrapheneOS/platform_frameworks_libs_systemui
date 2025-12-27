@@ -18,7 +18,6 @@
 
 package com.android.test.tracing.coroutines
 
-import android.platform.test.annotations.EnableFlags
 import com.android.app.tracing.coroutines.TraceContextElement
 import com.android.app.tracing.coroutines.TraceData
 import com.android.app.tracing.coroutines.TraceStorage
@@ -26,7 +25,6 @@ import com.android.app.tracing.coroutines.createCoroutineTracingContext
 import com.android.app.tracing.coroutines.launchTraced
 import com.android.app.tracing.coroutines.traceCoroutine
 import com.android.app.tracing.coroutines.traceThreadLocal
-import com.android.systemui.Flags.FLAG_COROUTINE_TRACING
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -43,7 +41,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Test
 
-@EnableFlags(FLAG_COROUTINE_TRACING)
 class CoroutineTracingMachineryTest : TestBase() {
 
     override val extraContext: CoroutineContext by lazy { EmptyCoroutineContext }
