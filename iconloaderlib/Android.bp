@@ -48,13 +48,9 @@ android_library {
         "androidx.core_core",
         "com_android_launcher3_flags_lib",
         "com_android_systemui_shared_flags_lib",
-    ],
-    resource_dirs: [
-        "res",
+        "iconloader_base",
     ],
     srcs: [
-        "src/**/*.java",
-        "src/**/*.kt",
         "src_full_lib/**/*.java",
         "src_full_lib/**/*.kt",
     ],
