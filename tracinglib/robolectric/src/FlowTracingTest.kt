@@ -18,7 +18,6 @@
 
 package com.android.test.tracing.coroutines
 
-import android.platform.test.annotations.EnableFlags
 import com.android.app.tracing.coroutines.CoroutineTraceName
 import com.android.app.tracing.coroutines.createCoroutineTracingContext
 import com.android.app.tracing.coroutines.flow.collectLatestTraced
@@ -33,7 +32,6 @@ import com.android.app.tracing.coroutines.flow.traceAs
 import com.android.app.tracing.coroutines.launchInTraced
 import com.android.app.tracing.coroutines.launchTraced
 import com.android.app.tracing.coroutines.traceCoroutine
-import com.android.systemui.Flags.FLAG_COROUTINE_TRACING
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -57,7 +55,6 @@ import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-@EnableFlags(FLAG_COROUTINE_TRACING)
 class FlowTracingTest : TestBase() {
 
     @Test

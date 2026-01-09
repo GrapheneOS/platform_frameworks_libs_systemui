@@ -16,13 +16,11 @@
 
 package com.android.test.tracing.coroutines
 
-import android.platform.test.annotations.EnableFlags
 import com.android.app.tracing.coroutines.TraceContextElement
 import com.android.app.tracing.coroutines.TraceData
 import com.android.app.tracing.coroutines.createCoroutineTracingContext
 import com.android.app.tracing.coroutines.traceCoroutine
 import com.android.app.tracing.coroutines.traceThreadLocal
-import com.android.systemui.Flags.FLAG_COROUTINE_TRACING
 import com.android.test.tracing.coroutines.util.FakeTraceState
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -34,7 +32,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-@EnableFlags(FLAG_COROUTINE_TRACING)
 class FlagEnabledTest : TestBase() {
 
     override val extraContext: CoroutineContext by lazy { EmptyCoroutineContext }
@@ -65,7 +62,7 @@ class FlagEnabledTest : TestBase() {
                     "hello"
                 }) {
                     assertTrue(
-                        "Lazy string should be been called when FLAG_COROUTINE_TRACING is enabled, " +
+                        "Lazy string should be been called when coroutine tracing is enabled, " +
                             "even when Trace.isEnabled()=false",
                         lazyStringCalled,
                     )

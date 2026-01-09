@@ -18,11 +18,9 @@
 
 package com.android.test.tracing.coroutines
 
-import android.platform.test.annotations.EnableFlags
 import com.android.app.tracing.coroutines.createCoroutineTracingContext
 import com.android.app.tracing.coroutines.launchTraced
 import com.android.app.tracing.coroutines.traceCoroutine
-import com.android.systemui.Flags.FLAG_COROUTINE_TRACING
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -31,7 +29,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import org.junit.Test
 
-@EnableFlags(FLAG_COROUTINE_TRACING)
 class NestedCoroutineTracingTest : TestBase() {
 
     override val extraContext: CoroutineContext by lazy {

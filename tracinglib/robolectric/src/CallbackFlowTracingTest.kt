@@ -16,11 +16,9 @@
 
 package com.android.test.tracing.coroutines
 
-import android.platform.test.annotations.EnableFlags
 import com.android.app.tracing.coroutines.createCoroutineTracingContext
 import com.android.app.tracing.coroutines.flow.stateInTraced
 import com.android.app.tracing.coroutines.launchTraced
-import com.android.systemui.Flags.FLAG_COROUTINE_TRACING
 import java.util.concurrent.Executor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -129,7 +127,6 @@ private class ExampleRepositoryImpl(
                 )
 }
 
-@EnableFlags(FLAG_COROUTINE_TRACING)
 class CallbackFlowTracingTest : TestBase() {
 
     private val bgScope: CoroutineScope by lazy {

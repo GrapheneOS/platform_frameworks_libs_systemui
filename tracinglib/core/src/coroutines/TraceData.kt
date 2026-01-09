@@ -40,11 +40,7 @@ internal typealias TraceSection = String
 @PublishedApi
 internal class TraceDataThreadLocal : ThreadLocal<TraceStorage?>() {
     override fun initialValue(): TraceStorage? {
-        return if (
-            Compile.IS_DEBUG &&
-                com.android.systemui.Flags.coroutineTracing() &&
-                coroutineTracingEnabled
-        ) {
+        return if (Compile.IS_DEBUG && coroutineTracingEnabled) {
             TraceStorage()
         } else {
             null
