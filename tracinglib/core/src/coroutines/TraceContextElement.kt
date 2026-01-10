@@ -67,9 +67,7 @@ internal object DebugSysProps {
      */
     @JvmField
     val coroutineTracingEnabled =
-        Compile.IS_DEBUG &&
-            com.android.systemui.Flags.coroutineTracing() &&
-            SystemProperties.getBoolean("persist.debug.coroutine_tracing", false)
+        Compile.IS_DEBUG && SystemProperties.getBoolean("persist.debug.coroutine_tracing", false)
 
     /**
      * Value of `persist.debug.coroutine_tracing.walk_stack` sysprop
@@ -79,7 +77,6 @@ internal object DebugSysProps {
     @JvmField
     val stackWalkerAlwaysEnabled =
         Compile.IS_DEBUG &&
-            com.android.systemui.Flags.coroutineTracing() &&
             SystemProperties.getBoolean("persist.debug.coroutine_tracing.walk_stack", true)
 
     /**
@@ -90,7 +87,6 @@ internal object DebugSysProps {
     @JvmField
     val continuationCountingAlwaysEnabled =
         Compile.IS_DEBUG &&
-            com.android.systemui.Flags.coroutineTracing() &&
             SystemProperties.getBoolean(
                 "persist.debug.coroutine_tracing.count_continuations",
                 false,
@@ -104,7 +100,6 @@ internal object DebugSysProps {
     @JvmField
     val inheritParentSlices =
         Compile.IS_DEBUG &&
-            com.android.systemui.Flags.coroutineTracing() &&
             SystemProperties.getBoolean("persist.debug.coroutine_tracing.inherit_slices", false)
 
     /**
@@ -115,7 +110,6 @@ internal object DebugSysProps {
     @JvmField
     val dumpInitStack =
         Compile.IS_DEBUG &&
-            com.android.systemui.Flags.coroutineTracing() &&
             SystemProperties.getBoolean("persist.debug.coroutine_tracing.dump_init_stack", false)
 
     /**
@@ -126,7 +120,6 @@ internal object DebugSysProps {
     @JvmField
     val dumpContinuationStack =
         Compile.IS_DEBUG &&
-            com.android.systemui.Flags.coroutineTracing() &&
             SystemProperties.getBoolean(
                 "persist.debug.coroutine_tracing.dump_continuation_stack",
                 false,
@@ -140,7 +133,6 @@ internal object DebugSysProps {
     @JvmField
     val traceFlowValues =
         Compile.IS_DEBUG &&
-            com.android.systemui.Flags.coroutineTracing() &&
             SystemProperties.getBoolean("persist.debug.coroutine_tracing.flow_values", false)
 }
 
@@ -184,9 +176,7 @@ public fun createCoroutineTracingContext(
     testMode: Boolean = false,
     walkStackForDefaultNames: Boolean = false,
 ): CoroutineContext {
-    return if (
-        Compile.IS_DEBUG && com.android.systemui.Flags.coroutineTracing() && coroutineTracingEnabled
-    ) {
+    return if (Compile.IS_DEBUG && coroutineTracingEnabled) {
         TraceContextElement(
             // Minor perf optimization: no need to create TraceData() for root scopes since all
             // launches require creation of child via [copyForChild] or [mergeForChild].
