@@ -62,7 +62,7 @@ class FlagEnabledTest : TestBase() {
                     "hello"
                 }) {
                     assertTrue(
-                        "Lazy string should be been called when coroutine tracing is enabled, " +
+                        "Lazy string should be called when coroutine tracing is enabled, " +
                             "even when Trace.isEnabled()=false",
                         lazyStringCalled,
                     )

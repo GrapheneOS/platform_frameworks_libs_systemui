@@ -92,6 +92,13 @@ flag {
 }
 
 flag {
+    name: "launcher_animation_shell_migration"
+    namespace: "systemui"
+    description: "Migrate old animation APIs to newer shell transition APIs"
+    bug: "449709471"
+}
+
+flag {
     name: "pan_and_zoom_in_extended_wallpaper_effects"
     namespace: "systemui"
     description: "Support pan & zoom for extended wallpaper effects"
