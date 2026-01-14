@@ -190,22 +190,22 @@ class MutatedComponentGenerator(private val targetClass: KSClassDeclaration) {
     }
 
     fun generate(codeGenerator: CodeGenerator) {
-        val file =
-            codeGenerator.createNewFile(
+        // Create the complete code first in case there are any processing errors
+        val writer =
+            CodeWriter().apply {
+                write("package $packageName\n")
+
+                writeUnifiedModule()
+                writeUnifiedComponent()
+                writeHelperExtension()
+            }
+        codeGenerator
+            .createNewFile(
                 Dependencies(false, targetClass.containingFile!!),
                 packageName,
                 modifiedComponentName,
             )
-
-        val writer = CodeWriter()
-        writer.apply {
-            write("package $packageName\n")
-
-            writeUnifiedModule()
-            writeUnifiedComponent()
-            writeHelperExtension()
-        }
-        file.use { it.write(writer.toString().toByteArray()) }
+            .use { it.write(writer.toString().toByteArray()) }
     }
 
     companion object {

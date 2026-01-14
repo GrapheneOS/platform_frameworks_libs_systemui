@@ -34,10 +34,11 @@ class MyProcessor(private val codeGenerator: CodeGenerator, private val logger: 
             .filter {
                 try {
                     MutatedComponentGenerator(it).generate(codeGenerator)
+                    logger.info("Generation successful: $it")
                     // Code successfully generated, skip
                     false
                 } catch (e: Throwable) {
-                    logger.exception(e)
+                    logger.warn("Generation skipped $it, will try again: " + e.message)
                     // Generation failed, try again
                     true
                 }
