@@ -17,6 +17,7 @@
 package com.android.mechanics.impl
 
 import android.util.Log
+import androidx.annotation.CallSuper
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastIsFinite
@@ -58,8 +59,13 @@ internal abstract class Computations : CurrentFrameInput, LastFrameState, Static
     internal val currentComputedValues: ComputedValues
         get() {
             val currentSpec: MotionSpec = spec
-            if (currentSpec == MotionSpec.InitiallyUndefined) {
+            if (currentSpec === MotionSpec.InitiallyUndefined) {
                 requireNoMotionSpecSet()
+                return memoizedComputedValues
+            }
+
+            if (memoizedSpec === MotionSpec.InitiallyUndefined) {
+                snapToInput()
                 return memoizedComputedValues
             }
 
@@ -76,62 +82,51 @@ internal abstract class Computations : CurrentFrameInput, LastFrameState, Static
                 return memoizedComputedValues
             }
 
-            val isInitialComputation = memoizedSpec == MotionSpec.InitiallyUndefined
-
             memoizedSpec = currentSpec
             memoizedInput = currentInput
             memoizedAnimationTimeNanos = currentAnimationTimeNanos
             memoizedDirection = currentDirection
 
-            memoizedComputedValues =
-                if (isInitialComputation) {
-                    ComputedValues(
-                        currentSpec.segmentAtInput(currentInput, currentDirection),
-                        GuaranteeState.Inactive,
-                        DiscontinuityAnimation.None,
-                        BreakpointHaptics.None,
-                    )
-                } else {
-                    val segment: SegmentData =
-                        computeSegmentData(
-                            spec = currentSpec,
-                            input = currentInput,
-                            direction = currentDirection,
-                        )
+            val segment: SegmentData =
+                computeSegmentData(
+                    spec = currentSpec,
+                    input = currentInput,
+                    direction = currentDirection,
+                )
 
-                    val segmentChange: SegmentChangeType =
-                        getSegmentChangeType(
-                            segment = segment,
-                            input = currentInput,
-                            direction = currentDirection,
-                        )
+            val segmentChange: SegmentChangeType =
+                getSegmentChangeType(
+                    segment = segment,
+                    input = currentInput,
+                    direction = currentDirection,
+                )
 
-                    val guarantee: GuaranteeState =
-                        computeGuaranteeState(
-                            segment = segment,
-                            segmentChange = segmentChange,
-                            input = currentInput,
-                        )
+            val guarantee: GuaranteeState =
+                computeGuaranteeState(
+                    segment = segment,
+                    segmentChange = segmentChange,
+                    input = currentInput,
+                )
 
-                    val animation: DiscontinuityAnimation =
-                        computeAnimation(
-                            segment = segment,
-                            guarantee = guarantee,
-                            segmentChange = segmentChange,
-                            spec = currentSpec,
-                            input = currentInput,
-                            animationTimeNanos = currentAnimationTimeNanos,
-                        )
+            val animation: DiscontinuityAnimation =
+                computeAnimation(
+                    segment = segment,
+                    guarantee = guarantee,
+                    segmentChange = segmentChange,
+                    spec = currentSpec,
+                    input = currentInput,
+                    animationTimeNanos = currentAnimationTimeNanos,
+                )
 
-                    val breakpointHaptics = computeBreakpointHaptics(segment, segmentChange)
+            val breakpointHaptics = computeBreakpointHaptics(segment, segmentChange)
 
-                    ComputedValues(segment, guarantee, animation, breakpointHaptics)
-                }
-            return memoizedComputedValues
+            return ComputedValues(segment, guarantee, animation, breakpointHaptics).also {
+                memoizedComputedValues = it
+            }
         }
 
     // currentSpringState input
-    private var memoizedAnimation: DiscontinuityAnimation? = null
+    private var memoizedAnimation: DiscontinuityAnimation = DiscontinuityAnimation.None
     private var memoizedTimeNanos: Long = Long.MIN_VALUE
 
     // currentSpringState output
@@ -241,6 +236,32 @@ internal abstract class Computations : CurrentFrameInput, LastFrameState, Static
 
         val frameDuration = frameDurationNanos / 1_000_000_000.0
         return (directMappedDelta / frameDuration).toFloat()
+    }
+
+    /**
+     * Immediately ends all animations, and updates the output to the target state.
+     *
+     * Currently only used when transitionong from InitiallyUndefined -> spec, requires more tests
+     * before making available as API.
+     */
+    @CallSuper
+    protected open fun snapToInput() {
+        memoizedSpec = spec
+        memoizedInput = currentInput
+        memoizedAnimationTimeNanos = currentAnimationTimeNanos
+        memoizedDirection = currentDirection
+
+        memoizedComputedValues =
+            ComputedValues(
+                memoizedSpec.segmentAtInput(memoizedInput, memoizedDirection),
+                GuaranteeState.Inactive,
+                DiscontinuityAnimation.None,
+                BreakpointHaptics.None,
+            )
+
+        memoizedAnimation = DiscontinuityAnimation.None
+        memoizedTimeNanos = currentAnimationTimeNanos
+        memoizedSpringState = SpringState.AtRest
     }
 
     /**

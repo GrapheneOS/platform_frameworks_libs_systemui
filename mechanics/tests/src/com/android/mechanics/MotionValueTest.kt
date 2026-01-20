@@ -118,6 +118,24 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
         }
 
     @Test
+    // Regression test for b/477165055
+    fun unspecifiedSpec_atTheBeginning_readingWithoutFrameAdvance_doesNotPoisonState() =
+        motion.goldenTest(
+            spec = MotionSpec.InitiallyUndefined,
+            verifyTimeSeries = {
+                // Same golden as the test above
+                AssertTimeSeriesMatchesGolden("unspecifiedSpec_atTheBeginning_jumpcutsToFirstValue")
+            },
+        ) {
+            animateValueTo(10f, changePerFrame = 5f)
+            assertThat(underTest.output).isNaN()
+            spec = MotionSpec.Identity
+            // The extra read below caused problems.
+            assertThat(underTest.output).isFinite()
+            animateValueTo(20f, changePerFrame = 5f)
+        }
+
+    @Test
     fun unspecifiedSpec_onAlreadyInitializedValue_throws() {
         assertFailsWith<IllegalArgumentException> {
             motion.goldenTest(spec = MotionSpec.Identity) {
@@ -731,6 +749,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
                 Log.setWtfHandler { tag, what, _ ->
                     if (tag == MotionValue.TAG) {
                         loggedFailures.add(checkNotNull(what.message))
+                        println(Exception(what.message).stackTraceToString())
                     }
                 }
         }
