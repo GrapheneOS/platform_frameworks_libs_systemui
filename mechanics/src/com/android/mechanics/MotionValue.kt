@@ -359,10 +359,28 @@ private class ObservableComputations(
 
     // ---- Computations ---------------------------------------------------------------------------
 
+    private var snappedToInput by mutableStateOf(false)
+
+    protected override fun snapToInput() {
+        super.snapToInput()
+
+        with(currentComputedValues) {
+            lastSegment = segment
+            lastGuaranteeState = guarantee
+            lastAnimation = animation
+        }
+        directMappedVelocity = 0f
+        lastSpringState = currentSpringState
+        lastFrameTimeNanos = -1L
+        lastInput = currentInput
+        lastGestureDragOffset = currentGestureDragOffset
+
+        snappedToInput = true
+    }
+
     suspend fun keepRunning(continueRunning: () -> Boolean) {
         check(!isActive) { "MotionValue($label) is already running" }
         isActive = true
-
         // These `captured*` values will be applied to the `last*` values, at the beginning
         // of the each new frame.
         // TODO(b/397837971): Encapsulate the state in a StateRecord.
@@ -375,6 +393,7 @@ private class ObservableComputations(
         var capturedInput = currentInput
         var capturedGestureDragOffset = currentGestureDragOffset
         var capturedDirection = currentDirection
+        snappedToInput = false
 
         try {
             debugIsAnimating = true
@@ -390,7 +409,11 @@ private class ObservableComputations(
                 withFrameNanos { frameTimeNanos ->
                     currentAnimationTimeNanos = frameTimeNanos
 
-                    // With the new frame started, copy
+                    if (snappedToInput) {
+                        // during the last frame, onSnapToInput was performed; do not clobber
+                        // the last* state, this was reset in onSnapToInput  already.
+                        return@withFrameNanos
+                    }
 
                     lastSegment = capturedSegment
                     lastGuaranteeState = capturedGuaranteeState
@@ -418,7 +441,7 @@ private class ObservableComputations(
 
                 var scheduleNextFrame = false
                 var breakpointHaptics: BreakpointHaptics? = null
-                if (!isSameSegmentAndAtRest) {
+                if (!isSameSegmentAndAtRest || snappedToInput) {
                     // Read currentComputedValues only once and update it, if necessary
                     val currentValues = currentComputedValues
 
@@ -467,6 +490,7 @@ private class ObservableComputations(
                 }
 
                 capturedFrameTimeNanos = currentAnimationTimeNanos
+                snappedToInput = false
 
                 debugInspector?.run {
                     frame =
