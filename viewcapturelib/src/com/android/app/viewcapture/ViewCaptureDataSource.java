@@ -53,6 +53,8 @@ class ViewCaptureDataSource
         public final Map<String, Integer> mInternMapWindowName = new HashMap<>();
         public final Map<String, Integer> mInternMapViewId = new HashMap<>();
         public final Map<String, Integer> mInternMapClassName = new HashMap<>();
+        public final Map<String, Integer> mInternMapContentDescription = new HashMap<>();
+        public final Map<String, Integer> mInternMapText = new HashMap<>();
         public boolean mHasNotifiedClearedState = false;
     }
 

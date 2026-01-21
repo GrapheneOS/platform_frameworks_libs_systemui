@@ -22,6 +22,7 @@ import android.internal.perfetto.protos.TracePacketOuterClass.TracePacket
 import android.internal.perfetto.protos.Viewcapture.ViewCapture as ViewCaptureMessage
 import android.internal.perfetto.protos.WinscopeExtensionsImplOuterClass.WinscopeExtensionsImpl
 import android.os.Trace
+import android.text.TextUtils
 import android.tracing.perfetto.DataSourceParams
 import android.tracing.perfetto.InitArguments
 import android.tracing.perfetto.Producer
@@ -52,6 +53,8 @@ internal constructor(private val context: Context, executor: Executor) :
         val windowNames = mutableListOf<String>()
         val viewIds = mutableListOf<String>()
         val classNames = mutableListOf<String>()
+        val contentDescriptions = mutableListOf<String>()
+        val text = mutableListOf<String>()
     }
 
     init {
@@ -203,6 +206,24 @@ internal constructor(private val context: Context, executor: Executor) :
 
         os.write(ViewCaptureMessage.View.ELEVATION, view.elevation)
 
+        if (!TextUtils.isEmpty(view.contentDescription)) {
+            os.write(
+                ViewCaptureMessage.View.CONTENT_DESCRIPTION_IID,
+                internContentDescription(
+                    view.contentDescription.toString(),
+                    incrementalState,
+                    newInternedStrings,
+                ),
+            )
+        }
+
+        if (!TextUtils.isEmpty(view.text)) {
+            os.write(
+                ViewCaptureMessage.View.TEXT_IID,
+                internText(view.text.toString(), incrementalState, newInternedStrings),
+            )
+        }
+
         os.end(token)
     }
 
@@ -248,6 +269,26 @@ internal constructor(private val context: Context, executor: Executor) :
             incrementalState.mInternMapWindowName,
             newInternedStrings.windowNames,
         )
+    }
+
+    private fun internContentDescription(
+        string: String,
+        incrementalState: ViewCaptureDataSource.IncrementalState,
+        newInternedStrings: NewInternedStrings,
+    ): Int {
+        return internString(
+            string,
+            incrementalState.mInternMapContentDescription,
+            newInternedStrings.contentDescriptions,
+        )
+    }
+
+    private fun internText(
+        string: String,
+        incrementalState: ViewCaptureDataSource.IncrementalState,
+        newInternedStrings: NewInternedStrings,
+    ): Int {
+        return internString(string, incrementalState.mInternMapText, newInternedStrings.text)
     }
 
     private fun internString(
@@ -304,6 +345,18 @@ internal constructor(private val context: Context, executor: Executor) :
             InternedData.VIEWCAPTURE_WINDOW_NAME,
             incrementalState.mInternMapWindowName,
             newInternedStrings.windowNames,
+        )
+        serializeInternMap(
+            os,
+            InternedData.VIEWCAPTURE_CONTENT_DESCRIPTION,
+            incrementalState.mInternMapContentDescription,
+            newInternedStrings.contentDescriptions,
+        )
+        serializeInternMap(
+            os,
+            InternedData.VIEWCAPTURE_TEXT,
+            incrementalState.mInternMapText,
+            newInternedStrings.text,
         )
         os.end(token)
     }
