@@ -44,6 +44,6 @@ object CachedObjectCachingLogic : CachingLogic<CachedObject> {
 
     override fun getApplicationInfo(info: CachedObject) = info.applicationInfo
 
-    override fun getFreshnessIdentifier(item: CachedObject, provider: IconProvider): String? =
+    override fun getFreshnessIdentifier(item: CachedObject, provider: IconProvider) =
         item.getFreshnessIdentifier(provider)
 }
