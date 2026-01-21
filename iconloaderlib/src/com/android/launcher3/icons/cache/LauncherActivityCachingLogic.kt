@@ -69,8 +69,6 @@ object LauncherActivityCachingLogic : CachingLogic<LauncherActivityInfo> {
         }
     }
 
-    override fun getFreshnessIdentifier(
-        item: LauncherActivityInfo,
-        provider: IconProvider,
-    ): String? = provider.getStateForApp(getApplicationInfo(item))
+    override fun getFreshnessIdentifier(item: LauncherActivityInfo, provider: IconProvider) =
+        provider.getStateForApp(getApplicationInfo(item))
 }

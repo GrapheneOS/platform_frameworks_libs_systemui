@@ -146,7 +146,9 @@ class IconCacheUpdateHandler(
 
                         if (
                             freshnessId ==
-                                cachingLogic.getFreshnessIdentifier(app, iconCache.iconProvider)
+                                cachingLogic
+                                    .getFreshnessIdentifier(app, iconCache.iconProvider)
+                                    ?.toString()
                         ) {
                             // Item is up-to-date
                             continue
@@ -195,7 +197,8 @@ class IconCacheUpdateHandler(
 
             itr.remove()
             if (
-                row.freshnessId != cachingLogic.getFreshnessIdentifier(app, iconCache.iconProvider)
+                row.freshnessId !=
+                    cachingLogic.getFreshnessIdentifier(app, iconCache.iconProvider)?.toString()
             ) {
                 appsToUpdate.add(app)
             }
@@ -225,7 +228,8 @@ class IconCacheUpdateHandler(
         // Ignore any application info entries which are already correct
         itemsToDelete.removeIf { row ->
             val info = packageAppInfoMap[ComponentKey(row.componentName, row.user)]
-            info != null && row.freshnessId == iconCache.iconProvider.getStateForApp(info)
+            info != null &&
+                row.freshnessId == iconCache.iconProvider.getStateForApp(info).toString()
         }
 
         // Commit all deletes
