@@ -147,13 +147,6 @@ flag {
 }
 
 flag {
-  name: "status_bar_connected_displays"
-  namespace: "lse_desktop_experience"
-  description: "Shows the status bar on connected displays"
-  bug: "379264862"
-}
-
-flag {
     name: "three_button_corner_swipe"
     namespace: "systemui"
     description: "Allow the Assistant corner swipe gesture while in 3 button mode"
