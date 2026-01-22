@@ -633,6 +633,8 @@ public abstract class ViewCapture {
         public float scaleX, scaleY;
         public float alpha;
         public float elevation;
+        public CharSequence contentDescription;
+        public CharSequence text;
 
         public int visibility;
         public boolean willNotDraw;
@@ -661,6 +663,11 @@ public abstract class ViewCapture {
             scaleY = in.getScaleY();
             alpha = in.getAlpha();
             elevation = in.getElevation();
+            contentDescription = in.getContentDescription();
+            text =
+                    (in instanceof android.widget.TextView)
+                            ? ((android.widget.TextView) in).getText()
+                            : null;
 
             visibility = in.getVisibility();
             willNotDraw = in.willNotDraw();
@@ -696,6 +703,8 @@ public abstract class ViewCapture {
             out.willNotDraw = this.willNotDraw;
             out.clipChildren = this.clipChildren;
             out.elevation = this.elevation;
+            out.contentDescription = this.contentDescription;
+            out.text = this.text;
         }
 
         /**
