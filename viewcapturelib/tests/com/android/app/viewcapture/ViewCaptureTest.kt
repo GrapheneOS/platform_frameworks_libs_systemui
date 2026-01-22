@@ -25,9 +25,8 @@ import android.widget.TextView
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.app.viewcapture.TestActivity.Companion.TEXT_VIEW_COUNT
-import com.android.app.viewcapture.data.MotionWindowData
-import junit.framework.Assert.assertEquals
+import com.android.app.viewcapture.ViewCapture.ViewPropertyRef
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,9 +37,18 @@ class ViewCaptureTest {
 
     private val memorySize = 100
     private val initPoolSize = 15
+    private val capturedData = mutableListOf<ViewPropertyRef>()
+
     private val viewCapture by lazy {
-        object :
-            ViewCapture(memorySize, initPoolSize, MAIN_EXECUTOR) {}
+        object : ViewCapture(memorySize, initPoolSize, MAIN_EXECUTOR) {
+            override fun onCapturedViewPropertiesBg(
+                elapsedRealtimeNanos: Long,
+                windowName: String,
+                startFlattenedViewTree: ViewPropertyRef,
+            ) {
+                capturedData.add(startFlattenedViewTree)
+            }
+        }
     }
 
     private val activityIntent =
@@ -51,12 +59,10 @@ class ViewCaptureTest {
     @Test
     fun testWindowListenerDumpsOneFrameAfterInvalidate() {
         activityScenarioRule.scenario.onActivity { activity ->
+            capturedData.clear()
             val closeable = startViewCaptureAndInvalidateNTimes(1, activity)
-            val rootView = activity.requireViewById<View>(android.R.id.content)
-            val data = viewCapture.getDumpTask(rootView).get().get()
-
-            assertEquals(1, data.frameDataList.size)
-            verifyTestActivityViewHierarchy(data)
+            assertEquals(1, capturedData.size)
+            verifyTestActivityViewHierarchy(capturedData.last())
             closeable.close()
         }
     }
@@ -64,15 +70,13 @@ class ViewCaptureTest {
     @Test
     fun testWindowListenerDumpsCorrectlyAfterRecyclingStarted() {
         activityScenarioRule.scenario.onActivity { activity ->
+            capturedData.clear()
             val closeable = startViewCaptureAndInvalidateNTimes(memorySize + 5, activity)
-            val rootView = activity.requireViewById<View>(android.R.id.content)
-            val data = viewCapture.getDumpTask(rootView).get().get()
 
             // since ViewCapture MEMORY_SIZE is [viewCaptureMemorySize], only
-            // [viewCaptureMemorySize] frames are exported, although the view is invalidated
-            // [viewCaptureMemorySize + 5] times
-            assertEquals(memorySize, data.frameDataList.size)
-            verifyTestActivityViewHierarchy(data)
+            // [viewCaptureMemorySize] frames are stored in the ring buffer.
+            assertEquals(memorySize + 5, capturedData.size)
+            verifyTestActivityViewHierarchy(capturedData.last())
             closeable.close()
         }
     }
@@ -91,21 +95,18 @@ class ViewCaptureTest {
         }
     }
 
-    private fun verifyTestActivityViewHierarchy(exportedData: MotionWindowData) {
-        for (frame in exportedData.frameDataList) {
-            val testActivityRoot =
-                frame.node // FrameLayout (android.R.id.content)
-                    .childrenList
-                    .first() // LinearLayout (set by setContentView())
-            assertEquals(TEXT_VIEW_COUNT, testActivityRoot.childrenList.size)
-            assertEquals(
-                LinearLayout::class.qualifiedName,
-                exportedData.getClassname(testActivityRoot.classnameIndex)
-            )
-            assertEquals(
-                TextView::class.qualifiedName,
-                exportedData.getClassname(testActivityRoot.childrenList.first().classnameIndex)
-            )
+    private fun verifyTestActivityViewHierarchy(start: ViewPropertyRef) {
+        var ref: ViewPropertyRef? = start
+        assertEquals(1, ref?.childCount)
+
+        ref = ref?.next
+        assertEquals(TestActivity.TEXT_VIEW_COUNT, ref?.childCount)
+        assertEquals(LinearLayout::class.java, ref?.clazz)
+
+        for (i in 0 until TestActivity.TEXT_VIEW_COUNT) {
+            ref = ref?.next
+            assertEquals(0, ref?.childCount)
+            assertEquals(TextView::class.java, ref?.clazz)
         }
     }
 }
