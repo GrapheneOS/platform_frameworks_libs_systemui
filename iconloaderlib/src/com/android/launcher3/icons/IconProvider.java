@@ -58,14 +58,12 @@ public class IconProvider {
 
     private static final String ICON_METADATA_KEY_PREFIX = ".dynamic_icons";
 
-    private static final String SYSTEM_STATE_SEPARATOR = " ";
-
     protected final Context mContext;
     private final ComponentName mCalendar;
     private final ComponentName mClock;
 
     @NonNull
-    protected String mSystemState = "";
+    protected PersistedItemState mSystemState = new PersistedItemState();
 
     public IconProvider(Context context) {
         mContext = context;
@@ -80,25 +78,24 @@ public class IconProvider {
      *
      * @see #updateSystemState()
      */
-    public String getStateForApp(@Nullable ApplicationInfo appInfo) {
+    public PersistedItemState getStateForApp(@Nullable ApplicationInfo appInfo) {
         if (appInfo == null) {
             return mSystemState;
         }
 
         if (mCalendar != null && mCalendar.getPackageName().equals(appInfo.packageName)) {
-            return mSystemState + SYSTEM_STATE_SEPARATOR + getDay() + SYSTEM_STATE_SEPARATOR
-                    + getApplicationInfoHash(appInfo);
+            return getApplicationInfoHash(appInfo).withAdditionalValues(Integer.toString(getDay()));
         } else {
-            return mSystemState + SYSTEM_STATE_SEPARATOR + getApplicationInfoHash(appInfo);
+            return getApplicationInfoHash(appInfo);
         }
     }
 
     /**
      * Returns a hash to uniquely identify a particular version of appInfo
      */
-    protected String getApplicationInfoHash(@NonNull ApplicationInfo appInfo) {
+    protected PersistedItemState getApplicationInfoHash(@NonNull ApplicationInfo appInfo) {
         // The hashString in source dir changes with every install
-        return appInfo.sourceDir;
+        return mSystemState.withAdditionalValues(appInfo.sourceDir);
     }
 
     /**
@@ -269,8 +266,9 @@ public class IconProvider {
      * and system-version.
      */
     public void updateSystemState() {
-        mSystemState = mContext.getResources().getConfiguration().getLocales().toLanguageTags()
-                + "," + Build.VERSION.SDK_INT;
+        mSystemState = mSystemState.withLocaleAndSdk(
+                mContext.getResources().getConfiguration().getLocales().toLanguageTags(),
+                Build.VERSION.SDK_INT);
     }
 
     /**

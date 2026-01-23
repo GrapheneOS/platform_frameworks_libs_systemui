@@ -21,6 +21,7 @@ import android.content.pm.ApplicationInfo
 import android.os.UserHandle
 import com.android.launcher3.icons.BitmapInfo
 import com.android.launcher3.icons.IconProvider
+import com.android.launcher3.icons.PersistedItemState
 import com.android.launcher3.icons.SourceHint
 import com.android.launcher3.util.ComponentKey
 
@@ -30,7 +31,7 @@ interface CachingLogic<T> {
         return SourceHint(
             key = ComponentKey(getComponent(item), getUser(item)),
             logic = this,
-            freshnessId = getFreshnessIdentifier(item, cache.iconProvider),
+            freshnessId = getFreshnessIdentifier(item, cache.iconProvider)?.toString(),
         )
     }
 
@@ -53,5 +54,5 @@ interface CachingLogic<T> {
      * Returns a persistable string that can be used to indicate indicate the correctness of the
      * cache for the provided item
      */
-    fun getFreshnessIdentifier(item: T, iconProvider: IconProvider): String?
+    fun getFreshnessIdentifier(item: T, iconProvider: IconProvider): PersistedItemState?
 }

@@ -47,6 +47,7 @@ import com.android.launcher3.icons.BitmapInfo
 import com.android.launcher3.icons.BitmapInfo.Companion.LOW_RES_ICON
 import com.android.launcher3.icons.GraphicsUtils
 import com.android.launcher3.icons.IconProvider
+import com.android.launcher3.icons.PersistedItemState
 import com.android.launcher3.icons.SourceHint
 import com.android.launcher3.icons.ThemedBitmap
 import com.android.launcher3.icons.cache.CacheLookupFlag.Companion.DEFAULT_LOOKUP_FLAG
@@ -591,7 +592,7 @@ constructor(
         label: CharSequence,
         key: ComponentName,
         userSerial: Long,
-        freshnessId: String,
+        freshnessId: PersistedItemState,
     ) {
         val values = ContentValues()
         if (bitmapInfo.canPersist()) {
@@ -608,7 +609,7 @@ constructor(
 
         values.put(COLUMN_COMPONENT, key.flattenToString())
         values.put(COLUMN_USER, userSerial)
-        values.put(COLUMN_FRESHNESS_ID, freshnessId)
+        values.put(COLUMN_FRESHNESS_ID, freshnessId.toString())
         iconDb.insertOrReplace(values)
     }
 
