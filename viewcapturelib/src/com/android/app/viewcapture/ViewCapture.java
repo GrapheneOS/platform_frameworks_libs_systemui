@@ -16,11 +16,7 @@
 
 package com.android.app.viewcapture;
 
-import static com.android.app.viewcapture.data.ExportedData.MagicNumber.MAGIC_NUMBER_H;
-import static com.android.app.viewcapture.data.ExportedData.MagicNumber.MAGIC_NUMBER_L;
-
 import android.content.ComponentCallbacks2;
-import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.media.permission.SafeCloseable;
@@ -44,27 +40,12 @@ import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 
-import com.android.app.viewcapture.data.ExportedData;
-import com.android.app.viewcapture.data.FrameData;
-import com.android.app.viewcapture.data.MotionWindowData;
-import com.android.app.viewcapture.data.ViewNode;
-import com.android.app.viewcapture.data.WindowData;
-
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * Utility class for capturing view data every frame
@@ -77,16 +58,12 @@ public abstract class ViewCapture {
     private static final int PFLAG_INVALIDATED = 0x80000000;
     private static final int PFLAG_DIRTY_MASK = 0x00200000;
 
-    private static final long MAGIC_NUMBER_FOR_WINSCOPE =
-            ((long) MAGIC_NUMBER_H.getNumber() << 32) | MAGIC_NUMBER_L.getNumber();
-
     // Number of frames to keep in memory
     private final int mMemorySize;
 
     // Number of ViewPropertyRef to preallocate per window
     private final int mInitPoolSize;
 
-    protected static final int DEFAULT_MEMORY_SIZE = 2000;
     // Initial size of the reference pool. This is at least be 5 * total number of views in
     // Launcher. This allows the first free frames avoid object allocation during view capture.
     protected static final int DEFAULT_INIT_POOL_SIZE = 300;
@@ -183,60 +160,6 @@ public abstract class ViewCapture {
         mIsEnabled = isEnabled;
         mListeners.forEach(WindowListener::detachFromRoot);
         if (mIsEnabled) mListeners.forEach(WindowListener::attachToRoot);
-    }
-
-    @AnyThread
-    protected void dumpTo(OutputStream os, Context context)
-            throws InterruptedException, ExecutionException, IOException {
-        if (mIsEnabled) {
-            DataOutputStream dataOutputStream = new DataOutputStream(os);
-            ExportedData ex = getExportedData(context);
-            dataOutputStream.writeInt(ex.getSerializedSize());
-            ex.writeTo(dataOutputStream);
-        }
-    }
-
-    @VisibleForTesting
-    public ExportedData getExportedData(Context context)
-            throws InterruptedException, ExecutionException {
-        ArrayList<Class> classList = new ArrayList<>();
-        return ExportedData.newBuilder()
-                .setMagicNumber(MAGIC_NUMBER_FOR_WINSCOPE)
-                .setPackage(context.getPackageName())
-                .addAllWindowData(getWindowData(context, classList, l -> l.mIsActive).get())
-                .addAllClassname(toStringList(classList))
-                .setRealToElapsedTimeOffsetNanos(TimeUnit.MILLISECONDS
-                        .toNanos(System.currentTimeMillis()) - SystemClock.elapsedRealtimeNanos())
-                .build();
-    }
-
-    private static List<String> toStringList(List<Class> classList) {
-        return classList.stream().map(Class::getName).collect(Collectors.toList());
-    }
-
-    public CompletableFuture<Optional<MotionWindowData>> getDumpTask(View view) {
-        ArrayList<Class> classList = new ArrayList<>();
-        return getWindowData(view.getContext().getApplicationContext(), classList,
-                l -> l.mRoot.equals(view)).thenApply(list -> list.stream().findFirst().map(w ->
-                MotionWindowData.newBuilder()
-                        .addAllFrameData(w.getFrameDataList())
-                        .addAllClassname(toStringList(classList))
-                        .build()));
-    }
-
-    @AnyThread
-    private CompletableFuture<List<WindowData>> getWindowData(Context context,
-            ArrayList<Class> outClassList, Predicate<WindowListener> filter) {
-        ViewIdProvider idProvider = new ViewIdProvider(context.getResources());
-        return CompletableFuture.supplyAsync(
-                () -> mListeners.stream()
-                        .filter(filter)
-                        .collect(Collectors.toList()),
-                MAIN_EXECUTOR).thenApplyAsync(
-                        it -> it.stream()
-                                .map(l -> l.dumpToProto(idProvider, outClassList))
-                                .collect(Collectors.toList()),
-                        mBgExecutor);
     }
 
     @WorkerThread
@@ -546,25 +469,6 @@ public abstract class ViewCapture {
             }
         }
 
-        @WorkerThread
-        private WindowData dumpToProto(ViewIdProvider idProvider, ArrayList<Class> classList) {
-            ViewPropertyRef[] nodesBg = mNodesBg.get();
-            long[] frameTimesNanosBg = mFrameTimesNanosBg.get();
-
-            WindowData.Builder builder = WindowData.newBuilder().setTitle(name);
-            int size = (nodesBg[mMemorySize - 1] == null) ? mFrameIndexBg + 1 : mMemorySize;
-            for (int i = size - 1; i >= 0; i--) {
-                int index = (mMemorySize + mFrameIndexBg - i) % mMemorySize;
-                ViewNode.Builder nodeBuilder = ViewNode.newBuilder();
-                nodesBg[index].toProto(idProvider, classList, nodeBuilder);
-                FrameData.Builder frameDataBuilder = FrameData.newBuilder()
-                        .setNode(nodeBuilder)
-                        .setTimestamp(frameTimesNanosBg[index]);
-                builder.addFrameData(frameDataBuilder);
-            }
-            return builder.build();
-        }
-
         @UiThread
         private ViewPropertyRef captureViewTree(View view, ViewPropertyRef start) {
             ViewPropertyRef ref = getFromPool();
@@ -705,46 +609,6 @@ public abstract class ViewCapture {
             out.elevation = this.elevation;
             out.contentDescription = this.contentDescription;
             out.text = this.text;
-        }
-
-        /**
-         * Converts the data to the proto representation and returns the next property ref
-         * at the end of the iteration.
-         */
-        public ViewPropertyRef toProto(ViewIdProvider idProvider, ArrayList<Class> classList,
-                ViewNode.Builder viewNode) {
-            int classnameIndex = classList.indexOf(clazz);
-            if (classnameIndex < 0) {
-                classnameIndex = classList.size();
-                classList.add(clazz);
-            }
-
-            viewNode.setClassnameIndex(classnameIndex)
-                    .setHashcode(hashCode)
-                    .setId(idProvider.getName(id))
-                    .setLeft(left)
-                    .setTop(top)
-                    .setWidth(right - left)
-                    .setHeight(bottom - top)
-                    .setTranslationX(translateX)
-                    .setTranslationY(translateY)
-                    .setScrollX(scrollX)
-                    .setScrollY(scrollY)
-                    .setScaleX(scaleX)
-                    .setScaleY(scaleY)
-                    .setAlpha(alpha)
-                    .setVisibility(visibility)
-                    .setWillNotDraw(willNotDraw)
-                    .setElevation(elevation)
-                    .setClipChildren(clipChildren);
-
-            ViewPropertyRef result = next;
-            for (int i = 0; (i < childCount) && (result != null); i++) {
-                ViewNode.Builder childViewNode = ViewNode.newBuilder();
-                result = result.toProto(idProvider, classList, childViewNode);
-                viewNode.addChildren(childViewNode);
-            }
-            return result;
         }
 
         @Override
