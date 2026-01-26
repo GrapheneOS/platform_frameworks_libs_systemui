@@ -77,7 +77,7 @@ object GraphicsUtils {
         }
     }
 
-    /** Compresses BitmapInfo default shape bitmap to a byte array **/
+    /** Compresses BitmapInfo default shape bitmap to a byte array */
     @JvmStatic
     fun createDefaultFlatBitmap(bitmapInfo: BitmapInfo): ByteArray {
         // BitmapInfo uses immutable hardware bitmaps, so we need to make a software copy to apply
@@ -215,6 +215,7 @@ object GraphicsUtils {
     }
 
     /** Returns a color filter which is equivalent to [filter] x BlendModeFilter with [color] */
+    @JvmStatic
     fun getColorMultipliedFilter(color: Int, filter: ColorFilter?): ColorFilter? {
         if (Color.alpha(color) == 0) return filter
         if (filter == null) return BlendModeColorFilter(color, BlendMode.SRC_IN)

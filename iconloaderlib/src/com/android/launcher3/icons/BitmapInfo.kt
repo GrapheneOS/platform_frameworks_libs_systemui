@@ -18,9 +18,10 @@ package com.android.launcher3.icons
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
-import androidx.annotation.ColorRes
-import androidx.annotation.DrawableRes
 import androidx.annotation.IntDef
+import com.android.launcher3.BadgeProvider
+import com.android.launcher3.BadgeProvider.BadgeType
+import com.android.launcher3.BadgeProvider.DefaultBadgeProvider
 import com.android.launcher3.icons.BitmapInfo.Companion.FLAG_THEMED
 import com.android.launcher3.icons.FastBitmapDrawableDelegate.DelegateFactory
 import com.android.launcher3.icons.FastBitmapDrawableDelegate.SimpleDelegateFactory
@@ -47,6 +48,7 @@ data class BitmapInfo(
     val themedBitmap: ThemedBitmap? = null,
     val badgeInfo: BitmapInfo? = null,
     val delegateFactory: DelegateFactory = SimpleDelegateFactory,
+    val badgeProvider: BadgeProvider = DefaultBadgeProvider,
 ) {
     @IntDef(
         flag = true,
@@ -54,7 +56,10 @@ data class BitmapInfo(
     )
     internal annotation class BitmapInfoFlags
 
-    @IntDef(flag = true, value = [FLAG_THEMED, FLAG_NO_BADGE, FLAG_SKIP_USER_BADGE, FLAG_CUSTOM_SHAPE])
+    @IntDef(
+        flag = true,
+        value = [FLAG_THEMED, FLAG_NO_BADGE, FLAG_SKIP_USER_BADGE, FLAG_CUSTOM_SHAPE],
+    )
     annotation class DrawableCreationFlags
 
     fun withBadgeInfo(badgeInfo: BitmapInfo?) = copy(badgeInfo = badgeInfo)
@@ -104,18 +109,15 @@ data class BitmapInfo(
                     else -> delegateFactory
                 },
             disabledAlpha = GraphicsUtils.getFloat(context, R.attr.disabledIconAlpha, 1f),
-            creationFlags = if (iconShape != null) {
-                creationFlags.or(FLAG_CUSTOM_SHAPE)
-            } else {
-                creationFlags
-            },
+            creationFlags =
+                if (iconShape != null) {
+                    creationFlags.or(FLAG_CUSTOM_SHAPE)
+                } else {
+                    creationFlags
+                },
             badge =
                 if (!creationFlags.hasMask(FLAG_NO_BADGE)) {
-                    getBadgeDrawable(
-                        context,
-                        creationFlags.hasMask(FLAG_THEMED),
-                        creationFlags.hasMask(FLAG_SKIP_USER_BADGE),
-                    )
+                    getBadgeDrawable(context, creationFlags)
                 } else null,
         )
 
@@ -126,59 +128,40 @@ data class BitmapInfo(
      * @param isThemed If Drawable is themed.
      */
     fun getBadgeDrawable(context: Context, isThemed: Boolean): Drawable? {
-        return getBadgeDrawable(context, isThemed, false)
+        return getBadgeDrawable(context, if (isThemed) FLAG_THEMED else 0)
     }
 
     /**
      * Creates a Drawable for an icon badge for this BitmapInfo
      *
      * @param context Context
-     * @param isThemed If the drawable is themed.
-     * @param skipUserBadge If should skip User Profile badging.
+     * @param creationFlag Flags for creating the badge drawable
      */
-    private fun getBadgeDrawable(
-        context: Context,
-        isThemed: Boolean,
-        skipUserBadge: Boolean,
-    ): Drawable? {
+    private fun getBadgeDrawable(context: Context, creationFlag: Int): Drawable? {
         if (badgeInfo != null) {
-            var creationFlag = if (isThemed) FLAG_THEMED else 0
-            if (skipUserBadge) {
-                creationFlag = creationFlag or FLAG_SKIP_USER_BADGE
-            }
             return badgeInfo.newIcon(context, creationFlag, null)
         }
-        if (skipUserBadge) {
+        if (creationFlag.hasMask(FLAG_SKIP_USER_BADGE)) {
             return null
         } else {
-            getBadgeDrawableInfo()?.let {
-                return UserBadgeDrawable(context, it.drawableRes, it.colorRes, isThemed)
+            return getBadgeType()?.let {
+                return badgeProvider.getDrawable(context, it, creationFlag)
             }
         }
-        return null
     }
 
     /** Returns information about the badge to apply based on current flags. */
-    fun getBadgeDrawableInfo(): BadgeDrawableInfo? {
+    fun getBadgeType(): BadgeType? {
         return when {
-            flags.hasMask(FLAG_INSTANT) ->
-                BadgeDrawableInfo(R.drawable.ic_instant_app_badge, R.color.badge_tint_instant)
-            flags.hasMask(FLAG_WORK) ->
-                BadgeDrawableInfo(R.drawable.ic_work_app_badge, R.color.badge_tint_work)
-            flags.hasMask(FLAG_CLONE) ->
-                BadgeDrawableInfo(R.drawable.ic_clone_app_badge, R.color.badge_tint_clone)
-            flags.hasMask(FLAG_PRIVATE) ->
-                BadgeDrawableInfo(
-                    R.drawable.ic_private_profile_app_badge,
-                    R.color.badge_tint_private,
-                )
+            flags.hasMask(FLAG_INSTANT) -> BadgeType.INSTANT
+            flags.hasMask(FLAG_WORK) -> BadgeType.WORK
+            flags.hasMask(FLAG_CLONE) -> BadgeType.CLONE
+            flags.hasMask(FLAG_PRIVATE) -> BadgeType.PRIVATE
             else -> null
         }
     }
 
-    /**
-     * Checks for FLAG_FULL_BLEED from factory as well as checking bitmap content to verify.
-     */
+    /** Checks for FLAG_FULL_BLEED from factory as well as checking bitmap content to verify. */
     fun isFullBleed(): Boolean {
         return flags.hasMask(FLAG_FULL_BLEED)
     }
@@ -192,18 +175,6 @@ data class BitmapInfo(
         /** Called to draw the UI independent of any runtime configurations like time or theme */
         fun drawForPersistence()
     }
-
-    /**
-     * Drawables backing a specific badge shown on app icons.
-     *
-     * @param drawableRes Drawable resource for the badge.
-     * @param colorRes Color resource to tint the badge.
-     */
-    @JvmRecord
-    data class BadgeDrawableInfo(
-        @field:DrawableRes @param:DrawableRes val drawableRes: Int,
-        @field:ColorRes @param:ColorRes val colorRes: Int,
-    )
 
     companion object {
         const val TAG: String = "BitmapInfo"
@@ -237,6 +208,6 @@ data class BitmapInfo(
             return BitmapInfo(icon = bitmap, color = color, defaultIconShape = defaultShape)
         }
 
-        private inline fun Int.hasMask(mask: Int) = (this and mask) != 0
+        internal inline fun Int.hasMask(mask: Int) = (this and mask) != 0
     }
 }

@@ -573,7 +573,8 @@ constructor(
                                                 logic,
                                                 c.getString(INDEX_FRESHNESS_ID),
                                             ),
-                                    )
+                                    ),
+                                badgeProvider = themeController.badgeProvider,
                             )
                     }
                 }

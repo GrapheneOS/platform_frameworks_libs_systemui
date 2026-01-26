@@ -18,6 +18,8 @@ package com.android.launcher3.icons
 
 import android.content.Context
 import android.graphics.drawable.AdaptiveIconDrawable
+import com.android.launcher3.BadgeProvider
+import com.android.launcher3.BadgeProvider.DefaultBadgeProvider
 import com.android.launcher3.icons.FastBitmapDrawableDelegate.DelegateFactory
 import com.android.launcher3.icons.cache.CachingLogic
 import com.android.launcher3.util.ComponentKey
@@ -47,6 +49,9 @@ interface ThemedBitmap {
 interface IconThemeController {
 
     val themeID: String
+
+    val badgeProvider: BadgeProvider
+        get() = DefaultBadgeProvider
 
     fun createThemedBitmap(
         icon: AdaptiveIconDrawable,
@@ -79,5 +84,4 @@ data class SourceHint(
     val key: ComponentKey,
     val logic: CachingLogic<*>,
     val freshnessId: String? = null,
-    val isFileDrawable: Boolean = false,
 )
