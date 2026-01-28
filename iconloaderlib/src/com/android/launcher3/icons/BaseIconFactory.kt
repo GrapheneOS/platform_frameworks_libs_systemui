@@ -213,7 +213,8 @@ constructor(
                                 this,
                                 options.sourceHint,
                             )
-                        else ThemedBitmap.NOT_SUPPORTED
+                        else ThemedBitmap.NOT_SUPPORTED,
+                    badgeProvider = themeController.badgeProvider,
                 )
         } else if (extendibleThemeManager()) {
             info = info.copy(themedBitmap = ThemedBitmap.NOT_SUPPORTED)
