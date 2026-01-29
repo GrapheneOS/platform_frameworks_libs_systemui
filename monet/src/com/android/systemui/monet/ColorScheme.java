@@ -24,7 +24,9 @@ import android.graphics.Color;
 
 import com.android.internal.graphics.ColorUtils;
 
+import com.google.ux.material.libmonet.dynamiccolor.ColorSpec.SpecVersion;
 import com.google.ux.material.libmonet.dynamiccolor.DynamicScheme;
+import com.google.ux.material.libmonet.dynamiccolor.DynamicScheme.Platform;
 import com.google.ux.material.libmonet.hct.Hct;
 import com.google.ux.material.libmonet.scheme.SchemeContent;
 import com.google.ux.material.libmonet.scheme.SchemeExpressive;
@@ -69,7 +71,7 @@ public class ColorScheme {
 
 
     public ColorScheme(@ColorInt int seed, boolean isDark, @ThemeStyle.Type int style,
-            double contrastLevel) {
+            double contrastLevel, SpecVersion specVersion, Platform platform) {
 
         this.mSeed = seed;
         this.mIsDark = isDark;
@@ -86,14 +88,22 @@ public class ColorScheme {
                                 : seed));
 
         mMaterialScheme = switch (style) {
-            case ThemeStyle.SPRITZ -> new SchemeNeutral(seedHct, isDark, contrastLevel);
-            case ThemeStyle.TONAL_SPOT -> new SchemeTonalSpot(seedHct, isDark, contrastLevel);
-            case ThemeStyle.VIBRANT -> new SchemeVibrant(seedHct, isDark, contrastLevel);
-            case ThemeStyle.EXPRESSIVE -> new SchemeExpressive(seedHct, isDark, contrastLevel);
-            case ThemeStyle.RAINBOW -> new SchemeRainbow(seedHct, isDark, contrastLevel);
-            case ThemeStyle.FRUIT_SALAD -> new SchemeFruitSalad(seedHct, isDark, contrastLevel);
-            case ThemeStyle.CONTENT -> new SchemeContent(seedHct, isDark, contrastLevel);
-            case ThemeStyle.MONOCHROMATIC -> new SchemeMonochrome(seedHct, isDark, contrastLevel);
+            case ThemeStyle.SPRITZ -> new SchemeNeutral(seedHct, isDark, contrastLevel, specVersion,
+                    platform);
+            case ThemeStyle.TONAL_SPOT -> new SchemeTonalSpot(seedHct, isDark, contrastLevel,
+                    specVersion, platform);
+            case ThemeStyle.VIBRANT -> new SchemeVibrant(seedHct, isDark, contrastLevel,
+                    specVersion, platform);
+            case ThemeStyle.EXPRESSIVE -> new SchemeExpressive(seedHct, isDark, contrastLevel,
+                    specVersion, platform);
+            case ThemeStyle.RAINBOW -> new SchemeRainbow(seedHct, isDark, contrastLevel,
+                    specVersion, platform);
+            case ThemeStyle.FRUIT_SALAD -> new SchemeFruitSalad(seedHct, isDark, contrastLevel,
+                    specVersion, platform);
+            case ThemeStyle.CONTENT -> new SchemeContent(seedHct, isDark, contrastLevel,
+                    specVersion, platform);
+            case ThemeStyle.MONOCHROMATIC -> new SchemeMonochrome(seedHct, isDark, contrastLevel,
+                    specVersion, platform);
             // SystemUI Schemes
             case ThemeStyle.CLOCK -> new SchemeClock(seedHct, isDark, contrastLevel);
             case ThemeStyle.CLOCK_VIBRANT -> new SchemeClockVibrant(seedHct, isDark, contrastLevel);
@@ -106,6 +116,12 @@ public class ColorScheme {
         mNeutral1 = new TonalPalette(mMaterialScheme.neutralPalette);
         mNeutral2 = new TonalPalette(mMaterialScheme.neutralVariantPalette);
         mError = new TonalPalette(mMaterialScheme.errorPalette);
+    }
+
+    public ColorScheme(@ColorInt int seed, boolean isDark, @ThemeStyle.Type int style,
+            double contrastLevel) {
+        this(seed, isDark, style, contrastLevel, DynamicScheme.DEFAULT_SPEC_VERSION,
+                DynamicScheme.DEFAULT_PLATFORM);
     }
 
     public ColorScheme(@ColorInt int seed, boolean darkTheme) {
