@@ -17,7 +17,6 @@
 package com.android.launcher3.icons.cache
 
 import android.content.ComponentName
-import android.content.Context
 import android.content.pm.LauncherActivityInfo
 import android.os.Build.VERSION
 import android.os.UserHandle
@@ -38,36 +37,34 @@ object LauncherActivityCachingLogic : CachingLogic<LauncherActivityInfo> {
 
     override fun getApplicationInfo(info: LauncherActivityInfo) = info.applicationInfo
 
-    override fun loadIcon(
-        context: Context,
-        cache: BaseIconCache,
-        info: LauncherActivityInfo,
-    ): BitmapInfo {
-        cache.iconFactory.use { li ->
-            val iconOptions: IconOptions =
-                IconOptions()
-                    .setUser(info.user)
-                    .assumeFullBleedIcon(
-                        // b/358123888: Pre-archived apps can have BitmapDrawables without insets
-                        useNewIconForArchivedApps() &&
-                            VERSION.SDK_INT >= 35 &&
-                            info.activityInfo.isArchived
-                    )
-                    .setSourceHint(getSourceHint(info, cache))
-            val iconDrawable = cache.iconProvider.getIcon(info.activityInfo, li.fullResIconDpi)
-            if (context.packageManager.isDefaultApplicationIcon(iconDrawable)) {
+    override fun loadIcon(request: IconLoadRequest<LauncherActivityInfo>): BitmapInfo =
+        request.run {
+            val iconDrawable = getIcon(item.activityInfo)
+            if (isDefaultApplicationIcon(iconDrawable)) {
                 Log.w(
                     TAG,
                     "loadIcon: Default app icon returned from PackageManager." +
-                        " component=${info.componentName}, user=${info.user}",
+                        " component=${item.componentName}, user=${item.user}",
                     Exception(),
                 )
                 // Make sure this default icon always matches BaseIconCache#getDefaultIcon
-                return cache.getDefaultIcon(info.user)
+                return getDefaultIcon()
             }
-            return li.createBadgedIconBitmap(iconDrawable, iconOptions)
+            iconFactory.use { li ->
+                val iconOptions: IconOptions =
+                    IconOptions()
+                        .setUser(item.user)
+                        .assumeFullBleedIcon(
+                            // b/358123888: Pre-archived apps can have BitmapDrawables without
+                            // insets
+                            useNewIconForArchivedApps() &&
+                                VERSION.SDK_INT >= 35 &&
+                                item.activityInfo.isArchived
+                        )
+                        .setSourceHint(sourceHint)
+                li.createBadgedIconBitmap(iconDrawable, iconOptions)
+            }
         }
-    }
 
     override fun getFreshnessIdentifier(item: LauncherActivityInfo, provider: IconProvider) =
         provider.getStateForApp(getApplicationInfo(item))
