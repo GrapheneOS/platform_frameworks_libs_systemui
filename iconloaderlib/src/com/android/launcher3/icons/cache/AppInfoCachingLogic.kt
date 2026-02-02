@@ -17,7 +17,6 @@
 package com.android.launcher3.icons.cache
 
 import android.content.ComponentName
-import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.UserHandle
@@ -33,40 +32,38 @@ class AppInfoCachingLogic(
     private val errorLogger: (String, Exception?) -> Unit = { _, _ -> },
 ) : CachingLogic<ApplicationInfo> {
 
-    override fun getComponent(info: ApplicationInfo) =
-        ComponentName(info.packageName, info.packageName + EMPTY_CLASS_NAME)
+    override fun getComponent(item: ApplicationInfo) =
+        ComponentName(item.packageName, item.packageName + EMPTY_CLASS_NAME)
 
-    override fun getUser(info: ApplicationInfo) = UserHandle.getUserHandleForUid(info.uid)
+    override fun getUser(item: ApplicationInfo) = UserHandle.getUserHandleForUid(item.uid)
 
-    override fun getLabel(info: ApplicationInfo) = info.loadLabel(pm)
+    override fun getLabel(item: ApplicationInfo) = item.loadLabel(pm)
 
-    override fun getApplicationInfo(info: ApplicationInfo) = info
+    override fun getApplicationInfo(item: ApplicationInfo) = item
 
-    override fun loadIcon(
-        context: Context,
-        cache: BaseIconCache,
-        info: ApplicationInfo,
-    ): BitmapInfo {
-        // Load the full res icon for the application, but if useLowResIcon is set, then
-        // only keep the low resolution icon instead of the larger full-sized icon
-        val appIcon = cache.iconProvider.getIcon(info)
-        if (context.packageManager.isDefaultApplicationIcon(appIcon)) {
-            errorLogger.invoke(
-                String.format("Default icon returned for %s", info.packageName),
-                null,
-            )
+    override fun loadIcon(request: IconLoadRequest<ApplicationInfo>): BitmapInfo =
+        request.run {
+            // Load the full res icon for the application, but if useLowResIcon is set, then
+            // only keep the low resolution icon instead of the larger full-sized icon
+            val appIcon = getIcon(item)
+            if (isDefaultApplicationIcon(appIcon)) {
+                errorLogger.invoke(
+                    String.format("Default icon returned for %s", item.packageName),
+                    null,
+                )
+                getDefaultIcon()
+            } else {
+                iconFactory.use { li ->
+                    li.createBadgedIconBitmap(
+                        appIcon,
+                        IconOptions()
+                            .setUser(getUser(item))
+                            .setInstantApp(instantAppResolver.invoke(item))
+                            .setSourceHint(sourceHint),
+                    )
+                }
+            }
         }
-
-        return cache.iconFactory.use { li ->
-            li.createBadgedIconBitmap(
-                appIcon,
-                IconOptions()
-                    .setUser(getUser(info))
-                    .setInstantApp(instantAppResolver.invoke(info))
-                    .setSourceHint(getSourceHint(info, cache)),
-            )
-        }
-    }
 
     override fun getFreshnessIdentifier(item: ApplicationInfo, iconProvider: IconProvider) =
         iconProvider.getStateForApp(item)

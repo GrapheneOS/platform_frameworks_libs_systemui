@@ -17,7 +17,6 @@
 package com.android.launcher3.icons.cache
 
 import android.content.ComponentName
-import android.content.Context
 import android.os.UserHandle
 import com.android.launcher3.icons.BaseIconFactory.IconOptions
 import com.android.launcher3.icons.BitmapInfo
@@ -26,24 +25,29 @@ import com.android.launcher3.icons.IconProvider
 /** Caching logic for ComponentWithLabelAndIcon */
 object CachedObjectCachingLogic : CachingLogic<CachedObject> {
 
-    override fun getComponent(info: CachedObject): ComponentName = info.component
+    override fun getComponent(item: CachedObject): ComponentName = item.component
 
-    override fun getUser(info: CachedObject): UserHandle = info.user
+    override fun getUser(item: CachedObject): UserHandle = item.user
 
-    override fun getLabel(info: CachedObject): CharSequence? = info.label
+    override fun getLabel(item: CachedObject): CharSequence? = item.label
 
-    override fun loadIcon(context: Context, cache: BaseIconCache, info: CachedObject): BitmapInfo {
-        val d = info.getFullResIcon(cache) ?: return BitmapInfo.LOW_RES_INFO
-        cache.iconFactory.use { li ->
-            return li.createBadgedIconBitmap(
-                d,
-                IconOptions().setUser(info.user).setSourceHint(getSourceHint(info, cache)),
-            )
+    override fun loadIcon(request: IconLoadRequest<CachedObject>): BitmapInfo =
+        request.run {
+            val d = item.getFullResIcon(request) ?: return BitmapInfo.LOW_RES_INFO
+            iconFactory.use { li ->
+                li.createBadgedIconBitmap(
+                    d,
+                    IconOptions().setUser(item.user).setSourceHint(sourceHint),
+                )
+            }
         }
-    }
 
-    override fun getApplicationInfo(info: CachedObject) = info.applicationInfo
+    override fun getApplicationInfo(item: CachedObject) = item.applicationInfo
 
-    override fun getFreshnessIdentifier(item: CachedObject, provider: IconProvider) =
-        item.getFreshnessIdentifier(provider)
+    override fun getFreshnessIdentifier(item: CachedObject, iconProvider: IconProvider) =
+        item.getFreshnessIdentifier(iconProvider)
+
+    @JvmStatic
+    fun loadFullResIcon(cache: BaseIconCache, obj: CachedObject) =
+        obj.getFullResIcon(cache.getIconLoadRequest(obj, CachedObjectCachingLogic))
 }
