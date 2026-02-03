@@ -51,7 +51,7 @@ public interface CachedObject {
      * Loads the user visible icon for the provided object
      */
     @Nullable
-    default Drawable getFullResIcon(@NonNull BaseIconCache cache) {
+    default Drawable getFullResIcon(@NonNull IconLoadRequest<CachedObject> request) {
         return null;
     }
 

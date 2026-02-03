@@ -18,7 +18,6 @@ package com.android.launcher3.icons.cache
 import android.content.ComponentName
 import android.content.ContentValues
 import android.content.Context
-import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
@@ -30,7 +29,6 @@ import android.graphics.Bitmap.Config.HARDWARE
 import android.graphics.BitmapFactory
 import android.graphics.BitmapFactory.Options
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.os.Looper
 import android.os.Trace
@@ -147,8 +145,6 @@ constructor(
         }
     }
 
-    fun getFullResIcon(info: ActivityInfo): Drawable? = iconProvider.getIcon(info, iconDpi)
-
     /** Remove any records for the supplied ComponentName. */
     @Synchronized
     fun remove(componentName: ComponentName, user: UserHandle) =
@@ -208,6 +204,15 @@ constructor(
         return if (format == null) label else String.format(format, label)
     }
 
+    fun <T> getIconLoadRequest(obj: T, cachingLogic: CachingLogic<T>) =
+        IconLoadRequest(
+            context = context,
+            item = obj,
+            logic = cachingLogic,
+            cache = this,
+            iconDpi = iconDpi,
+        )
+
     /**
      * Adds/updates an entry into the DB and the in-memory cache. The update is skipped if the entry
      * fails to load
@@ -217,7 +222,7 @@ constructor(
         val user = cachingLogic.getUser(obj)
         val componentName = cachingLogic.getComponent(obj)
         val key = ComponentKey(componentName, user)
-        val bitmapInfo = cachingLogic.loadIcon(context, this, obj)
+        val bitmapInfo = getIconLoadRequest(obj, cachingLogic).evaluate()
 
         // Icon can't be loaded from cachingLogic, which implies alternative icon was loaded
         // (e.g. fallback icon, default icon). So we drop here since there's no point in caching
@@ -327,7 +332,7 @@ constructor(
         user: UserHandle,
     ) {
         if (obj != null) {
-            entry.bitmap = cachingLogic.loadIcon(context, this, obj)
+            entry.bitmap = getIconLoadRequest(obj, cachingLogic).evaluate()
         } else {
             if (lookupFlag.usePackageIcon()) {
                 val packageEntry =
@@ -452,7 +457,7 @@ constructor(
 
                     // Load the full res icon for the application, but if useLowResIcon is set, then
                     // only keep the low resolution icon instead of the larger full-sized icon
-                    val iconInfo = appInfoCachingLogic.loadIcon(context, this, appInfo)
+                    val iconInfo = getIconLoadRequest(appInfo, appInfoCachingLogic).evaluate()
                     entry.bitmap =
                         if (lookupFlags.useLowRes()) BitmapInfo.of(LOW_RES_ICON, iconInfo.color)
                         else iconInfo
