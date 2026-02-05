@@ -20,6 +20,16 @@ flag {
 }
 
 flag {
+    name: "brightness_dialog_on_system_user"
+    namespace: "systemui"
+    description: "Launches BrightnessDialog always on System user from Settings"
+    bug: "411698713"
+    metadata {
+         purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "cue_bar_ace_migration"
     namespace: "launcher_search"
     description: "Cue Bar receives data from Android Context Engine and is rendered in Taskbar."
