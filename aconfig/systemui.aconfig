@@ -22,7 +22,7 @@ flag {
 flag {
     name: "cue_bar_ace_migration"
     namespace: "launcher_search"
-    description: "Cue Bar receives data from Android Context Engine and is rendered in Taskbar."
+    description: "Cue Bar receives data from new service provider and is rendered in Taskbar."
     bug: "437417091"
 }
 
