@@ -15,6 +15,7 @@
  */
 package com.android.app.displaylib
 
+import android.database.ContentObserver
 import android.hardware.display.DisplayManager
 import android.hardware.display.DisplayManager.DISPLAY_CATEGORY_ALL_INCLUDING_DISABLED
 import android.hardware.display.DisplayManager.DisplayListener
@@ -25,6 +26,7 @@ import android.hardware.display.DisplayManager.EXTERNAL_DISPLAY_CONNECTION_PREFE
 import android.hardware.display.DisplayManager.EXTERNAL_DISPLAY_CONNECTION_PREFERENCE_DESKTOP
 import android.hardware.display.DisplayManager.EXTERNAL_DISPLAY_CONNECTION_PREFERENCE_MIRROR
 import android.os.Handler
+import android.provider.Settings
 import android.util.Log
 import android.view.Display
 import com.android.app.displaylib.ExternalDisplayConnectionType.DESKTOP
@@ -89,6 +91,9 @@ interface DisplayRepository {
     /** Whether the default display is currently off. */
     val defaultDisplayOff: StateFlow<Boolean>
 
+    /** Whether the device is currently mirroring to an external display. */
+    val isMirroringEnabled: StateFlow<Boolean>
+
     /**
      * Given a display ID int, return the corresponding Display object, or null if none exist.
      *
@@ -152,7 +157,8 @@ class DisplayRepositoryImpl
 @Inject
 constructor(
     private val displayManager: DisplayManager,
-    backgroundHandler: Handler,
+    private val contentResolver: android.content.ContentResolver,
+    private val backgroundHandler: Handler,
     bgApplicationScope: CoroutineScope,
     backgroundCoroutineDispatcher: CoroutineDispatcher,
 ) : DisplayRepository {
@@ -185,6 +191,30 @@ constructor(
             .onStart { emit(DisplayEvent.Changed(Display.DEFAULT_DISPLAY)) }
             .debugLog("allDisplayEvents")
             .flowOn(backgroundCoroutineDispatcher)
+
+    override val isMirroringEnabled: StateFlow<Boolean> =
+        mirroringSettingFlow().stateIn(bgApplicationScope, SharingStarted.Eagerly, false)
+
+    private fun mirroringSettingFlow(): Flow<Boolean> =
+        callbackFlow {
+                val uri = Settings.Secure.getUriFor(Settings.Secure.MIRROR_BUILT_IN_DISPLAY)
+                val observer =
+                    object : ContentObserver(backgroundHandler) {
+                        override fun onChange(selfChange: Boolean) {
+                            trySend(Unit)
+                        }
+                    }
+                contentResolver.registerContentObserver(uri, false, observer)
+                trySend(Unit)
+                awaitClose { contentResolver.unregisterContentObserver(observer) }
+            }
+            .map {
+                Settings.Secure.getInt(
+                    contentResolver,
+                    Settings.Secure.MIRROR_BUILT_IN_DISPLAY,
+                    0,
+                ) != 0
+            }
 
     override val displayChangeEvent: Flow<Int> =
         allDisplayEvents.filterIsInstance<DisplayEvent.Changed>().map { event -> event.displayId }

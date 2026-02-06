@@ -15,6 +15,8 @@
  */
 package com.android.app.displaylib
 
+import android.content.ContentResolver
+import android.content.Context
 import android.hardware.display.DisplayManager
 import android.os.Handler
 import android.view.IWindowManager
@@ -45,6 +47,7 @@ interface DisplayLibComponent {
             @BindsInstance bgHandler: Handler,
             @BindsInstance bgApplicationScope: CoroutineScope,
             @BindsInstance backgroundCoroutineDispatcher: CoroutineDispatcher,
+            @BindsInstance contentResolver: ContentResolver,
         ): DisplayLibComponent
     }
 
@@ -71,6 +74,7 @@ interface DisplayLibModule {
  * this might throw an exception if they are tied to the main thread!
  */
 fun createDisplayLibComponent(
+    context: Context,
     displayManager: DisplayManager,
     windowManager: IWindowManager,
     bgHandler: Handler,
@@ -84,5 +88,6 @@ fun createDisplayLibComponent(
             bgHandler,
             bgApplicationScope,
             backgroundCoroutineDispatcher,
+            context.contentResolver,
         )
 }
