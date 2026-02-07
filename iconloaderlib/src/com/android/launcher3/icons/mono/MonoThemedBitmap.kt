@@ -32,12 +32,14 @@ import java.nio.ByteBuffer
 
 class MonoThemedBitmap(
     val mono: Bitmap,
-    private val colorProvider: (Context) -> IntArray = ThemedIconDelegate.Companion::getColors,
+    private val colorProvider: (Context) -> ColorList = ThemedIconDelegate.Companion::getColors,
     @get:VisibleForTesting val luminanceDelta: Double? = null,
 ) : ThemedBitmap {
 
     override fun newDelegateFactory(info: BitmapInfo, context: Context): DelegateFactory =
-        getUpdatedColors(context).let { ThemedIconInfo(mono, it[0], it[1]) }
+        getUpdatedColors(context).let {
+            ThemedIconInfo(mono, it.iconBackgroundColor, it.iconForegroundColor)
+        }
 
     override fun serialize(): ByteArray {
         val expectedSize = mono.width * mono.height
@@ -51,7 +53,7 @@ class MonoThemedBitmap(
             }
     }
 
-    fun getUpdatedColors(ctx: Context): IntArray =
+    fun getUpdatedColors(ctx: Context): ColorList =
         if (luminanceDelta != null)
             ColorAdapter(luminanceDelta).adaptedColorProvider(colorProvider)(ctx)
         else colorProvider(ctx)
@@ -63,14 +65,23 @@ class MonoThemedBitmap(
 
 class ClockThemedBitmap(
     private val animInfo: ClockAnimationInfo,
-    private val colorProvider: (Context) -> IntArray = ThemedIconDelegate.Companion::getColors,
+    private val colorProvider: (Context) -> ColorList = ThemedIconDelegate.Companion::getColors,
 ) : ThemedBitmap {
 
     override fun newDelegateFactory(info: BitmapInfo, context: Context): DelegateFactory =
         colorProvider(context).let { colors ->
             animInfo.copy(
-                themeFgColor = colors[1],
-                shader = LinearGradient(0f, 0f, 1f, 1f, colors[0], colors[0], CLAMP),
+                themeFgColor = colors.iconForegroundColor,
+                shader =
+                    LinearGradient(
+                        0f,
+                        0f,
+                        1f,
+                        1f,
+                        colors.iconBackgroundColor,
+                        colors.iconBackgroundColor,
+                        CLAMP,
+                    ),
             )
         }
 
@@ -81,7 +92,7 @@ class ColorAdapter(private val luminanceDelta: Double) {
 
     private val luminanceComputer = LuminanceComputer.createDefaultLuminanceComputer()
 
-    fun adaptedColorProvider(colorProvider: (Context) -> IntArray): (Context) -> IntArray {
+    fun adaptedColorProvider(colorProvider: (Context) -> ColorList): (Context) -> ColorList {
         // if the feature flag is off, then we don't need to adapt the colors at all.
         if (!Flags.forceMonochromeAppIconsAdaptColors()) {
             return colorProvider
@@ -94,10 +105,14 @@ class ColorAdapter(private val luminanceDelta: Double) {
         // color.
         return { context ->
             val colors = colorProvider(context)
-            intArrayOf(
-                adaptBackgroundColor(colors[0], colors[2]),
-                adaptForegroundColor(colors[1], colors[0]),
-                colors[2],
+            colors.copy(
+                iconBackgroundColor =
+                    adaptBackgroundColor(
+                        colors.iconBackgroundColor,
+                        colors.iconAdaptiveBackgroundColor,
+                    ),
+                iconForegroundColor =
+                    adaptForegroundColor(colors.iconForegroundColor, colors.iconBackgroundColor),
             )
         }
     }

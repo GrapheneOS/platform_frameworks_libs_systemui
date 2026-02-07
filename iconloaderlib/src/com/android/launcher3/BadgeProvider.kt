@@ -25,6 +25,7 @@ import com.android.launcher3.icons.BitmapInfo.Companion.FLAG_THEMED
 import com.android.launcher3.icons.BitmapInfo.Companion.hasMask
 import com.android.launcher3.icons.R
 import com.android.launcher3.icons.UserBadgeDrawable
+import com.android.launcher3.icons.mono.ColorList
 
 /**
  * Provides badge drawable based on [BadgeType] for a [com.android.launcher3.icons.BitmapInfo].
@@ -50,6 +51,17 @@ interface BadgeProvider {
                     context.getColor(type.colorRes),
                 )
             }
+    }
+
+    class ColoredBadgeProvider(val colorProvider: (Context) -> ColorList) : BadgeProvider {
+        override fun getDrawable(context: Context, type: BadgeType, creationFlag: Int): Drawable {
+            val colors = colorProvider(context)
+            return UserBadgeDrawable(
+                context.getDrawable(type.drawableRes),
+                colors.badgeBackgroundColor,
+                colors.badgeForegroundColor,
+            )
+        }
     }
 
     /**

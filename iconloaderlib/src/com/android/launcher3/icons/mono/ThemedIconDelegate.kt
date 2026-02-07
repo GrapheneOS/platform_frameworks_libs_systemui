@@ -85,12 +85,15 @@ class ThemedIconDelegate(
 
         /** Get an int array representing background and foreground colors for themed icons */
         @JvmStatic
-        fun getColors(context: Context): IntArray {
+        fun getColors(context: Context): ColorList {
             val res = context.resources
-            return intArrayOf(
-                res.getColor(R.color.themed_icon_background_color),
-                res.getColor(R.color.themed_icon_color),
-                res.getColor(R.color.themed_icon_adaptive_background_color),
+            return ColorList(
+                iconBackgroundColor = res.getColor(R.color.themed_icon_background_color),
+                iconForegroundColor = res.getColor(R.color.themed_icon_color),
+                iconAdaptiveBackgroundColor =
+                    res.getColor(R.color.themed_icon_adaptive_background_color),
+                badgeBackgroundColor = res.getColor(R.color.themed_badge_icon_background_color),
+                badgeForegroundColor = res.getColor(R.color.themed_badge_icon_color),
             )
         }
     }
@@ -105,3 +108,11 @@ class ThemedIconInfo(val mono: Bitmap, val colorBg: Int, val colorFg: Int) : Del
         host: FastBitmapDrawable,
     ) = ThemedIconDelegate(this, bitmapInfo, paint)
 }
+
+data class ColorList(
+    val iconBackgroundColor: Int,
+    val iconForegroundColor: Int,
+    val iconAdaptiveBackgroundColor: Int,
+    val badgeBackgroundColor: Int,
+    val badgeForegroundColor: Int,
+)
