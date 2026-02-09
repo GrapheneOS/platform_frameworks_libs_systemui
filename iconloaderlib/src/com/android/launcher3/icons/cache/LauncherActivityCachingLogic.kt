@@ -18,10 +18,10 @@ package com.android.launcher3.icons.cache
 
 import android.content.ComponentName
 import android.content.pm.LauncherActivityInfo
+import android.os.Build
 import android.os.Build.VERSION
 import android.os.UserHandle
 import android.util.Log
-import com.android.launcher3.Flags.useNewIconForArchivedApps
 import com.android.launcher3.icons.BaseIconFactory.IconOptions
 import com.android.launcher3.icons.BitmapInfo
 import com.android.launcher3.icons.IconProvider
@@ -55,11 +55,8 @@ object LauncherActivityCachingLogic : CachingLogic<LauncherActivityInfo> {
                     IconOptions()
                         .setUser(item.user)
                         .assumeFullBleedIcon(
-                            // b/358123888: Pre-archived apps can have BitmapDrawables without
-                            // insets
-                            useNewIconForArchivedApps() &&
-                                VERSION.SDK_INT >= 35 &&
-                                item.activityInfo.isArchived
+                            VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
+                                && item.activityInfo.isArchived
                         )
                         .setSourceHint(sourceHint)
                 li.createBadgedIconBitmap(iconDrawable, iconOptions)
