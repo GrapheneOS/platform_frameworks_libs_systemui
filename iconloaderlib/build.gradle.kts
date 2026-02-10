@@ -18,9 +18,7 @@ android {
             res.setSrcDirs(listOf("res"))
         }
 
-        named("androidTest") {
-            java.setSrcDirs(listOf("tests/src"))
-        }
+        named("androidTest") { java.setSrcDirs(listOf("tests/src")) }
     }
 }
 
@@ -28,6 +26,7 @@ dependencies {
     implementation("androidx.core:core")
     api(project(":NexusLauncher:Flags"))
     api(project(":frameworks:base:packages:SystemUI:SystemUISharedFlags"))
+    api(project(":UserTypeLib"))
 
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.junit)

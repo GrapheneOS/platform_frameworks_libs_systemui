@@ -24,6 +24,7 @@ android_library {
         "androidx.core_core",
         "com_android_launcher3_flags_lib",
         "com_android_systemui_shared_flags_lib",
+        "usertypelib",
     ],
     resource_dirs: [
         "res",

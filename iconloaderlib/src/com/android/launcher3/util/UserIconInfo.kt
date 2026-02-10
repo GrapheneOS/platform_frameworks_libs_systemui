@@ -16,8 +16,8 @@
 package com.android.launcher3.util
 
 import android.os.UserHandle
-import androidx.annotation.IntDef
 import com.android.launcher3.icons.BitmapInfo
+import com.android.users.UserType
 
 /**
  * Data class which stores various properties of a [android.os.UserHandle] which affects rendering
@@ -26,34 +26,24 @@ data class UserIconInfo
 @JvmOverloads
 constructor(
     @JvmField val user: UserHandle,
-    @JvmField @UserType val type: Int,
+    @JvmField val type: UserType,
     @JvmField val userSerial: Long = user.hashCode().toLong(),
 ) {
-    @Target(AnnotationTarget.PROPERTY, AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.TYPE)
-    @IntDef(TYPE_MAIN, TYPE_WORK, TYPE_CLONED, TYPE_PRIVATE)
-    annotation class UserType
 
     val isMain: Boolean
-        get() = type == TYPE_MAIN
+        get() = type == UserType.MAIN
 
     val isWork: Boolean
-        get() = type == TYPE_WORK
+        get() = type == UserType.WORK
 
     val isCloned: Boolean
-        get() = type == TYPE_CLONED
+        get() = type == UserType.CLONED
 
     val isPrivate: Boolean
-        get() = type == TYPE_PRIVATE
+        get() = type == UserType.PRIVATE
 
     fun applyBitmapInfoFlags(op: FlagOp): FlagOp =
         op.setFlag(BitmapInfo.FLAG_WORK, isWork)
             .setFlag(BitmapInfo.FLAG_CLONE, isCloned)
             .setFlag(BitmapInfo.FLAG_PRIVATE, isPrivate)
-
-    companion object {
-        const val TYPE_MAIN: Int = 0
-        const val TYPE_WORK: Int = 1
-        const val TYPE_CLONED: Int = 2
-        const val TYPE_PRIVATE: Int = 3
-    }
 }
