@@ -15,7 +15,6 @@
  */
 package com.android.systemui.monet
 
-import android.app.WallpaperColors
 import android.content.theming.ThemeStyle
 import android.graphics.Color
 import android.util.Log
@@ -23,6 +22,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.systemui.monet.ColorScheme.GOOGLE_BLUE
+import com.google.ux.material.libmonet.dynamiccolor.ColorSpec.SpecVersion
+import com.google.ux.material.libmonet.dynamiccolor.DynamicScheme.Platform
 import com.google.ux.material.libmonet.hct.Hct
 import com.google.ux.material.libmonet.scheme.SchemeTonalSpot
 import java.io.File
@@ -126,9 +127,12 @@ class ColorSchemeTest {
                     val style = document.createElement(ThemeStyle.name(styleValue).lowercase())
                     val colorScheme =
                         ColorScheme(
-                            WallpaperColors(sourceColor, sourceColor, sourceColor),
+                            listOf(sourceColor.toArgb()),
                             isDarkMode,
                             styleValue,
+                            0.0,
+                            SpecVersion.SPEC_2026,
+                            Platform.PHONE,
                         )
 
                     style.appendChild(
