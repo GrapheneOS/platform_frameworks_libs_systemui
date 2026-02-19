@@ -40,9 +40,8 @@ import com.android.launcher3.icons.IconNormalizer.ICON_VISIBLE_AREA_FACTOR
 import com.android.launcher3.icons.ShadowGenerator.BLUR_FACTOR
 import com.android.launcher3.util.FlagOp
 import com.android.launcher3.util.UserIconInfo
-import com.android.launcher3.util.UserIconInfo.Companion.TYPE_MAIN
-import com.android.launcher3.util.UserIconInfo.Companion.TYPE_WORK
 import com.android.systemui.shared.Flags.extendibleThemeManager
+import com.android.users.UserType
 import java.lang.ref.WeakReference
 import kotlin.annotation.AnnotationRetention.SOURCE
 import kotlin.math.ceil
@@ -238,7 +237,7 @@ constructor(
         // We do not have the ability to distinguish between different badged users here.
         // As such all badged users will have the work profile badge applied.
         return cachedUserInfo[key]
-            ?: UserIconInfo(user, if (user.isWorkUser()) TYPE_WORK else TYPE_MAIN).also {
+            ?: UserIconInfo(user, if (user.isWorkUser()) UserType.WORK else UserType.MAIN).also {
                 cachedUserInfo[key] = it
             }
     }
