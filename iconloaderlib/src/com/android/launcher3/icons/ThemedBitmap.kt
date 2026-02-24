@@ -21,6 +21,8 @@ import android.graphics.drawable.AdaptiveIconDrawable
 import com.android.launcher3.BadgeProvider
 import com.android.launcher3.BadgeProvider.DefaultBadgeProvider
 import com.android.launcher3.icons.FastBitmapDrawableDelegate.DelegateFactory
+import com.android.launcher3.icons.cache.CacheLookupFlag
+import com.android.launcher3.icons.cache.CacheLookupFlag.Companion.DEFAULT_LOOKUP_FLAG
 import com.android.launcher3.icons.cache.CachingLogic
 import com.android.launcher3.util.ComponentKey
 
@@ -84,4 +86,5 @@ data class SourceHint(
     val key: ComponentKey,
     val logic: CachingLogic<*>,
     val freshnessId: String? = null,
+    val lookupFlag: CacheLookupFlag = DEFAULT_LOOKUP_FLAG,
 )

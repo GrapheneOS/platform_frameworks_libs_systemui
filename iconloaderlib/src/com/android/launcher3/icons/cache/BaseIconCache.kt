@@ -204,13 +204,19 @@ constructor(
         return if (format == null) label else String.format(format, label)
     }
 
-    fun <T> getIconLoadRequest(obj: T, cachingLogic: CachingLogic<T>) =
+    @JvmOverloads
+    fun <T> getIconLoadRequest(
+        obj: T,
+        cachingLogic: CachingLogic<T>,
+        lookupFlag: CacheLookupFlag = DEFAULT_LOOKUP_FLAG,
+    ) =
         IconLoadRequest(
             context = context,
             item = obj,
             logic = cachingLogic,
             cache = this,
             iconDpi = iconDpi,
+            lookupFlag = lookupFlag,
         )
 
     /**
@@ -332,7 +338,7 @@ constructor(
         user: UserHandle,
     ) {
         if (obj != null) {
-            entry.bitmap = getIconLoadRequest(obj, cachingLogic).evaluate()
+            entry.bitmap = getIconLoadRequest(obj, cachingLogic, lookupFlag).evaluate()
         } else {
             if (lookupFlag.usePackageIcon()) {
                 val packageEntry =
@@ -457,7 +463,8 @@ constructor(
 
                     // Load the full res icon for the application, but if useLowResIcon is set, then
                     // only keep the low resolution icon instead of the larger full-sized icon
-                    val iconInfo = getIconLoadRequest(appInfo, appInfoCachingLogic).evaluate()
+                    val iconInfo =
+                        getIconLoadRequest(appInfo, appInfoCachingLogic, lookupFlags).evaluate()
                     entry.bitmap =
                         if (lookupFlags.useLowRes()) BitmapInfo.of(LOW_RES_ICON, iconInfo.color)
                         else iconInfo
