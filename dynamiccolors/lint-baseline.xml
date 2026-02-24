@@ -1233,4 +1233,135 @@
             column="49"/>
     </issue>
 
+    <issue
+        id="NewApi"
+        message="`@android:color/system_inverse_on_surface_dark` requires API level 10000 (current min is 30)"
+        errorLine1="    &lt;color name=&quot;materialColorInverseOnSurface&quot;>@android:color/system_inverse_on_surface_dark&lt;/color>"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/dynamiccolors/res/values-night/colors.xml"
+            line="28"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`@android:color/system_inverse_on_surface_light` requires API level 10000 (current min is 30)"
+        errorLine1="    &lt;color name=&quot;materialColorInverseOnSurface&quot;>@android:color/system_inverse_on_surface_light&lt;/color>"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/dynamiccolors/res/values/colors.xml"
+            line="28"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`@android:color/system_inverse_primary_dark` requires API level 10000 (current min is 30)"
+        errorLine1="    &lt;color name=&quot;materialColorInversePrimary&quot;>@android:color/system_inverse_primary_dark&lt;/color>"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/dynamiccolors/res/values-night/colors.xml"
+            line="29"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`@android:color/system_inverse_primary_light` requires API level 10000 (current min is 30)"
+        errorLine1="    &lt;color name=&quot;materialColorInversePrimary&quot;>@android:color/system_inverse_primary_light&lt;/color>"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/dynamiccolors/res/values/colors.xml"
+            line="29"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`@android:color/system_inverse_surface_dark` requires API level 10000 (current min is 30)"
+        errorLine1="    &lt;color name=&quot;materialColorInverseSurface&quot;>@android:color/system_inverse_surface_dark&lt;/color>"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/dynamiccolors/res/values-night/colors.xml"
+            line="30"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`@android:color/system_inverse_surface_light` requires API level 10000 (current min is 30)"
+        errorLine1="    &lt;color name=&quot;materialColorInverseSurface&quot;>@android:color/system_inverse_surface_light&lt;/color>"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/dynamiccolors/res/values/colors.xml"
+            line="30"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`@android:color/system_scrim_dark` requires API level 10000 (current min is 30)"
+        errorLine1="    &lt;color name=&quot;materialColorScrim&quot;>@android:color/system_scrim_dark&lt;/color>"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/dynamiccolors/res/values-night/colors.xml"
+            line="53"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`@android:color/system_scrim_light` requires API level 10000 (current min is 30)"
+        errorLine1="    &lt;color name=&quot;materialColorScrim&quot;>@android:color/system_scrim_light&lt;/color>"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/dynamiccolors/res/values/colors.xml"
+            line="53"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`@android:color/system_shadow_dark` requires API level 10000 (current min is 30)"
+        errorLine1="    &lt;color name=&quot;materialColorShadow&quot;>@android:color/system_shadow_dark&lt;/color>"
+        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/dynamiccolors/res/values-night/colors.xml"
+            line="57"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`@android:color/system_shadow_light` requires API level 10000 (current min is 30)"
+        errorLine1="    &lt;color name=&quot;materialColorShadow&quot;>@android:color/system_shadow_light&lt;/color>"
+        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/dynamiccolors/res/values/colors.xml"
+            line="57"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`@android:color/system_surface_tint_dark` requires API level 10000 (current min is 30)"
+        errorLine1="    &lt;color name=&quot;materialColorSurfaceTint&quot;>@android:color/system_surface_tint_dark&lt;/color>"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/dynamiccolors/res/values-night/colors.xml"
+            line="66"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="`@android:color/system_surface_tint_light` requires API level 10000 (current min is 30)"
+        errorLine1="    &lt;color name=&quot;materialColorSurfaceTint&quot;>@android:color/system_surface_tint_light&lt;/color>"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/dynamiccolors/res/values/colors.xml"
+            line="66"
+            column="44"/>
+    </issue>
 </issues>
