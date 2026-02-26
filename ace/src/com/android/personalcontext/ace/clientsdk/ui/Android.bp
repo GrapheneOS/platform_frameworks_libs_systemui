@@ -1,0 +1,42 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+android_library {
+    name: "personalcontext_ace_clientsdk_ui",
+    srcs: [
+        "AceEmbeddedInputsUpdateEffect.kt",
+        "AceEmbeddedOverlapDetectionEffect.kt",
+        "AceEmbeddedOverlapState.kt",
+        "AceEmbeddedOverlapZOrderEffect.kt",
+        "AceEmbeddedScrollDispatchEffect.kt",
+        "AceEmbeddedSessionStateExt.kt",
+        "AceEmbeddedSurfaceView.kt",
+        "NullableRectExt.kt",
+    ],
+    manifest: "AndroidManifest.xml",
+    static_libs: [
+        "androidx.appcompat_appcompat",
+        "personalcontext_ace_clientlib",
+        "personalcontext_ace_clientlib_impl",
+        "personalcontext_ace_clientsdk_state",
+        "personalcontext_ace_clientsdk_ui_androidexternalsurface",
+        "personalcontext_ace_clientsdk_utils",
+        "personalcontext_ace_prototype_utils",
+        "personalcontext_ace_prototype_embeddedscroll",
+        "androidx.activity_activity-compose",
+        "androidx.compose.foundation_foundation",
+        "androidx.compose.foundation_foundation-layout",
+        "androidx.compose.material3_material3",
+        "androidx.compose.runtime_runtime",
+        "androidx.compose.runtime_runtime-saveable",
+        "androidx.compose.ui_ui",
+        "androidx.compose.ui_ui-geometry",
+        "androidx.compose.ui_ui-graphics",
+        "androidx.compose.ui_ui-text",
+        "androidx.compose.ui_ui-unit",
+        "androidx.fragment_fragment-ktx",
+        "androidx.lifecycle_lifecycle-viewmodel-compose",
+        "androidx.window_window",
+    ],
+}

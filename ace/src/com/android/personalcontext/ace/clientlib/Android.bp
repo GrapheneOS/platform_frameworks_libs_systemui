@@ -1,0 +1,39 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+android_library {
+    name: "personalcontext_ace_clientlib",
+    srcs: [
+        "AceEmbeddedExceptions.kt",
+        "AceEmbeddedInputs.kt",
+        "AceEmbeddedMeasureSpec.kt",
+        "AceEmbeddedProvider.kt",
+        "AceEmbeddedUiSize.kt",
+    ],
+    manifest: "AndroidManifest.xml",
+    static_libs: [
+        "androidx.appcompat_appcompat",
+        "androidx.annotation_annotation",
+        "androidx.core_core",
+        "androidx.core_core-ktx",
+        "kotlinx-coroutines-android",
+    ],
+}
+
+android_library {
+    name: "personalcontext_ace_clientlib_impl",
+    srcs: [
+        "AceEmbeddedProviderImpl.kt",
+        "AceEmbeddedSessionImpl.kt",
+    ],
+    manifest: "AndroidManifest.xml",
+    static_libs: [
+        "personalcontext_ace_clientlib",
+        "androidx.annotation_annotation",
+        "androidx.core_core",
+        "kotlinx-coroutines-android",
+        "personalcontext_ace_prototype_insight",
+        "personalcontext_ace_prototype_utils",
+    ],
+}

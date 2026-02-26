@@ -1,0 +1,20 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+android_library {
+    name: "personalcontext_ace_clientsdk_state",
+    srcs: [
+        "AceEmbeddedOverlapBehavior.kt",
+        "AceEmbeddedSessionState.kt",
+        "AceEmbeddedUiVisibility.kt",
+        "AceEmbeddedZOrderOverrideValue.kt",
+        "NullableRect.kt",
+    ],
+    manifest: "AndroidManifest.xml",
+    static_libs: [
+        "androidx.appcompat_appcompat",
+        "personalcontext_ace_clientlib",
+        "kotlinx-coroutines-android",
+    ],
+}
