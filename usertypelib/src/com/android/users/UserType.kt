@@ -26,4 +26,5 @@ enum class UserType : Parcelable {
     WORK,
     CLONED,
     PRIVATE,
+    SYSTEM_HEADLESS,
 }

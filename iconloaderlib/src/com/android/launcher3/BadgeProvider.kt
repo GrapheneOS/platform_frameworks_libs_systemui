@@ -44,6 +44,14 @@ interface BadgeProvider {
                     context.getColor(R.color.themed_badge_icon_background_color),
                     context.getColor(R.color.themed_badge_icon_color),
                 )
+            } else if (type == BadgeType.SYSTEM_HEADLESS) {
+                // SYSTEM_HEADLESS requires a white icon on a colored background,
+                // which is the inverse of standard profile badges.
+                UserBadgeDrawable(
+                    context.getDrawable(type.drawableRes),
+                    context.getColor(type.colorRes),
+                    Color.WHITE,
+                )
             } else {
                 UserBadgeDrawable(
                     context.getDrawable(type.drawableRes),
@@ -56,6 +64,13 @@ interface BadgeProvider {
     class ColoredBadgeProvider(val colorProvider: (Context) -> ColorList) : BadgeProvider {
         override fun getDrawable(context: Context, type: BadgeType, creationFlag: Int): Drawable {
             val colors = colorProvider(context)
+            if (type == BadgeType.SYSTEM_HEADLESS) {
+                return UserBadgeDrawable(
+                    context.getDrawable(type.drawableRes),
+                    colors.badgeForegroundColor,
+                    colors.badgeBackgroundColor,
+                )
+            }
             return UserBadgeDrawable(
                 context.getDrawable(type.drawableRes),
                 colors.badgeBackgroundColor,
@@ -79,6 +94,11 @@ interface BadgeProvider {
         WORK("work", R.drawable.ic_work_app_badge, R.color.badge_tint_work),
         CLONE("clone", R.drawable.ic_clone_app_badge, R.color.badge_tint_clone),
         PRIVATE("private", R.drawable.ic_private_profile_app_badge, R.color.badge_tint_private),
+        SYSTEM_HEADLESS(
+            "system_headless",
+            R.drawable.ic_system_headless_app_badge,
+            R.color.badge_tint_system_headless,
+        ),
         INSTANT("instant", R.drawable.ic_instant_app_badge, R.color.badge_tint_instant),
     }
 }
