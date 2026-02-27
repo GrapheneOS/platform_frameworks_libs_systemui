@@ -33,4 +33,7 @@ android_library {
         "src/**/*.kt",
     ],
     kotlincflags: ["-Xjvm-default=all"],
+    lint: {
+        baseline_filename: "lint-baseline.xml",
+    },
 }
