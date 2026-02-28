@@ -24,6 +24,7 @@ import com.android.launcher3.icons.BaseIconFactory
 import com.android.launcher3.icons.BitmapInfo
 import com.android.launcher3.icons.IconProvider
 import com.android.launcher3.icons.SourceHint
+import com.android.launcher3.icons.cache.CacheLookupFlag.Companion.DEFAULT_LOOKUP_FLAG
 import com.android.launcher3.util.ComponentKey
 
 /** Class to encapsulate various icon loading arguments and some utility methods */
@@ -33,6 +34,7 @@ class IconLoadRequest<T>(
     private val logic: CachingLogic<T>,
     private val cache: BaseIconCache,
     @JvmField val iconDpi: Int,
+    private val lookupFlag: CacheLookupFlag = DEFAULT_LOOKUP_FLAG,
 ) {
 
     private val iconProvider: IconProvider
@@ -47,6 +49,7 @@ class IconLoadRequest<T>(
                 key = ComponentKey(logic.getComponent(item), logic.getUser(item)),
                 logic = logic,
                 freshnessId = logic.getFreshnessIdentifier(item, iconProvider)?.toString(),
+                lookupFlag = lookupFlag,
             )
 
     /** Loads the icon for the provided component info */
