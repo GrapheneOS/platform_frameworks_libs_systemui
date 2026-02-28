@@ -39,6 +39,9 @@ constructor(
     val isCloned: Boolean
         get() = type == UserType.CLONED
 
+    val isSystemHeadless: Boolean
+        get() = type == UserType.SYSTEM_HEADLESS
+
     val isPrivate: Boolean
         get() = type == UserType.PRIVATE
 
@@ -46,4 +49,5 @@ constructor(
         op.setFlag(BitmapInfo.FLAG_WORK, isWork)
             .setFlag(BitmapInfo.FLAG_CLONE, isCloned)
             .setFlag(BitmapInfo.FLAG_PRIVATE, isPrivate)
+            .setFlag(BitmapInfo.FLAG_SYSTEM_HEADLESS, isSystemHeadless)
 }
