@@ -22,6 +22,7 @@ import com.android.mechanics.testing.DataPointTypes.springParameters
 import com.android.mechanics.testing.DataPointTypes.springState
 import org.json.JSONObject
 import platform.test.motion.golden.DataPointType
+import platform.test.motion.golden.FloatTolerances
 import platform.test.motion.golden.UnknownTypeException
 
 fun SpringParameters.asDataPoint() = springParameters.makeDataPoint(this)
@@ -30,7 +31,7 @@ fun SpringState.asDataPoint() = springState.makeDataPoint(this)
 
 object DataPointTypes {
     val springParameters: DataPointType<SpringParameters> =
-        DataPointType(
+        DataPointType.createWithTolerance(
             "springParameters",
             jsonToValue = {
                 with(it as? JSONObject ?: throw UnknownTypeException()) {
@@ -46,10 +47,19 @@ object DataPointTypes {
                     put("dampingRatio", it.dampingRatio)
                 }
             },
+            // stiffness is required to be > 0, so using Float.MIN_VALUE for the tolerance as
+            // workaround.
+            tolerance = SpringParameters(Float.MIN_VALUE, 0f),
+            toleranceAwareEquality = { a, b, t ->
+                with(FloatTolerances) {
+                    isWithinTolerance(a.stiffness, b.stiffness, t.stiffness) &&
+                        isWithinTolerance(a.dampingRatio, b.dampingRatio, t.dampingRatio)
+                }
+            },
         )
 
     val springState: DataPointType<SpringState> =
-        DataPointType(
+        DataPointType.createWithTolerance(
             "springState",
             jsonToValue = {
                 with(it as? JSONObject ?: throw UnknownTypeException()) {
@@ -63,6 +73,13 @@ object DataPointTypes {
                 JSONObject().apply {
                     put("displacement", it.displacement)
                     put("velocity", it.velocity)
+                }
+            },
+            tolerance = SpringState(0f, 0f),
+            toleranceAwareEquality = { a, b, t ->
+                with(FloatTolerances) {
+                    isWithinTolerance(a.displacement, b.displacement, t.displacement) &&
+                        isWithinTolerance(a.velocity, b.velocity, t.velocity)
                 }
             },
         )
