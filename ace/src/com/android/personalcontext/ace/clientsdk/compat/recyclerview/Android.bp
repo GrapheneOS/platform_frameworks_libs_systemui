@@ -1,0 +1,13 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+android_library {
+    name: "personalcontext_ace_clientsdk_compat_recyclerview",
+    srcs: ["NestedScrollingParentRecyclerView.kt"],
+    manifest: "AndroidManifest.xml",
+    static_libs: [
+        "androidx.core_core",
+        "androidx.recyclerview_recyclerview",
+    ],
+}

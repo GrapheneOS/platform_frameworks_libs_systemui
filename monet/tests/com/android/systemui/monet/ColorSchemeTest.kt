@@ -197,18 +197,13 @@ class ColorSchemeTest {
         arrayOf(false, true).forEach { isDark ->
             val suffix = if (isDark) "_dark" else "_light"
             val dynamicScheme = SchemeTonalSpot(Hct.fromInt(GOOGLE_BLUE), isDark, CONTRAST)
-            DynamicColors.getAllDynamicColorsMapped().forEach {
-                resources.createColorEntry(
-                    "system_${it.first}$suffix",
-                    it.second.getArgb(dynamicScheme),
-                )
-            }
-        }
-
-        // fixed colors
-        val dynamicScheme = SchemeTonalSpot(Hct.fromInt(GOOGLE_BLUE), false, CONTRAST)
-        DynamicColors.getFixedColorsMapped().forEach {
-            resources.createColorEntry("system_${it.first}", it.second.getArgb(dynamicScheme))
+            (DynamicColors.getAllDynamicColorsMapped() + DynamicColors.getFixedColorsMapped())
+                .forEach {
+                    resources.createColorEntry(
+                        "system_${it.first}$suffix",
+                        it.second.getArgb(dynamicScheme),
+                    )
+                }
         }
 
         // custom colors
@@ -302,8 +297,7 @@ class ColorSchemeTest {
             (DynamicColors.getAllDynamicColorsMapped() + DynamicColors.getFixedColorsMapped())
                 .forEach {
                     val newName = ("material_color_" + it.first).snakeToLowerCamelCase()
-                    val colorValue =
-                        "@color/system_" + it.first + if (it.first.contains("fixed")) "" else suffix
+                    val colorValue = "@color/system_" + it.first + suffix
 
                     resources.createColorEntry(newName, colorValue)
                 }
@@ -331,19 +325,13 @@ class ColorSchemeTest {
         val existingFields = rClass.declaredFields.map { it.name }.toSet()
 
         arrayOf("_light", "_dark").forEach { suffix ->
-            DynamicColors.getAllDynamicColorsMapped().forEach {
-                val name = "system_" + it.first + suffix
-                if (!existingFields.contains(name)) {
-                    group.createEntry("public", arrayOf(Pair("name", name)), null)
+            (DynamicColors.getAllDynamicColorsMapped() + DynamicColors.getFixedColorsMapped())
+                .forEach {
+                    val name = "system_" + it.first + suffix
+                    if (!existingFields.contains(name)) {
+                        group.createEntry("public", arrayOf(Pair("name", name)), null)
+                    }
                 }
-            }
-        }
-
-        DynamicColors.getFixedColorsMapped().forEach {
-            val name = "system_${it.first}"
-            if (!existingFields.contains(name)) {
-                group.createEntry("public", arrayOf(Pair("name", name)), null)
-            }
         }
 
         saveFile(document, "public.xml")

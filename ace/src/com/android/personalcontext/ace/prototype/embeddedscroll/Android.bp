@@ -1,0 +1,16 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+android_library {
+    name: "personalcontext_ace_prototype_embeddedscroll",
+    srcs: [
+        "EmbeddedScrollInsight.kt",
+    ],
+    manifest: "AndroidManifest.xml",
+    static_libs: [
+        "personalcontext_ace_common_embeddedscroll",
+        "personalcontext_ace_prototype_insight",
+        "androidx.core_core",
+    ],
+}

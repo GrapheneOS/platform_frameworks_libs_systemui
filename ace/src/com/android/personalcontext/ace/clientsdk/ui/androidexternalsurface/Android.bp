@@ -1,0 +1,16 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+android_library {
+    name: "personalcontext_ace_clientsdk_ui_androidexternalsurface",
+    srcs: ["AndroidExternalSurface.kt"],
+    manifest: "AndroidManifest.xml",
+    static_libs: [
+        "androidx.compose.foundation_foundation",
+        "androidx.compose.runtime_runtime",
+        "androidx.compose.ui_ui",
+        "androidx.lifecycle_lifecycle-viewmodel-compose",
+        "kotlinx-coroutines-android",
+    ],
+}
