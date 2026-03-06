@@ -25,9 +25,15 @@ import platform.test.motion.golden.DataPointType
 import platform.test.motion.golden.FloatTolerances
 import platform.test.motion.golden.UnknownTypeException
 
-fun SpringParameters.asDataPoint() = springParameters.makeDataPoint(this)
+fun SpringParameters?.asDataPoint() = springParameters.makeDataPoint(this)
 
-fun SpringState.asDataPoint() = springState.makeDataPoint(this)
+val SpringParameters.Companion.dataPointType
+    get() = DataPointTypes.springParameters
+
+fun SpringState?.asDataPoint() = springState.makeDataPoint(this)
+
+val SpringState.Companion.dataPointType
+    get() = DataPointTypes.springState
 
 object DataPointTypes {
     val springParameters: DataPointType<SpringParameters> =
