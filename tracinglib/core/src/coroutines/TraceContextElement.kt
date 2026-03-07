@@ -17,7 +17,7 @@
 package com.android.app.tracing.coroutines
 
 import android.annotation.SuppressLint
-import android.os.PerfettoTrace
+import android.os.PerfettoCategories
 import android.os.SystemProperties
 import android.os.Trace
 import android.util.Log
@@ -357,12 +357,11 @@ internal class TraceContextElement(
         val traceSection = "TCE#init;$nameWithId"
         debug { traceSection }
         if (usePerfettoSdk) {
-            if (PerfettoTrace.isCcCategoryEnabled()) {
-                if (PerfettoTrace.IS_USE_SDK_TRACING_API_V3) {
-                    PerfettoTraceV3.begin(PerfettoTrace.CC_CATEGORY_V3, traceSection).emit()
-                } else {
-                    PerfettoTrace.begin(PerfettoTrace.CC_CATEGORY, traceSection).emit()
-                }
+            if (
+                android.os.Flags.perfettoSdkTracingV3() &&
+                    PerfettoCategories.CC_CATEGORY.isEnabled()
+            ) {
+                PerfettoTraceV3.begin(PerfettoCategories.CC_CATEGORY, traceSection).emit()
             }
         } else {
             Trace.traceBegin(Trace.TRACE_TAG_APP, traceSection) // begin: "TCE#init"
@@ -393,12 +392,11 @@ internal class TraceContextElement(
 
     init {
         if (usePerfettoSdk) {
-            if (PerfettoTrace.isCcCategoryEnabled()) {
-                if (PerfettoTrace.IS_USE_SDK_TRACING_API_V3) {
-                    PerfettoTraceV3.end(PerfettoTrace.CC_CATEGORY_V3).setFlow(continuationId).emit()
-                } else {
-                    PerfettoTrace.end(PerfettoTrace.CC_CATEGORY).setFlow(continuationId).emit()
-                }
+            if (
+                android.os.Flags.perfettoSdkTracingV3() &&
+                    PerfettoCategories.CC_CATEGORY.isEnabled()
+            ) {
+                PerfettoTraceV3.end(PerfettoCategories.CC_CATEGORY).setFlow(continuationId).emit()
             }
         } else {
             Trace.traceEnd(Trace.TRACE_TAG_APP) // end: "TCE#init"
@@ -430,23 +428,17 @@ internal class TraceContextElement(
         val oldState = storage.data
         if (oldState === contextTraceData) return oldState
         if (usePerfettoSdk) {
-            if (PerfettoTrace.isCcCategoryEnabled()) {
+            if (
+                android.os.Flags.perfettoSdkTracingV3() &&
+                    PerfettoCategories.CC_CATEGORY.isEnabled()
+            ) {
                 val name = coroutineTraceName + if (continuationCount < 0) "" else continuationCount
-                if (PerfettoTrace.IS_USE_SDK_TRACING_API_V3) {
-                    val slice = PerfettoTraceV3.begin(PerfettoTrace.CC_CATEGORY_V3, name)
-                    initStack?.let { slice.addArg("init_stack", it) }
-                    if (DebugSysProps.dumpContinuationStack) {
-                        slice.addArg("continuation_stack", StackDump().stackTraceToString())
-                    }
-                    slice.setTerminatingFlow(continuationId).emit()
-                } else {
-                    val slice = PerfettoTrace.begin(PerfettoTrace.CC_CATEGORY, name)
-                    initStack?.let { slice.addArg("init_stack", it) }
-                    if (DebugSysProps.dumpContinuationStack) {
-                        slice.addArg("continuation_stack", StackDump().stackTraceToString())
-                    }
-                    slice.setTerminatingFlow(continuationId).emit()
+                val slice = PerfettoTraceV3.begin(PerfettoCategories.CC_CATEGORY, name)
+                initStack?.let { slice.addArg("init_stack", it) }
+                if (DebugSysProps.dumpContinuationStack) {
+                    slice.addArg("continuation_stack", StackDump().stackTraceToString())
                 }
+                slice.setTerminatingFlow(continuationId).emit()
             }
             continuationId = nextRandomLong()
         } else {
@@ -497,12 +489,8 @@ internal class TraceContextElement(
         val storage = traceThreadLocal.get() ?: return
         if (storage.data === oldState) return
         val contId = storage.restoreDataForSuspension(oldState)
-        if (usePerfettoSdk) {
-            if (PerfettoTrace.IS_USE_SDK_TRACING_API_V3) {
-                PerfettoTraceV3.end(PerfettoTrace.CC_CATEGORY_V3).setFlow(contId).emit()
-            } else {
-                PerfettoTrace.end(PerfettoTrace.CC_CATEGORY).setFlow(contId).emit()
-            }
+        if (usePerfettoSdk && android.os.Flags.perfettoSdkTracingV3()) {
+            PerfettoTraceV3.end(PerfettoCategories.CC_CATEGORY).setFlow(contId).emit()
         } else {
             Trace.traceEnd(Trace.TRACE_TAG_APP) // end: coroutineTraceName
         }
