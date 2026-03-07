@@ -40,7 +40,6 @@ import com.android.launcher3.icons.IconNormalizer.ICON_VISIBLE_AREA_FACTOR
 import com.android.launcher3.icons.ShadowGenerator.BLUR_FACTOR
 import com.android.launcher3.util.FlagOp
 import com.android.launcher3.util.UserIconInfo
-import com.android.systemui.shared.Flags.extendibleThemeManager
 import com.android.users.UserType
 import java.lang.ref.WeakReference
 import kotlin.annotation.AnnotationRetention.SOURCE
@@ -215,7 +214,7 @@ constructor(
                         else ThemedBitmap.NOT_SUPPORTED,
                     badgeProvider = themeController.badgeProvider,
                 )
-        } else if (extendibleThemeManager()) {
+        } else {
             info = info.copy(themedBitmap = ThemedBitmap.NOT_SUPPORTED)
         }
 
