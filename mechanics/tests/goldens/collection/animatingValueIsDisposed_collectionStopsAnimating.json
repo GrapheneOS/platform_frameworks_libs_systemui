@@ -53,9 +53,7 @@
         0.16369182,
         0.32773256,
         0.48736703,
-        {
-          "type": "not_found"
-        }
+        null
       ]
     },
     {
@@ -70,9 +68,7 @@
         1,
         1,
         1,
-        {
-          "type": "not_found"
-        }
+        null
       ]
     },
     {
@@ -87,9 +83,7 @@
         false,
         false,
         false,
-        {
-          "type": "not_found"
-        }
+        null
       ]
     },
     {
