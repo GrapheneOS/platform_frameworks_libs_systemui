@@ -19,6 +19,7 @@ package com.android.launcher3.util
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.BiFunction
+import java.util.function.Consumer
 
 object ListenableRefs {
 
@@ -68,5 +69,12 @@ object ListenableRefs {
         transformer: (T1, T2) -> R,
     ): ListenableRef<R> {
         return combine(source1, source2, BiFunction { t1, t2 -> transformer(t1, t2) })
+    }
+
+    /** Utility method which allows callers to skip first [n] events of a [ListenableRef] */
+    @JvmStatic
+    fun <T> skip(n: Int, callback: Consumer<T>): (T) -> Unit {
+        var count = n
+        return { if (count > 0) count-- else callback.accept(it) }
     }
 }
