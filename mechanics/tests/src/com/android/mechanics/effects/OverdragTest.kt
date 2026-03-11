@@ -38,7 +38,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import platform.test.motion.MotionTestRule
-import platform.test.motion.golden.DataPointTypes
+import platform.test.motion.golden.dataPointType
 import platform.test.motion.golden.feature
 import platform.test.motion.testing.createGoldenPathManager
 
@@ -121,7 +121,7 @@ class OverdragTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Defaul
             feature(
                 FeatureCaptures.semantics(
                     Overdrag.Defaults.OverdragLimit,
-                    DataPointTypes.float,
+                    Float.dataPointType,
                     "overdragLimit",
                 )
             )

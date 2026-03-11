@@ -13,6 +13,9 @@ android_library {
     name: "personalcontext_ace_common_render_token",
     srcs: ["RenderTokenUtils.kt"],
     manifest: "AndroidManifest.xml",
+    static_libs: [
+        "personalcontext_ace_common_wrappers",
+    ],
 }
 
 android_library {
@@ -20,4 +23,17 @@ android_library {
     srcs: ["EmbeddedScrollEvent.kt"],
     manifest: "AndroidManifest.xml",
     static_libs: ["androidx.core_core"],
+}
+
+android_library {
+    name: "personalcontext_ace_common",
+    srcs: [
+        "FlatIndexUtils.kt",
+        "PackedIntUtils.kt",
+    ],
+    static_libs: [
+        "androidx.annotation_annotation",
+        "personalcontext_ace_common_wrappers",
+    ],
+    manifest: "AndroidManifest.xml",
 }

@@ -58,7 +58,7 @@ import org.junit.rules.ExternalResource
 import org.junit.runner.RunWith
 import platform.test.motion.MotionTestRule
 import platform.test.motion.compose.runMonotonicClockTest
-import platform.test.motion.golden.DataPointTypes
+import platform.test.motion.golden.dataPointType
 import platform.test.motion.golden.feature
 import platform.test.motion.testing.createGoldenPathManager
 
@@ -538,7 +538,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
             spec = spec,
             capture = {
                 defaultFeatureCaptures()
-                feature(FeatureCaptures.semantics(s1, DataPointTypes.string))
+                feature(FeatureCaptures.semantics(s1, String.dataPointType))
             },
         ) {
             animateValueTo(3f, changePerFrame = .2f)

@@ -20,55 +20,63 @@ import com.android.mechanics.debug.DebugInspector
 import com.android.mechanics.spec.SemanticKey
 import com.android.mechanics.spring.SpringParameters
 import com.android.mechanics.spring.SpringState
-import platform.test.motion.golden.DataPoint
 import platform.test.motion.golden.DataPointType
 import platform.test.motion.golden.FeatureCapture
-import platform.test.motion.golden.asDataPoint
+import platform.test.motion.golden.dataPointType
 
 /** Feature captures on MotionValue's [DebugInspector] */
 object FeatureCaptures {
     /** Input value of the current frame. */
-    val input = FeatureCapture<DebugInspector, Float>("input") { it.frame.input.asDataPoint() }
+    val input =
+        FeatureCapture<DebugInspector, Float>("input", Float.dataPointType) { it.frame.input }
 
     /** Gesture direction of the current frame. */
     val gestureDirection =
-        FeatureCapture<DebugInspector, String>("gestureDirection") {
-            it.frame.gestureDirection.name.asDataPoint()
+        FeatureCapture<DebugInspector, String>("gestureDirection", String.dataPointType) {
+            it.frame.gestureDirection.name
         }
 
     /** Animated output value of the current frame. */
-    val output = FeatureCapture<DebugInspector, Float>("output") { it.frame.output.asDataPoint() }
+    val output =
+        FeatureCapture<DebugInspector, Float>("output", Float.dataPointType) { it.frame.output }
 
     /** Output target value of the current frame. */
     val outputTarget =
-        FeatureCapture<DebugInspector, Float>("outputTarget") {
-            it.frame.outputTarget.asDataPoint()
+        FeatureCapture<DebugInspector, Float>("outputTarget", Float.dataPointType) {
+            it.frame.outputTarget
         }
 
     /** Spring parameters currently in use. */
     val springParameters =
-        FeatureCapture<DebugInspector, SpringParameters>("springParameters") {
-            it.frame.springParameters.asDataPoint()
+        FeatureCapture<DebugInspector, SpringParameters>(
+            "springParameters",
+            SpringParameters.dataPointType,
+        ) {
+            it.frame.springParameters
         }
 
     /** Spring state currently in use. */
     val springState =
-        FeatureCapture<DebugInspector, SpringState>("springState") {
-            it.frame.springState.asDataPoint()
+        FeatureCapture<DebugInspector, SpringState>("springState", SpringState.dataPointType) {
+            it.frame.springState
         }
 
     /** Whether the spring is currently stable. */
     val isStable =
-        FeatureCapture<DebugInspector, Boolean>("isStable") { it.frame.isStable.asDataPoint() }
+        FeatureCapture<DebugInspector, Boolean>("isStable", Boolean.dataPointType) {
+            it.frame.isStable
+        }
 
     /** Whether the motion value currently is running the animation loop. */
     val isAnimating =
-        FeatureCapture<DebugInspector, Boolean>("isAnimating") { it.isAnimating.asDataPoint() }
+        FeatureCapture<DebugInspector, Boolean>("isAnimating", Boolean.dataPointType) {
+            it.isAnimating
+        }
 
     /** Whether the output can change. */
     val isOutputFixed =
-        FeatureCapture<DebugInspector, Boolean>("isOutputFixed") {
-            it.frame.isOutputFixed.asDataPoint()
+        FeatureCapture<DebugInspector, Boolean>("isOutputFixed", Boolean.dataPointType) {
+            it.frame.isOutputFixed
         }
 
     /** A semantic value to capture in the golden. */
@@ -77,11 +85,13 @@ object FeatureCaptures {
         dataPointType: DataPointType<T & Any>,
         name: String = key.debugLabel,
     ): FeatureCapture<DebugInspector, T & Any> {
-        return FeatureCapture(name) { dataPointType.makeDataPoint(it.frame.semantic(key)) }
+        return FeatureCapture(name, dataPointType) { it.frame.semantic(key) }
     }
 }
 
-/** Returns notFound if the motion value is not active. */
+/** Returns null if the motion value is not active. */
 fun <T : Any> FeatureCapture<DebugInspector, T>.whenActive(): FeatureCapture<DebugInspector, T> {
-    return FeatureCapture(name) { if (it.isActive) capture(it) else DataPoint.notFound() }
+    return FeatureCapture(name, type) { debugInspector ->
+        captureFn(debugInspector).takeIf { debugInspector.isActive }
+    }
 }

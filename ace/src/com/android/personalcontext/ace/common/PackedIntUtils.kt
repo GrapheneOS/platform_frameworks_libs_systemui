@@ -13,20 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("FlaggedApi", "NewApi")
-
 package com.android.personalcontext.ace.common
 
-import com.android.personalcontext.ace.common.wrappers.IPublishedContextHint
-
-/** Render token utilities for ACE classes. */
-object RenderTokenUtils {
+object PackedIntUtils {
 
   /**
-   * Checks if the hint has a renderer token.
-   *
-   * This is used to distinguish between hints that are meant to be delivered to a specific renderer
-   * (eg: for embedded UI), versus hints that are used for other purposes.
+   * Packs the [value] parameter into the upper 16 bits of the receiver (`this`). The receiver's
+   * existing lower 16 bits are preserved.
    */
-  fun IPublishedContextHint.hasRendererToken(): Boolean = this.renderTokens.isNotEmpty()
+  fun Int.packValue(value: Int): Int {
+    val maskedLower = this and 0xFFFF
+    val shiftedUpper = value shl 16
+    return shiftedUpper or maskedLower
+  }
+
+  /** Extracts the signed 16-bit value from the upper 16 bits of the receiver (`this`). */
+  fun Int.unpackValue(): Int {
+    return this shr 16
+  }
+
+  /** Extracts the original Int receiver. */
+  fun Int.unpackOriginal(): Int {
+    return this.toShort().toInt()
+  }
 }
