@@ -13,27 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("FlaggedApi", "NewApi")
-
-package com.android.personalcontext.ace.common
+package com.android.personalcontext.ace.visualizer.compat
 
 import android.service.personalcontext.hint.ContextHint
 import android.service.personalcontext.insight.ContextInsight
+import android.service.personalcontext.insight.InsightCollection
 
-/**
- * Utility object for extracting specific typed hints from a
- * [android.service.personalcontext.insight.ContextInsight].
- */
-object FindHintUtils {
+interface PrototypeTransformCompat {
+
+  /** Transforms the [ContextHint] into a prototype instance, if possible. */
+  fun transform(hint: ContextHint): Any? = null
+
+  /** Transforms the [ContextInsight] into a prototype instance, if possible. */
+  fun transform(insight: ContextInsight): Any? = null
 
   /**
-   * Finds the first [android.service.personalcontext.hint.ContextHint] of type [T] within this
-   * [android.service.personalcontext.insight.ContextInsight].
-   *
-   * @param T The specific type of [android.service.personalcontext.hint.ContextHint] to find.
-   * @return The first hint of type [T], or `null` if no matching hint is found.
+   * Transforms the [InsightCollection] into a prototype instance, if possible, and return its
+   * [ContextInsight] children.
    */
-  @JvmSynthetic
-  inline fun <reified T : ContextHint> ContextInsight.findContextHint(): T? =
-    originHints.firstNotNullOfOrNull { it.contextHint as? T }
+  fun transformChildren(insight: InsightCollection): List<ContextInsight>? = null
 }
