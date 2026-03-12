@@ -10,6 +10,13 @@ flag {
 }
 
 flag {
+    name: "blueflax_first_phase"
+    namespace: "systemui"
+    description: "Enable Blueflax feature first phase."
+    bug: "483872198"
+}
+
+flag {
     name: "bouncer_area_exclusion"
     namespace : "systemui"
     description : "Exclusion List to calculated a default bouncer region on dream"

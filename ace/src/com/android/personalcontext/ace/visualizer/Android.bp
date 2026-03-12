@@ -1,0 +1,23 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+android_library {
+    name: "personalcontext_ace_visualizer",
+    srcs: [
+        "**/*.kt",
+    ],
+    manifest: "AndroidManifest.xml",
+    use_resource_processor: true,
+    enable_ksp: true,
+    resource_dirs: ["res"],
+    static_libs: [
+        "personalcontext_ace_common",
+        "androidx.compose.runtime_runtime",
+        "androidx.compose.material3_material3",
+        "dagger2",
+        "jsr330",
+        "androidx.compose.material_material-icons-extended",
+    ],
+    plugins: ["dagger2-compiler"],
+}
