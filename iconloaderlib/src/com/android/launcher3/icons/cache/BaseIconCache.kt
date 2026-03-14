@@ -52,7 +52,6 @@ import com.android.launcher3.icons.cache.CacheLookupFlag.Companion.DEFAULT_LOOKU
 import com.android.launcher3.util.ComponentKey
 import com.android.launcher3.util.FlagOp
 import com.android.launcher3.util.SQLiteCacheHelper
-import com.android.systemui.shared.Flags.extendibleThemeManager
 import java.util.function.Supplier
 import kotlin.collections.MutableMap.MutableEntry
 
@@ -564,7 +563,7 @@ constructor(
                 return false
             }
 
-            if (!extendibleThemeManager() || lookupFlags.hasThemeIcon()) {
+            if (lookupFlags.hasThemeIcon()) {
                 // Always set a non-null theme bitmap if theming was requested
                 entry.bitmap = entry.bitmap.copy(themedBitmap = ThemedBitmap.NOT_SUPPORTED)
 
@@ -717,14 +716,13 @@ constructor(
         fun CacheLookupFlag.toLookupColumns() =
             when {
                 useLowRes() -> COLUMNS_LOW_RES
-                extendibleThemeManager() && !hasThemeIcon() -> COLUMNS_HIGH_RES_NO_THEME
+                !hasThemeIcon() -> COLUMNS_HIGH_RES_NO_THEME
                 else -> COLUMNS_HIGH_RES
             }
 
         @JvmStatic
         protected fun BitmapInfo.downSampleToLookupFlag(flag: CacheLookupFlag) =
             when {
-                !extendibleThemeManager() -> this
                 flag.useLowRes() -> BitmapInfo.of(LOW_RES_ICON, color)
                 !flag.hasThemeIcon() && themedBitmap != null -> copy(themedBitmap = null)
                 else -> this
