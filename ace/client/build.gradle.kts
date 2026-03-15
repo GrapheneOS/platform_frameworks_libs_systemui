@@ -1,4 +1,3 @@
-
 plugins {
     id(libs.plugins.android.library.get().pluginId)
     id(libs.plugins.kotlin.android.get().pluginId)
@@ -11,14 +10,10 @@ android {
 
     sourceSets {
         named("main") {
-            java {
-                setSrcDirs(listOf(
-                    "src/com/android/personalcontext/ace/client/",
-                    "src/com/android/personalcontext/ace/common/",
-                    "src/com/android/personalcontext/ace/common/wrapper",
-                ))
-            }
-            res.setSrcDirs(listOf("src/com/android/personalcontext/ace/client/clientsdk/compat/res"))
+            java { setSrcDirs(listOf("../src/com/android/personalcontext/ace/client/")) }
+            res.setSrcDirs(
+                listOf("../src/com/android/personalcontext/ace/client/clientsdk/compat/res")
+            )
             manifest.srcFile("AndroidManifest.xml")
         }
     }
@@ -27,6 +22,7 @@ android {
 }
 
 dependencies {
+    api(project(":frameworks:libs:systemui:ace:common"))
     api(libs.androidx.annotation)
     api(libs.compose.runtime)
     api(libs.androidx.core.ktx)
