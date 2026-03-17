@@ -44,6 +44,13 @@ flag {
 }
 
 flag {
+  name: "enable_ai_clocks"
+  namespace: "systemui"
+  description: "Enables AI clocks functionality"
+  bug: "493645457"
+}
+
+flag {
     name: "enable_home_delay"
     namespace: "systemui"
     description: "Enables fix that exposes signal to notify the completion of the RRO loading."
