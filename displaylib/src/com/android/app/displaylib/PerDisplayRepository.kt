@@ -34,7 +34,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 /**
@@ -229,12 +228,18 @@ constructor(
                     lifecycleAllowedDisplayIds.intersect(connectedDisplays)
                 }
             }
-            .map { it.ifEmpty { setOf(DEFAULT_DISPLAY) } }
             .stateInTraced(
-                "allowed displays for $debugName",
-                bgApplicationScope,
-                SharingStarted.WhileSubscribed(),
-                setOf(DEFAULT_DISPLAY),
+                name = "allowed displays for $debugName",
+                scope = bgApplicationScope,
+                started = SharingStarted.WhileSubscribed(),
+                initialValue =
+                    if (lifecycleManager == null) {
+                        displayRepository.displayIds.value
+                    } else {
+                        displayRepository.displayIds.value.intersect(
+                            lifecycleManager.displayIds.value
+                        )
+                    },
             )
 
     init {
