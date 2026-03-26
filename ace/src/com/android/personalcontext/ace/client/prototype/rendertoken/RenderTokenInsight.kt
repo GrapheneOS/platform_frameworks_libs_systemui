@@ -13,33 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.personalcontext.ace.client.prototype.aacard
+package com.android.personalcontext.ace.client.prototype.rendertoken
 
 import android.os.Bundle
+import android.service.personalcontext.RenderToken
 import android.service.personalcontext.hint.PublishedContextHint
 import android.service.personalcontext.insight.ContextInsight
+import androidx.core.os.BundleCompat
 import com.android.personalcontext.ace.client.prototype.PrototypeInsight
-import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.AACardInsightId
+import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.RenderTokenInsightId
 
-/** An insight for AA Card. */
-data class AACardInsight(
-    val title: String,
-    // TODO(b/480789784): add more fields
-    override val originHints: Set<PublishedContextHint>,
-) : PrototypeInsight(AACardInsightId, this) {
+/**
+ * A [PrototypeInsight] that wraps a [RenderToken].
+ *
+ * @param renderToken the render token to wrap.
+ */
+data class RenderTokenInsight(val renderToken: RenderToken) :
+    PrototypeInsight(RenderTokenInsightId, this) {
 
     override fun exportDataToBundle(bundle: Bundle) {
-        bundle.putString(KEY_TITLE, title)
+        bundle.putParcelable(KEY_RENDER_TOKEN, renderToken)
     }
 
     companion object : Creator {
-        private const val KEY_TITLE = "title"
+        private const val KEY_RENDER_TOKEN = "render_token"
 
         override fun create(
             bundle: Bundle,
             insights: List<ContextInsight?>,
             originHints: Set<PublishedContextHint>,
         ): PrototypeInsight =
-            AACardInsight(title = bundle.getString(KEY_TITLE) ?: "", originHints = originHints)
+            RenderTokenInsight(
+                BundleCompat.getParcelable(bundle, KEY_RENDER_TOKEN, RenderToken::class.java)
+                    ?: throw IllegalArgumentException("RenderToken is null")
+            )
     }
 }

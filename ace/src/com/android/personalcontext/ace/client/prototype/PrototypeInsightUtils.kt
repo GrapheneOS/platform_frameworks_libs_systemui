@@ -20,24 +20,25 @@ package com.android.personalcontext.ace.client.prototype
 import android.service.personalcontext.insight.BundleInsight
 import android.service.personalcontext.insight.ContextInsight
 import android.service.personalcontext.insight.InsightCollection
-import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.AACardInsightId
 import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.CardInsightId
 import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.ClientActionInsightId
+import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.ClientSignalInsightId
 import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.EmbeddedScrollInsightId
 import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.EmptyRenderInsightId
 import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.ExampleEmbeddedInsightId
 import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.InsightGridId
+import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.RenderTokenInsightId
 import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.ServerSideCloseInsightId
 import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.WeatherInsightId
-import com.android.personalcontext.ace.client.prototype.PrototypeInsightUtils.isPrototypeInsight
 import com.android.personalcontext.ace.client.prototype.PrototypeInsightUtils.toContextInsight
-import com.android.personalcontext.ace.client.prototype.aacard.AACardInsight
 import com.android.personalcontext.ace.client.prototype.card.CardInsight
 import com.android.personalcontext.ace.client.prototype.clientaction.ClientActionInsight
+import com.android.personalcontext.ace.client.prototype.clientsignal.ClientSignalInsight
 import com.android.personalcontext.ace.client.prototype.embeddedscroll.EmbeddedScrollInsight
 import com.android.personalcontext.ace.client.prototype.empty.EmptyRenderInsight
 import com.android.personalcontext.ace.client.prototype.example.ExampleEmbeddedInsight
 import com.android.personalcontext.ace.client.prototype.grid.InsightGrid
+import com.android.personalcontext.ace.client.prototype.rendertoken.RenderTokenInsight
 import com.android.personalcontext.ace.client.prototype.serversideclose.ServerSideCloseInsight
 import com.android.personalcontext.ace.client.prototype.weather.WeatherInsight
 
@@ -75,14 +76,15 @@ object PrototypeInsightUtils {
 
         val data =
             BundleInsight.Builder()
+                .setInsightTypeName(prototype.id.typeName)
                 .apply {
                     for (hint in prototype.originHints) addOriginHint(hint)
                     for (token in prototype.tokens) addToken(token)
                 }
                 .build()
                 .apply {
-                    dataBundle.putInt(PROTOTYPE_INSIGHT_ID_KEY, prototype.id.uid)
                     prototype.exportDataToBundle(dataBundle)
+                    dataBundle.putInt(PROTOTYPE_INSIGHT_ID_KEY, prototype.id.uid)
                 }
         val children =
             prototype.exportInsightsToList().map {
@@ -118,10 +120,11 @@ object PrototypeInsightUtils {
                 ClientActionInsightId -> ClientActionInsight
                 WeatherInsightId -> WeatherInsight
                 EmptyRenderInsightId -> EmptyRenderInsight
-                AACardInsightId -> AACardInsight
                 CardInsightId -> CardInsight
                 InsightGridId -> InsightGrid
                 ServerSideCloseInsightId -> ServerSideCloseInsight
+                RenderTokenInsightId -> RenderTokenInsight
+                ClientSignalInsightId -> ClientSignalInsight
             }
 
         return creator.create(data.dataBundle, children, originHints)

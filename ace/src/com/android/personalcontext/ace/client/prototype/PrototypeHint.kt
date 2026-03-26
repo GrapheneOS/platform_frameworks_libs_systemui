@@ -62,12 +62,18 @@ abstract class PrototypeHint(val id: PrototypeHintId, val creator: Creator) {
  * A unique identifier for each type of [PrototypeHint].
  *
  * @property uid A unique positive value for each entry that should not change after creation.
+ * @property typeName The class name of the prototype, may be used by OSI for comparison.
  */
-// Next ID: 6
-enum class PrototypeHintId(@field:IntRange(from = 1) val uid: Int) {
-    ExampleEmbeddedHintId(1),
-    WeatherHintId(2),
-    AACardHintId(3),
-    DialerClickEventHintId(4),
-    CrossDeviceIntentHintId(5),
+// Next ID: 12
+enum class PrototypeHintId(@field:IntRange(from = 1) val uid: Int, val typeName: String) {
+    ExampleEmbeddedHintId(1, "ExampleEmbeddedHint"),
+    WeatherHintId(2, "WeatherHint"),
+    DialerClickEventHintId(4, "DialerClickEventHint"),
+    CrossDeviceIntentHintId(5, "CrossDeviceIntentHint"),
+    RichCardHintId(6, "RichCardHint"),
+    RichCardLiveDataHintId(7, "RichCardLiveDataHint"),
+    ContactHintId(8, "ContactHint"),
+    EntityTypeHintId(9, "EntityTypeHint"),
+    ClientSignalHintId(10, "ClientSignalHint"),
+    VisualMetadataHintId(11, "VisualMetadataHint"),
 }

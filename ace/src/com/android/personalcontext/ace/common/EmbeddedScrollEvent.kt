@@ -31,55 +31,55 @@ import com.android.personalcontext.ace.common.EmbeddedScrollEventType.SCROLL_STO
  *   [SCROLL_STOP], the fling velocity in the y direction.
  */
 data class EmbeddedScrollEvent(
-  val type: EmbeddedScrollEventType,
-  @property:ScrollAxis val axes: Int = 0,
-  val x: Float = 0f,
-  val y: Float = 0f,
+    val type: EmbeddedScrollEventType,
+    @property:ScrollAxis val axes: Int = 0,
+    val x: Float = 0f,
+    val y: Float = 0f,
 ) {
 
-  override fun toString() =
-    when (type) {
-      SCROLL_START -> "EmbeddedScrollStart(axes=${axes.toScrollAxesString()})"
-      SCROLL_DELTA -> "EmbeddedScrollDelta(x=%.1f, y=%.1f)".format(x, y)
-      SCROLL_STOP -> "EmbeddedScrollStop(x=%.1f, y=%.1f)".format(x, y)
-    }
+    override fun toString() =
+        when (type) {
+            SCROLL_START -> "EmbeddedScrollStart(axes=${axes.toScrollAxesString()})"
+            SCROLL_DELTA -> "EmbeddedScrollDelta(x=%.1f, y=%.1f)".format(x, y)
+            SCROLL_STOP -> "EmbeddedScrollStop(x=%.1f, y=%.1f)".format(x, y)
+        }
 }
 
 enum class EmbeddedScrollEventType {
-  /**
-   * Indicates the start of a scroll interaction.
-   *
-   * When this type is used, the [EmbeddedScrollEvent.axes] property is populated.
-   */
-  SCROLL_START,
+    /**
+     * Indicates the start of a scroll interaction.
+     *
+     * When this type is used, the [EmbeddedScrollEvent.axes] property is populated.
+     */
+    SCROLL_START,
 
-  /**
-   * Indicates a scroll position update (movement).
-   *
-   * When this type is used, [EmbeddedScrollEvent.x] and [EmbeddedScrollEvent.y] represent the
-   * scroll deltas.
-   */
-  SCROLL_DELTA,
+    /**
+     * Indicates a scroll position update (movement).
+     *
+     * When this type is used, [EmbeddedScrollEvent.x] and [EmbeddedScrollEvent.y] represent the
+     * scroll deltas.
+     */
+    SCROLL_DELTA,
 
-  /**
-   * Indicates the end of a scroll interaction.
-   *
-   * When this type is used, [EmbeddedScrollEvent.x] and [EmbeddedScrollEvent.y] represent the fling
-   * velocities.
-   */
-  SCROLL_STOP,
+    /**
+     * Indicates the end of a scroll interaction.
+     *
+     * When this type is used, [EmbeddedScrollEvent.x] and [EmbeddedScrollEvent.y] represent the
+     * fling velocities.
+     */
+    SCROLL_STOP,
 }
 
 private fun @receiver:ScrollAxis Int.toScrollAxesString(): String {
-  val axes = this
+    val axes = this
 
-  if (axes == ViewCompat.SCROLL_AXIS_NONE) {
-    return "[NONE]"
-  }
-
-  return buildList {
-      if ((axes and ViewCompat.SCROLL_AXIS_HORIZONTAL) != 0) add("HORIZONTAL")
-      if ((axes and ViewCompat.SCROLL_AXIS_VERTICAL) != 0) add("VERTICAL")
+    if (axes == ViewCompat.SCROLL_AXIS_NONE) {
+        return "[NONE]"
     }
-    .joinToString(", ", prefix = "[", postfix = "]")
+
+    return buildList {
+            if ((axes and ViewCompat.SCROLL_AXIS_HORIZONTAL) != 0) add("HORIZONTAL")
+            if ((axes and ViewCompat.SCROLL_AXIS_VERTICAL) != 0) add("VERTICAL")
+        }
+        .joinToString(", ", prefix = "[", postfix = "]")
 }

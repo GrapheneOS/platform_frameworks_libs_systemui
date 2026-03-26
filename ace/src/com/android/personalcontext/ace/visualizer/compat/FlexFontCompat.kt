@@ -20,37 +20,37 @@ import androidx.compose.ui.text.TextStyle
 
 interface FlexFontCompat {
 
-  /**
-   * Modifies the [Typography] to use Google Sans Flex with the given variable format.
-   *
-   * @param slant the slant of the font.
-   * @param width the width of the font.
-   * @param grade the grade of the font.
-   * @param round the round of the font.
-   */
-  fun flexFont(
-    typography: Typography,
-    slant: Float = 0.0f,
-    width: Float = 100.0f,
-    grade: Int = 0,
-    round: Float = 100.0f,
-  ): Typography = typography
+    /**
+     * Modifies the [Typography] to use Google Sans Flex with the given variable format.
+     *
+     * @param slant the slant of the font.
+     * @param width the width of the font.
+     * @param grade the grade of the font.
+     * @param round the round of the font.
+     */
+    fun flexFont(
+        typography: Typography,
+        slant: Float = 0.0f,
+        width: Float = 100.0f,
+        grade: Int = 0,
+        round: Float = 100.0f,
+    ): Typography = typography
 
-  /**
-   * Returns the Google Sans Flex text style with the given variable format.
-   *
-   * @param slant the slant of the font.
-   * @param width the width of the font.
-   * @param weight the weight of the font.
-   * @param grade the grade of the font.
-   * @param round the round of the font.
-   */
-  fun flexFont(
-    style: TextStyle,
-    weight: Int,
-    slant: Float = 0.0f,
-    width: Float = 100.0f,
-    grade: Int = 0,
-    round: Float = 100.0f,
-  ): TextStyle = style
+    /**
+     * Returns the Google Sans Flex text style with the given variable format.
+     *
+     * @param slant the slant of the font.
+     * @param width the width of the font.
+     * @param weight the weight of the font.
+     * @param grade the grade of the font.
+     * @param round the round of the font.
+     */
+    fun flexFont(
+        style: TextStyle,
+        weight: Int,
+        slant: Float = 0.0f,
+        width: Float = 100.0f,
+        grade: Int = 0,
+        round: Float = 100.0f,
+    ): TextStyle = style
 }

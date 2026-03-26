@@ -31,7 +31,6 @@ import com.android.personalcontext.ace.client.clientlib.AceEmbeddedProvider
 import com.android.personalcontext.ace.client.clientlib.AceEmbeddedUiSize
 import com.android.personalcontext.ace.client.clientlib.ServerSideCloseException
 import com.android.personalcontext.ace.client.clientlib.SessionErrorException
-import com.android.personalcontext.ace.client.clientlib.UpdateSessionDestroyedException
 import com.android.personalcontext.ace.client.clientsdk.state.AceEmbeddedUiVisibility.Error
 import com.android.personalcontext.ace.client.clientsdk.state.AceEmbeddedUiVisibility.Hidden
 import com.android.personalcontext.ace.client.clientsdk.state.AceEmbeddedUiVisibility.Pending
@@ -241,20 +240,6 @@ class AceEmbeddedSessionStateImpl(
                             }
                         }
 
-                        // TODO: b/485772848 - Workaround until ACE stops destroying the session on
-                        // update()
-                        cancellationCause is UpdateSessionDestroyedException -> {
-                            val session = cancellationCause.session
-                            Log.i(
-                                TAG,
-                                "[AceEmbeddedLifecycle] Client-sdk connect() received session destroyed signal during update: $session.",
-                            )
-
-                            _uiStateFlow.update { state ->
-                                state.copy(visibility = Retryable.SessionDestroyedDuringUpdate)
-                            }
-                        }
-
                         // Server-side error.
                         cancellationCause is SessionErrorException -> {
                             val serverError = cancellationCause.cause
@@ -270,7 +255,7 @@ class AceEmbeddedSessionStateImpl(
 
                         // Client-side cancel.
                         e is CancellationException -> {
-                            Log.v(
+                            Log.i(
                                 TAG,
                                 "[AceEmbeddedLifecycle] Client-sdk connect() received client-side cancel: $cancellationCause.",
                             )
@@ -293,7 +278,13 @@ class AceEmbeddedSessionStateImpl(
                         }
                     }
 
-                    if (e is CancellationException) throw e
+                    if (_uiStateFlow.value.visibility is Error) {
+                        _uiStateFlow.update { state -> state.copy(size = AceEmbeddedUiSize(0, 0)) }
+                    }
+
+                    if (e is CancellationException) {
+                        throw e
+                    }
                 } finally {
                     job = null
                 }
@@ -310,6 +301,8 @@ class AceEmbeddedSessionStateImpl(
         shouldBlur: Boolean,
         @StyleRes themeResourceId: Int,
     ) {
+        Log.i(TAG, "[AceEmbeddedLifecycle] Client-sdk running update()")
+
         val unused =
             inputsFlow.tryEmit(
                 AceEmbeddedInputs(

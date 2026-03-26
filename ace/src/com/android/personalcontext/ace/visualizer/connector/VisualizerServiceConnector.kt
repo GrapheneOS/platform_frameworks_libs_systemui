@@ -29,23 +29,23 @@ import com.android.personalcontext.ace.common.wrappers.IRenderToken
  */
 interface VisualizerServiceConnector {
 
-  /** Called when a client is connected. */
-  fun onClientConnected(info: InsightSurfaceClientInfo)
+    /** Called when a client is connected. */
+    fun onClientConnected(info: InsightSurfaceClientInfo)
 
-  /** Visualizes the given insights and returns a View. */
-  fun onCreateEmbeddedView(
-    context: Context,
-    publishedInsight: IPublishedContextInsight,
-    renderToken: IRenderToken?,
-    info: IInsightSurfaceClientInfo,
-  ): View?
+    /** Visualizes the given insights and returns a View. */
+    fun onCreateEmbeddedView(
+        context: Context,
+        publishedInsight: IPublishedContextInsight,
+        renderToken: IRenderToken?,
+        info: IInsightSurfaceClientInfo,
+    ): View?
 
-  /** Updates the View. */
-  fun onClientUpdated(
-    oldClientInfo: IInsightSurfaceClientInfo,
-    newClientInfo: IInsightSurfaceClientInfo,
-  ): Boolean
+    /** Updates the View. */
+    fun onClientUpdated(
+        oldClientInfo: IInsightSurfaceClientInfo,
+        newClientInfo: IInsightSurfaceClientInfo,
+    ): Boolean
 
-  /** Called when a client is disconnected. */
-  fun onClientDisconnected(info: IInsightSurfaceClientInfo)
+    /** Called when a client is disconnected. */
+    fun onClientDisconnected(info: IInsightSurfaceClientInfo)
 }

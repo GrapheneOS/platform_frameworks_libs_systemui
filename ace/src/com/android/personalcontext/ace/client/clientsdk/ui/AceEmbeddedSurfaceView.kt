@@ -163,11 +163,11 @@ fun AceEmbeddedSurfaceView(
         }
 
         DisposableEffect(Unit) {
-            Log.i(TAG, "[AceEmbeddedLifecycle] Client-sdk entered composition.")
+            Log.d(TAG, "[AceEmbeddedLifecycle] Client-sdk entered composition.")
             onCompositionLifecycle(AceEmbeddedCompositionLifecycle.Enter)
 
             onDispose {
-                Log.i(TAG, "[AceEmbeddedLifecycle] Client-sdk exited composition.")
+                Log.d(TAG, "[AceEmbeddedLifecycle] Client-sdk exited composition.")
                 onCompositionLifecycle(AceEmbeddedCompositionLifecycle.Exit)
                 sessionState.cancel()
             }
@@ -202,7 +202,7 @@ fun AceEmbeddedSurfaceView(
             exit = stateTransitionOut,
         ) {
             LaunchedEffect(visibility) {
-                Log.v(TAG, "[AceEmbeddedLifecycle] Client-sdk visibility Hidden: $visibility")
+                Log.d(TAG, "[AceEmbeddedLifecycle] Client-sdk → visibility Hidden: $visibility")
             }
             hiddenContent?.invoke()
         }
@@ -214,9 +214,9 @@ fun AceEmbeddedSurfaceView(
             exit = stateTransitionOut,
         ) {
             LaunchedEffect(visibility) {
-                Log.v(
+                Log.d(
                     TAG,
-                    "[AceEmbeddedLifecycle] Client-sdk visibility isTransient(): $visibility",
+                    "[AceEmbeddedLifecycle] Client-sdk → visibility isTransient(): $visibility",
                 )
             }
             pendingContent?.invoke()
@@ -229,7 +229,7 @@ fun AceEmbeddedSurfaceView(
             exit = stateTransitionOut,
         ) {
             LaunchedEffect(visibility) {
-                Log.v(TAG, "[AceEmbeddedLifecycle] Client-sdk visibility Error: $visibility")
+                Log.d(TAG, "[AceEmbeddedLifecycle] Client-sdk → visibility Error: $visibility")
             }
             errorContent?.invoke()
         }
@@ -240,7 +240,7 @@ fun AceEmbeddedSurfaceView(
             // work.
             Box(modifier = Modifier.zIndex(-1f)) {
                 LaunchedEffect(visibility) {
-                    Log.v(TAG, "[AceEmbeddedLifecycle] Client-sdk visibility Shown: $visibility")
+                    Log.d(TAG, "[AceEmbeddedLifecycle] Client-sdk → visibility Shown: $visibility")
                 }
 
                 AceEmbeddedScrollDispatchEffect(sessionState)
@@ -276,7 +276,7 @@ fun AceEmbeddedSurfaceView(
 
         if (visibility is Retryable) {
             LaunchedEffect(visibility) {
-                Log.v(TAG, "[AceEmbeddedLifecycle] Client-sdk visibility Retryable: $visibility")
+                Log.d(TAG, "[AceEmbeddedLifecycle] Client-sdk → visibility Retryable: $visibility")
             }
             LaunchedEffect(Unit) { sessionState.connect(context) }
         }

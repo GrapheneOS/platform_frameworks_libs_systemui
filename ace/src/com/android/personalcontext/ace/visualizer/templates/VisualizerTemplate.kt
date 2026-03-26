@@ -22,21 +22,23 @@ import com.android.personalcontext.ace.common.wrappers.IInsightSurfaceClientInfo
 import com.android.personalcontext.ace.common.wrappers.IPublishedContextInsight
 import com.android.personalcontext.ace.common.wrappers.IRenderToken
 import com.android.personalcontext.ace.visualizer.compat.InsightEventReporterCompat
+import com.android.personalcontext.ace.visualizer.templates.utils.trafficshaperqueue.TrafficShaperQueue
 
 /** Responsible for constructing the remote template UI for a particular template type. */
 interface VisualizerTemplate {
 
-  /**
-   * Returns the Composable UI content this template would render for the given [publishedInsight].
-   *
-   * Special cases:
-   * * Returns `null` if the inputs do not target this template.
-   * * Throws an exception if the inputs are invalid.
-   *
-   * Implementations have access to ACE platform APIs via [LocalInsightSurfaceClientInfo],
-   * [LocalRenderToken], [LocalPublishedContextInsight], [LocalInsightEventReporter].
-   */
-  fun handleInsight(publishedInsight: IPublishedContextInsight): (@Composable () -> Unit)?
+    /**
+     * Returns the Composable UI content this template would render for the given
+     * [publishedInsight].
+     *
+     * Special cases:
+     * * Returns `null` if the inputs do not target this template.
+     * * Throws an exception if the inputs are invalid.
+     *
+     * Implementations have access to ACE platform APIs via [LocalInsightSurfaceClientInfo],
+     * [LocalRenderToken], [LocalPublishedContextInsight], [LocalInsightEventReporter].
+     */
+    fun handleInsight(publishedInsight: IPublishedContextInsight): (@Composable () -> Unit)?
 }
 
 /**
@@ -44,13 +46,13 @@ interface VisualizerTemplate {
  * by the template.
  */
 val LocalInsightSurfaceClientInfo: ProvidableCompositionLocal<IInsightSurfaceClientInfo> =
-  compositionLocalOf {
-    error("No InsightSurfaceClientInfo provided")
-  }
+    compositionLocalOf {
+        error("No InsightSurfaceClientInfo provided")
+    }
 
 /** Provides a [android.service.personalcontext.RenderToken] that can be used by the template. */
 val LocalRenderToken: ProvidableCompositionLocal<IRenderToken> = compositionLocalOf {
-  error("No RenderToken provided")
+    error("No RenderToken provided")
 }
 
 /**
@@ -58,12 +60,17 @@ val LocalRenderToken: ProvidableCompositionLocal<IRenderToken> = compositionLoca
  * the template.
  */
 val LocalPublishedContextInsight: ProvidableCompositionLocal<IPublishedContextInsight> =
-  compositionLocalOf {
-    error("No PublishedContextInsight provided")
-  }
+    compositionLocalOf {
+        error("No PublishedContextInsight provided")
+    }
 
 /** Provides a [InsightEventReporterCompat] that can be used by the template. */
 val LocalInsightEventReporter: ProvidableCompositionLocal<InsightEventReporterCompat> =
-  compositionLocalOf {
-    error("No InsightEventReporterCompat provided")
-  }
+    compositionLocalOf {
+        error("No InsightEventReporterCompat provided")
+    }
+
+/** Provides a [TrafficShaperQueue] that can be used by the template. */
+val LocalTrafficShaperQueue: ProvidableCompositionLocal<TrafficShaperQueue> = compositionLocalOf {
+    error("No TrafficShaperQueue provided")
+}

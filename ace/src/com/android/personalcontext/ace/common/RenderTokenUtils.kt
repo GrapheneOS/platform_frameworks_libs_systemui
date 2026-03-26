@@ -22,11 +22,11 @@ import com.android.personalcontext.ace.common.wrappers.IPublishedContextHint
 /** Render token utilities for ACE classes. */
 object RenderTokenUtils {
 
-  /**
-   * Checks if the hint has a renderer token.
-   *
-   * This is used to distinguish between hints that are meant to be delivered to a specific renderer
-   * (eg: for embedded UI), versus hints that are used for other purposes.
-   */
-  fun IPublishedContextHint.hasRendererToken(): Boolean = this.renderTokens.isNotEmpty()
+    /**
+     * Checks if the hint has a renderer token.
+     *
+     * This is used to distinguish between hints that are meant to be delivered to a specific
+     * renderer (eg: for embedded UI), versus hints that are used for other purposes.
+     */
+    fun IPublishedContextHint.hasRendererToken(): Boolean = this.renderTokens.isNotEmpty()
 }

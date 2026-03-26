@@ -152,15 +152,7 @@ sealed class AceEmbeddedUiVisibility {
      */
     sealed class Retryable(override val ordinal: Int = 0, override val phase: Phase = Transient) :
         AceEmbeddedUiVisibility() {
-
-        /**
-         * Indicates that the server destroyed the session while a client update was in progress.
-         *
-         * TODO: b/485772848 - This is a temporary workaround for a known server-side behavior where
-         *   onSessionDestroyed() is invoked during update. Remove this state once the server
-         *   lifecycle bug is fixed.
-         */
-        object SessionDestroyedDuringUpdate : Retryable()
+        /*Empty for now.*/
     }
 
     override fun toString(): String {

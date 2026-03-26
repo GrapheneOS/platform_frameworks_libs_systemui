@@ -81,270 +81,288 @@ import javax.inject.Inject
 
 /** A [VisualizerTemplate] that renders a simple message template UI. */
 class MessageVisualizerTemplate @Inject internal constructor(val flexFontCompat: FlexFontCompat) :
-  VisualizerTemplate {
+    VisualizerTemplate {
 
-  override fun handleInsight(
-    publishedInsight: IPublishedContextInsight
-  ): (@Composable () -> Unit)? {
-    Log.d(TAG, "[MessagesEmbedded] handleInsight")
-    val insight = publishedInsight.insight
-    val unused = insight.findContextHint<MessagesHint>() ?: return null
-    val messageTemplateData = insight.toMessageTemplateData()
-    return { MessageTemplate(messageTemplateData) }
-  }
+    override fun handleInsight(
+        publishedInsight: IPublishedContextInsight
+    ): (@Composable () -> Unit)? {
+        Log.d(TAG, "[MessagesEmbedded] handleInsight")
+        val insight = publishedInsight.insight
+        val unused = insight.findContextHint<MessagesHint>() ?: return null
+        val messageTemplateData = insight.toMessageTemplateData()
+        return { MessageTemplate(messageTemplateData) }
+    }
 
-  @Composable
-  private fun MessageTemplate(messageTemplateData: MessageTemplateData) {
-    // TODO: b/469695123 - add blur effect
-    // TODO: b/469697415 - show pii hints
-    MainTheme() { MergedChipsRow(messageTemplateData) }
-  }
+    @Composable
+    private fun MessageTemplate(messageTemplateData: MessageTemplateData) {
+        // TODO: b/469695123 - add blur effect
+        // TODO: b/469697415 - show pii hints
+        MainTheme() { MergedChipsRow(messageTemplateData) }
+    }
 
-  @Composable
-  private fun MergedChipsRow(messageTemplateData: MessageTemplateData) {
-    Log.d(
-      TAG,
-      "[MessagesEmbedded] MergedChipsRow chip count: ${messageTemplateData.messageChipList.size}",
-    )
-    // TODO: b/469699341 - isStandaloneRowEnabled
-    Row(
-      modifier = Modifier.padding(vertical = 4.dp).wrapContentWidth().heightIn(48.dp),
-      horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.End),
-      verticalAlignment = Alignment.Bottom,
-    ) {
-      val suggestionEnterEasing = CubicBezierEasing(0f, 0f, 0f, 1f)
-      if (messageTemplateData.messageChipList.isNotEmpty()) {
-        MessageAnimatedListItemVisibility(
-          values = messageTemplateData.messageChipList,
-          itemEnter = { _ ->
-            scaleIn(
-              animationSpec =
-                tween(
-                  durationMillis = MessageConstants.ANIMATION_REVEAL_DURATION_MILLIS,
-                  delayMillis = MessageConstants.ANIMATION_REVEAL_DELAY_MILLIS,
-                  easing = suggestionEnterEasing,
-                )
+    @Composable
+    private fun MergedChipsRow(messageTemplateData: MessageTemplateData) {
+        Log.d(
+            TAG,
+            "[MessagesEmbedded] MergedChipsRow chip count: ${messageTemplateData.messageChipList.size}",
+        )
+        // TODO: b/469699341 - isStandaloneRowEnabled
+        Row(
+            modifier = Modifier.padding(vertical = 4.dp).wrapContentWidth().heightIn(48.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.End),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            val suggestionEnterEasing = CubicBezierEasing(0f, 0f, 0f, 1f)
+            if (messageTemplateData.messageChipList.isNotEmpty()) {
+                MessageAnimatedListItemVisibility(
+                    values = messageTemplateData.messageChipList,
+                    itemEnter = { _ ->
+                        scaleIn(
+                            animationSpec =
+                                tween(
+                                    durationMillis =
+                                        MessageConstants.ANIMATION_REVEAL_DURATION_MILLIS,
+                                    delayMillis = MessageConstants.ANIMATION_REVEAL_DELAY_MILLIS,
+                                    easing = suggestionEnterEasing,
+                                )
+                        )
+                    },
+                ) { messageChip ->
+                    when (messageChip) {
+                        is SuggestionChip -> MessageSuggestionChip(messageChip)
+                        is RemoteActionChip -> MessageRemoteActionChip(messageChip)
+                        is ClientActionChip -> MessageClientActionChip(messageChip)
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun MessageRemoteActionChip(remoteActionChip: RemoteActionChip) {
+        Log.d(TAG, "[MessagesEmbedded] MessageRemoteActionChip: ${remoteActionChip.title}")
+        val context = LocalContext.current
+        MessageOutlinedButton(
+            chipOnClick = {
+                Log.d(TAG, "[MessagesEmbedded] remote action clicked")
+                remoteActionChip.remoteAction.execute(context)
+            },
+            insight = remoteActionChip.insight,
+        ) {
+            MessageRowContent(
+                title = remoteActionChip.title,
+                contentDescription = remoteActionChip.contentDescription,
+                icon = remoteActionChip.icon?.toBitmap(context)?.asTintableIcon(tintable = false),
             )
-          },
-        ) { messageChip ->
-          when (messageChip) {
-            is SuggestionChip -> MessageSuggestionChip(messageChip)
-            is ActionChip -> MessageActionChip(messageChip)
-          }
         }
-      }
     }
-  }
 
-  @Composable
-  fun MessageActionChip(actionChip: ActionChip) {
-    Log.d(TAG, "[MessagesEmbedded] MessageActionChip: ${actionChip.title}")
-    val context = LocalContext.current
-    val info = LocalInsightSurfaceClientInfo.current
-    MessageOutlinedButton(
-      chipOnClick = {
-        when (actionChip) {
-          is ClientActionChip -> {
-            Log.d(TAG, "[MessagesEmbedded] photo action clicked")
-            info.onReceiveInsight(actionChip.egressInsight)
-          }
-          is RemoteActionChip -> {
-            Log.d(TAG, "[MessagesEmbedded] remote action clicked")
-            actionChip.remoteAction.execute(context)
-          }
+    @Composable
+    fun MessageClientActionChip(clientActionChip: ClientActionChip) {
+        Log.d(TAG, "[MessagesEmbedded] MessageClientActionChip: ${clientActionChip.title}")
+        val context = LocalContext.current
+        val info = LocalInsightSurfaceClientInfo.current
+        MessageOutlinedButton(
+            chipOnClick = {
+                Log.d(TAG, "[MessagesEmbedded] client action clicked")
+                info.onReceiveInsight(clientActionChip.insight)
+            },
+            insight = clientActionChip.insight,
+        ) {
+            MessageRowContent(
+                title = clientActionChip.title,
+                contentDescription = clientActionChip.contentDescription,
+                icon = clientActionChip.icon?.toBitmap(context)?.asTintableIcon(tintable = false),
+            )
         }
-      },
-      attributionInsight = actionChip.attributionInsight,
-    ) {
-      MessageRowContent(
-        title = actionChip.title,
-        contentDescription = actionChip.contentDescription,
-        icon = actionChip.icon?.toBitmap(context)?.asTintableIcon(tintable = false),
-      )
     }
-  }
 
-  @Composable
-  internal fun MessageSuggestionChip(suggestionChip: SuggestionChip) {
-    Log.d(TAG, "[MessagesEmbedded] MessageSuggestionChip: ${suggestionChip.title}")
-    val context = LocalContext.current
-    val info = LocalInsightSurfaceClientInfo.current
-    MessageOutlinedButton(
-      chipOnClick = {
-        Log.d(TAG, "[MessagesEmbedded] display insight clicked")
-        info.onReceiveInsight(suggestionChip.egressInsight)
-      },
-      attributionInsight = suggestionChip.egressInsight,
-    ) {
-      MessageRowContent(
-        title = suggestionChip.title,
-        subtitle = suggestionChip.subtitle,
-        contentDescription = suggestionChip.contentDescription,
-        icon = suggestionChip.icon?.toBitmap(context)?.asTintableIcon(tintable = true),
-      )
-    }
-  }
-
-  @Composable
-  private fun MessageOutlinedButton(
-    chipOnClick: () -> Unit,
-    attributionInsight: ContextInsight,
-    chipContents: @Composable () -> Unit,
-  ) {
-    val shape = RoundedCornerShape(MessageConstants.CornerRadius)
-    val interactionSource = remember { MutableInteractionSource() }
-    val context = LocalContext.current
-    val insightEventReporter = LocalInsightEventReporter.current
-    val publishedInsight = LocalPublishedContextInsight.current
-    val renderToken = LocalRenderToken.current
-
-    val personalContextManager = remember {
-      context.getSystemService(PersonalContextManager::class.java)
-    }
-    fun reportEvent(event: Int) {
-      with(insightEventReporter) {
-        personalContextManager?.reportChildInsightEvent(
-          publishedInsight,
-          attributionInsight,
-          event,
-          renderToken,
-        )
-      }
-    }
-    LaunchedEffect(Unit) { reportEvent(InsightEvent.EVENT_SHOW) }
-    // TODO: b/469698749 - outer glow & inner glow
-    Box(
-      modifier =
-        Modifier.clip(shape)
-          .widthIn(min = 30.dp, max = 320.dp)
-          .heightIn(min = 40.dp)
-          .background(color = Color.Transparent, shape = shape)
-          .combinedClickable(
-            onClick = {
-              chipOnClick()
-              reportEvent(InsightEvent.EVENT_USER_TAP)
+    @Composable
+    internal fun MessageSuggestionChip(suggestionChip: SuggestionChip) {
+        Log.d(TAG, "[MessagesEmbedded] MessageSuggestionChip: ${suggestionChip.title}")
+        val context = LocalContext.current
+        val info = LocalInsightSurfaceClientInfo.current
+        MessageOutlinedButton(
+            chipOnClick = {
+                Log.d(TAG, "[MessagesEmbedded] display insight clicked")
+                info.onReceiveInsight(suggestionChip.insight)
             },
-            onLongClick = {
-              Log.d(TAG, "[MessagesEmbedded] chip long clicked")
-              reportEvent(InsightEvent.EVENT_USER_LONG_PRESS)
-            },
-            interactionSource = interactionSource,
-            indication = ripple(color = MaterialTheme.colorScheme.onSurface),
-          )
-          .animatedActionBorder(
-            strokeWidth = MessageConstants.BorderStrokeWidth,
-            innerGlowStrokeWidth = MessageConstants.InnerBorderStrokeWidth,
-          )
-          .semantics { role = Role.Button },
-      contentAlignment = Alignment.Center,
-    ) {
-      chipContents()
+            insight = suggestionChip.insight,
+        ) {
+            MessageRowContent(
+                title = suggestionChip.title,
+                subtitle = suggestionChip.subtitle,
+                contentDescription = suggestionChip.contentDescription,
+                icon = suggestionChip.icon?.toBitmap(context)?.asTintableIcon(tintable = true),
+            )
+        }
     }
-  }
 
-  @Composable
-  private fun MessageRowContent(
-    title: String,
-    subtitle: String? = null,
-    contentDescription: String,
-    icon: TintableIcon?,
-  ) {
-    Row(
-      modifier =
-        Modifier.clearAndSetSemantics(contentDescription)
-          .padding(
-            horizontal = MessageConstants.ButtonHorizontalPadding,
-            vertical = MessageConstants.ButtonVerticalPadding,
-          ),
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
-      verticalAlignment = Alignment.CenterVertically,
+    @Composable
+    private fun MessageOutlinedButton(
+        chipOnClick: () -> Unit,
+        insight: ContextInsight,
+        chipContents: @Composable () -> Unit,
     ) {
-      // Icon
-      icon?.let {
-        IconOrImage(
-          icon = icon,
-          modifier = Modifier.size(18.dp).align(Alignment.CenterVertically),
-          tint = MaterialTheme.colorScheme.primary,
-        )
-      }
+        val shape = RoundedCornerShape(MessageConstants.CornerRadius)
+        val interactionSource = remember { MutableInteractionSource() }
+        val context = LocalContext.current
+        val insightEventReporter = LocalInsightEventReporter.current
+        val publishedInsight = LocalPublishedContextInsight.current
+        val renderToken = LocalRenderToken.current
 
-      // Text
-      if (subtitle.isNullOrEmpty()) {
-        SuggestionText(title, maxLines = 2, modifier = Modifier.align(Alignment.CenterVertically))
-      } else {
-        Column {
-          SuggestionText(title, maxLines = 1)
-          Text(
-            text = subtitle,
+        val personalContextManager = remember {
+            context.getSystemService(PersonalContextManager::class.java)
+        }
+        fun reportEvent(event: Int) {
+            with(insightEventReporter) {
+                personalContextManager?.reportChildInsightEvent(
+                    publishedInsight,
+                    insight,
+                    event,
+                    renderToken,
+                )
+            }
+        }
+        LaunchedEffect(Unit) { reportEvent(InsightEvent.EVENT_SHOW) }
+        // TODO: b/469698749 - outer glow & inner glow
+        Box(
+            modifier =
+                Modifier.clip(shape)
+                    .widthIn(min = 30.dp, max = 320.dp)
+                    .heightIn(min = 40.dp)
+                    .background(color = Color.Transparent, shape = shape)
+                    .combinedClickable(
+                        onClick = {
+                            chipOnClick()
+                            reportEvent(InsightEvent.EVENT_USER_TAP)
+                        },
+                        onLongClick = {
+                            Log.d(TAG, "[MessagesEmbedded] chip long clicked")
+                            reportEvent(InsightEvent.EVENT_USER_LONG_PRESS)
+                        },
+                        interactionSource = interactionSource,
+                        indication = ripple(color = MaterialTheme.colorScheme.onSurface),
+                    )
+                    .animatedActionBorder(
+                        strokeWidth = MessageConstants.BorderStrokeWidth,
+                        innerGlowStrokeWidth = MessageConstants.InnerBorderStrokeWidth,
+                    )
+                    .semantics { role = Role.Button },
+            contentAlignment = Alignment.Center,
+        ) {
+            chipContents()
+        }
+    }
+
+    @Composable
+    private fun MessageRowContent(
+        title: String,
+        subtitle: String? = null,
+        contentDescription: String,
+        icon: TintableIcon?,
+    ) {
+        Row(
+            modifier =
+                Modifier.clearAndSetSemantics(contentDescription)
+                    .padding(
+                        horizontal = MessageConstants.ButtonHorizontalPadding,
+                        vertical = MessageConstants.ButtonVerticalPadding,
+                    ),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Icon
+            icon?.let {
+                IconOrImage(
+                    icon = icon,
+                    modifier = Modifier.size(18.dp).align(Alignment.CenterVertically),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            // Text
+            if (subtitle.isNullOrEmpty()) {
+                SuggestionText(
+                    title,
+                    maxLines = 2,
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                )
+            } else {
+                Column {
+                    SuggestionText(title, maxLines = 1)
+                    Text(
+                        text = subtitle,
+                        style =
+                            flexFontCompat.flexFont(
+                                style = MaterialTheme.typography.bodyMedium,
+                                weight = 550,
+                                round = 0f,
+                            ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun SuggestionText(text: String, maxLines: Int, modifier: Modifier = Modifier) {
+        Text(
+            text = text,
+            modifier = modifier,
             style =
-              flexFontCompat.flexFont(
-                style = MaterialTheme.typography.bodyMedium,
-                weight = 550,
-                round = 0f,
-              ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
+                flexFontCompat.flexFont(
+                    style = MaterialTheme.typography.labelLarge,
+                    weight = 500,
+                    round = 0f,
+                ),
+            color = MaterialTheme.colorScheme.onSurface,
             overflow = TextOverflow.Ellipsis,
-          )
+            maxLines = maxLines,
+        )
+    }
+
+    private fun Icon.toBitmap(context: Context): Bitmap? {
+        return try {
+            this.loadDrawable(context)?.toBitmap()
+        } catch (e: Exception) {
+            Log.w(TAG, "[MessagesEmbedded] Failed to load icon to bitmap", e)
+            null
         }
-      }
     }
-  }
 
-  @Composable
-  private fun SuggestionText(text: String, maxLines: Int, modifier: Modifier = Modifier) {
-    Text(
-      text = text,
-      modifier = modifier,
-      style =
-        flexFontCompat.flexFont(
-          style = MaterialTheme.typography.labelLarge,
-          weight = 500,
-          round = 0f,
-        ),
-      color = MaterialTheme.colorScheme.onSurface,
-      overflow = TextOverflow.Ellipsis,
-      maxLines = maxLines,
+    private fun Modifier.clearAndSetSemantics(description: String?): Modifier {
+        if (description != null) {
+            return clearAndSetSemantics { contentDescription = description }
+        } else {
+            return this
+        }
+    }
+
+    private data class MessageColorScheme(
+        val outlineVariant: Color,
+        val onSurface: Color,
+        val primary: Color,
+        val backgroundColor: Color,
     )
-  }
 
-  private fun Icon.toBitmap(context: Context): Bitmap? {
-    return try {
-      this.loadDrawable(context)?.toBitmap()
-    } catch (e: Exception) {
-      Log.w(TAG, "[MessagesEmbedded] Failed to load icon to bitmap", e)
-      null
+    @Composable
+    private fun MainTheme(content: @Composable () -> Unit) {
+        // TODO: b/481128881 - Switch to Delegated Rendering Theming once go/ace-delegated-theming
+        // is
+        // effective.
+        val context = LocalContext.current
+        val colorScheme =
+            if (isSystemInDarkTheme()) dynamicDarkColorScheme(context)
+            else dynamicLightColorScheme(context)
+
+        MaterialTheme(colorScheme = colorScheme, typography = Typography(), content = content)
     }
-  }
 
-  private fun Modifier.clearAndSetSemantics(description: String?): Modifier {
-    if (description != null) {
-      return clearAndSetSemantics { contentDescription = description }
-    } else {
-      return this
+    companion object {
+        const val TAG = "MessageVisualizerTemplate"
     }
-  }
-
-  private data class MessageColorScheme(
-    val outlineVariant: Color,
-    val onSurface: Color,
-    val primary: Color,
-    val backgroundColor: Color,
-  )
-
-  @Composable
-  private fun MainTheme(content: @Composable () -> Unit) {
-    // TODO: b/481128881 - Switch to Delegated Rendering Theming once go/ace-delegated-theming is
-    // effective.
-    val context = LocalContext.current
-    val colorScheme =
-      if (isSystemInDarkTheme()) dynamicDarkColorScheme(context)
-      else dynamicLightColorScheme(context)
-
-    MaterialTheme(colorScheme = colorScheme, typography = Typography(), content = content)
-  }
-
-  companion object {
-    const val TAG = "MessageVisualizerTemplate"
-  }
 }

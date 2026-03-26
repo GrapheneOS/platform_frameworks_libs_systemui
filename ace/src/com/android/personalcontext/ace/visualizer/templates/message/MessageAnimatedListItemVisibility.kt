@@ -42,45 +42,48 @@ import androidx.compose.ui.node.Ref
 @SuppressLint("NewApi")
 @Composable
 internal fun <T> MessageAnimatedListItemVisibility(
-  values: List<T>?,
-  itemEnter: (index: Int) -> EnterTransition = { fadeIn() + scaleIn() },
-  itemExit: (index: Int) -> ExitTransition = { fadeOut() + scaleOut() },
-  label: String = "AnimatedListItemVisibilityAfterInitialComposition",
-  itemContent: @Composable (itemValue: T) -> Unit,
+    values: List<T>?,
+    itemEnter: (index: Int) -> EnterTransition = { fadeIn() + scaleIn() },
+    itemExit: (index: Int) -> ExitTransition = { fadeOut() + scaleOut() },
+    label: String = "AnimatedListItemVisibilityAfterInitialComposition",
+    itemContent: @Composable (itemValue: T) -> Unit,
 ) {
-  val ref = remember { Ref<List<T>>() }
-  val previouslyDrawnList = ref.value
-  val currentList = values ?: emptyList()
+    val ref = remember { Ref<List<T>>() }
+    val previouslyDrawnList = ref.value
+    val currentList = values ?: emptyList()
 
-  val listToDraw: List<T?> =
-    if (previouslyDrawnList == null || currentList.size >= previouslyDrawnList.size) {
-      // If the new list is bigger than the old list, assume we've just added elements so we can
-      // just draw them all and they will animate in as expected.
-      currentList
-    } else if (currentList.isEmpty()) {
-      // Shortcut from the list diffing if we've removed all elements.
-      List(previouslyDrawnList.size) { null }
-    } else {
-      // If the new list is smaller than the old list, we've removed elements and need to pass a
-      // null into the AnimatedVisibilityAfterInitialComposition, otherwise the element which was
-      // removed won't animate out. The algorithm below replaces removed items with null by
-      // finding
-      // the diff between the two lists.
-      val result: MutableList<T?> = previouslyDrawnList.toMutableList()
-      val diff = (previouslyDrawnList - currentList.toSet()).toSet()
-      result.apply { replaceAll { value -> if (diff.contains(value)) null else value } }
+    val listToDraw: List<T?> =
+        if (previouslyDrawnList == null || currentList.size >= previouslyDrawnList.size) {
+            // If the new list is bigger than the old list, assume we've just added elements so we
+            // can
+            // just draw them all and they will animate in as expected.
+            currentList
+        } else if (currentList.isEmpty()) {
+            // Shortcut from the list diffing if we've removed all elements.
+            List(previouslyDrawnList.size) { null }
+        } else {
+            // If the new list is smaller than the old list, we've removed elements and need to pass
+            // a
+            // null into the AnimatedVisibilityAfterInitialComposition, otherwise the element which
+            // was
+            // removed won't animate out. The algorithm below replaces removed items with null by
+            // finding
+            // the diff between the two lists.
+            val result: MutableList<T?> = previouslyDrawnList.toMutableList()
+            val diff = (previouslyDrawnList - currentList.toSet()).toSet()
+            result.apply { replaceAll { value -> if (diff.contains(value)) null else value } }
+        }
+    for ((index, value) in listToDraw.withIndex()) {
+        AnimatedVisibilityAfterInitialComposition(
+            value,
+            itemEnter.invoke(index),
+            itemExit.invoke(index),
+            label,
+            itemContent,
+        )
     }
-  for ((index, value) in listToDraw.withIndex()) {
-    AnimatedVisibilityAfterInitialComposition(
-      value,
-      itemEnter.invoke(index),
-      itemExit.invoke(index),
-      label,
-      itemContent,
-    )
-  }
 
-  ref.value = values
+    ref.value = values
 }
 
 /**
@@ -104,21 +107,21 @@ internal fun <T> MessageAnimatedListItemVisibility(
  */
 @Composable
 private fun <T> AnimatedVisibilityAfterInitialComposition(
-  value: T?,
-  enter: EnterTransition,
-  exit: ExitTransition,
-  label: String = "AnimatedVisibilityAfterInitialComposition",
-  content: @Composable (value: T) -> Unit,
+    value: T?,
+    enter: EnterTransition,
+    exit: ExitTransition,
+    label: String = "AnimatedVisibilityAfterInitialComposition",
+    content: @Composable (value: T) -> Unit,
 ) {
-  val ref = remember { Ref<T>() }
+    val ref = remember { Ref<T>() }
 
-  ref.value = value ?: ref.value
+    ref.value = value ?: ref.value
 
-  val visibleState = remember { MutableTransitionState(false) }
+    val visibleState = remember { MutableTransitionState(false) }
 
-  LaunchedEffect(Unit) { visibleState.targetState = true }
+    LaunchedEffect(Unit) { visibleState.targetState = true }
 
-  AnimatedVisibility(visibleState = visibleState, enter = enter, exit = exit, label = label) {
-    ref.value?.let { value -> content(value) }
-  }
+    AnimatedVisibility(visibleState = visibleState, enter = enter, exit = exit, label = label) {
+        ref.value?.let { value -> content(value) }
+    }
 }

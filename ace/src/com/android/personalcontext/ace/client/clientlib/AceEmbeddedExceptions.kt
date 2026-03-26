@@ -24,10 +24,6 @@ import android.service.personalcontext.embedded.InsightSurfaceSession
 data class ServerSideCloseException(val session: InsightSurfaceSession) :
     Exception("Session was server-side closed: $session")
 
-/** When the server destroys the session after an update(), due to b/485772848. */
-data class UpdateSessionDestroyedException(val session: InsightSurfaceSession) :
-    Exception("Session was destroyed while updating: $session")
-
 /**
  * When the server encounters an error, possibly before the session is created, it will signal the
  * [android.service.personalcontext.embedded.InsightSurfaceClient.ClientCallback.onError] callback.

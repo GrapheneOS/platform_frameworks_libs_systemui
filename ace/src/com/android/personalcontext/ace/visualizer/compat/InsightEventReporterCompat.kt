@@ -24,23 +24,24 @@ import com.android.personalcontext.ace.common.wrappers.IRenderToken
 
 interface InsightEventReporterCompat {
 
-  /**
-   * Reports an event that occurred on a [childInsight] from a Renderer back to the Understander
-   * that published it.
-   *
-   * @param childInsight The child insight the event occurred on.
-   * @see android.service.personalcontext.PersonalContextManager.reportInsightEvent
-   */
-  fun PersonalContextManager.reportChildInsightEvent(
-    publishedInsight: IPublishedContextInsight,
-    childInsight: ContextInsight,
-    eventType: Int,
-    renderToken: IRenderToken,
-  ) {
-    reportInsightEvent(
-      publishedInsight.unwrap() ?: return,
-      eventType,
-      renderToken.unwrap() ?: return,
-    )
-  }
+    /**
+     * Reports an event that occurred on a [childInsight] from a Renderer back to the Understander
+     * that published it.
+     *
+     * @param childInsight The child insight the event occurred on.
+     * @see android.service.personalcontext.PersonalContextManager.reportInsightEvent
+     * @see android.service.personalcontext.insight.interaction.InsightEvent
+     */
+    fun PersonalContextManager.reportChildInsightEvent(
+        publishedInsight: IPublishedContextInsight,
+        childInsight: ContextInsight,
+        eventType: Int,
+        renderToken: IRenderToken,
+    ) {
+        reportInsightEvent(
+            publishedInsight.unwrap() ?: return,
+            eventType,
+            renderToken.unwrap() ?: return,
+        )
+    }
 }

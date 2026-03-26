@@ -20,11 +20,14 @@ package com.android.personalcontext.ace.visualizer.templates.message
 import android.app.RemoteAction
 import android.graphics.drawable.Icon
 import android.service.personalcontext.insight.ActionableInsight
-import android.service.personalcontext.insight.BundleInsight
 import android.service.personalcontext.insight.ContextInsight
 import android.service.personalcontext.insight.DisplayInsight
 import android.service.personalcontext.insight.InsightCollection
 import android.util.Log
+import com.android.personalcontext.ace.client.prototype.PrototypeInsightUtils.toPrototypeInsight
+import com.android.personalcontext.ace.client.prototype.clientaction.ClientActionInsight
+import com.android.personalcontext.ace.client.prototype.clientaction.SharePhotoParams
+import com.android.personalcontext.ace.client.prototype.clientaction.ShowCardsParams
 import com.android.personalcontext.ace.visualizer.templates.message.ClientActionChip.Companion.toClientActionChip
 import com.android.personalcontext.ace.visualizer.templates.message.RemoteActionChip.Companion.toRemoteActionChip
 import com.android.personalcontext.ace.visualizer.templates.message.SuggestionChip.Companion.toSuggestionChip
@@ -36,150 +39,138 @@ import com.android.personalcontext.ace.visualizer.templates.message.SuggestionCh
  *   non-empty.
  */
 data class MessageTemplateData(val messageChipList: List<MessageChip>) {
-  companion object {
-    private const val TAG = "MessageTemplateData"
+    companion object {
+        private const val TAG = "MessageTemplateData"
 
-    fun ContextInsight.toMessageTemplateData(): MessageTemplateData {
-      Log.d(TAG, "[MessagesEmbedded] toMessageTemplateData")
+        fun ContextInsight.toMessageTemplateData(): MessageTemplateData {
+            Log.d(TAG, "[MessagesEmbedded] toMessageTemplateData")
 
-      if (this !is InsightCollection) {
-        error(
-          "[MessagesEmbedded] Expected a top-level InsightCollection, actual: ${this.javaClass.simpleName}"
-        )
-      }
+            if (this !is InsightCollection) {
+                error(
+                    "[MessagesEmbedded] Expected a top-level InsightCollection, actual: ${this.javaClass.simpleName}"
+                )
+            }
 
-      val messageChipList =
-        insights.mapNotNull { insight ->
-          when (insight) {
-            is DisplayInsight -> {
-              Log.d(TAG, "[MessagesEmbedded] Find display insight")
-              insight.toSuggestionChip()
+            val messageChipList =
+                insights.mapNotNull { insight ->
+                    when (insight) {
+                        is DisplayInsight -> {
+                            Log.d(TAG, "[MessagesEmbedded] Find display insight")
+                            insight.toSuggestionChip()
+                        }
+                        is ActionableInsight -> {
+                            Log.d(TAG, "[MessagesEmbedded] Find actionable insight")
+                            insight.toRemoteActionChip()
+                        }
+                        else -> {
+                            val clientActionInsight =
+                                insight.toPrototypeInsight<ClientActionInsight>()
+                            if (clientActionInsight != null) {
+                                Log.d(TAG, "[MessagesEmbedded] Find client action insight")
+                                clientActionInsight.toClientActionChip(insight)
+                            } else {
+                                Log.w(
+                                    TAG,
+                                    "[MessagesEmbedded] Find unexpected insight: ${insight.javaClass.simpleName}",
+                                )
+                                null
+                            }
+                        }
+                    }
+                }
+            if (messageChipList.isEmpty()) {
+                error("[MessagesEmbedded] messageChipList is empty")
             }
-            is ActionableInsight -> {
-              Log.d(TAG, "[MessagesEmbedded] Find actionable insight")
-              insight.toRemoteActionChip()
-            }
-            is InsightCollection -> {
-              Log.d(TAG, "[MessagesEmbedded] Find insight collection")
-              insight.toClientActionChip()
-            }
-            else -> {
-              Log.w(
-                TAG,
-                "[MessagesEmbedded] Find unexpected insight: ${insight.javaClass.simpleName}",
-              )
-              null
-            }
-          }
+
+            return MessageTemplateData(messageChipList)
         }
-      if (messageChipList.isEmpty()) {
-        error("[MessagesEmbedded] messageChipList is empty")
-      }
-
-      return MessageTemplateData(messageChipList)
     }
-  }
 }
 
 /** A sealed interface for chips that can be displayed in the message template. */
 sealed interface MessageChip {
-  val title: String
-  val contentDescription: String
-  val icon: Icon?
+    val title: String
+    val contentDescription: String
+    val icon: Icon?
+    val insight: ContextInsight
 }
 
 data class SuggestionChip(
-  override val title: String,
-  val subtitle: String,
-  override val contentDescription: String,
-  override val icon: Icon?,
-  val egressInsight: DisplayInsight,
+    override val title: String,
+    val subtitle: String,
+    override val contentDescription: String,
+    override val icon: Icon?,
+    override val insight: ContextInsight,
 ) : MessageChip {
-  companion object {
-    private const val TAG = "SuggestionChip"
+    companion object {
+        private const val TAG = "SuggestionChip"
 
-    fun DisplayInsight.toSuggestionChip(): SuggestionChip {
-      Log.d(TAG, "[MessagesEmbedded] title: ${details.title}")
-      return SuggestionChip(
-        title = details.title.toString(),
-        subtitle = details.subtitle.toString(),
-        contentDescription = details.contentDescription.toString(),
-        icon = details.icon,
-        egressInsight = this,
-      )
+        fun DisplayInsight.toSuggestionChip(): SuggestionChip {
+            Log.d(TAG, "[MessagesEmbedded] displayInsight title: ${details.title}")
+            return SuggestionChip(
+                title = details.title.toString(),
+                subtitle = details.subtitle.toString(),
+                contentDescription = details.contentDescription.toString(),
+                icon = details.icon,
+                insight = this,
+            )
+        }
     }
-  }
-}
-
-sealed interface ActionChip : MessageChip {
-  override val icon: Icon
-  val attributionInsight: ContextInsight
 }
 
 data class RemoteActionChip(
-  override val title: String,
-  override val contentDescription: String,
-  override val icon: Icon,
-  override val attributionInsight: ActionableInsight,
-  val remoteAction: RemoteAction,
-) : ActionChip {
-  companion object {
-    private const val TAG = "RemoteActionChip"
+    override val title: String,
+    override val contentDescription: String,
+    override val icon: Icon,
+    override val insight: ContextInsight,
+    val remoteAction: RemoteAction,
+) : MessageChip {
+    companion object {
+        private const val TAG = "RemoteActionChip"
 
-    fun ActionableInsight.toRemoteActionChip(): RemoteActionChip? {
-      Log.d(
-        TAG,
-        "[MessagesEmbedded] actionDetails.remoteAction is null: ${actionDetails.remoteAction == null}",
-      )
-      return actionDetails.remoteAction?.let { remoteAction ->
-        RemoteActionChip(
-          title = displayDetails.title.toString(),
-          contentDescription = displayDetails.contentDescription.toString(),
-          icon = remoteAction.icon,
-          attributionInsight = this,
-          remoteAction = remoteAction,
-        )
-      }
+        fun ActionableInsight.toRemoteActionChip(): RemoteActionChip? {
+            Log.d(
+                TAG,
+                "[MessagesEmbedded] actionDetails.remoteAction is null: ${actionDetails.remoteAction == null}",
+            )
+            return actionDetails.remoteAction?.let { remoteAction ->
+                Log.d(TAG, "[MessagesEmbedded] actionableInsight title: ${remoteAction.title}")
+                RemoteActionChip(
+                    title = displayDetails.title.toString(),
+                    contentDescription = displayDetails.contentDescription.toString(),
+                    icon = remoteAction.icon,
+                    insight = this,
+                    remoteAction = remoteAction,
+                )
+            }
+        }
     }
-  }
 }
 
 data class ClientActionChip(
-  override val title: String,
-  override val contentDescription: String,
-  override val icon: Icon,
-  override val attributionInsight: ActionableInsight,
-  val egressInsight: BundleInsight,
-) : ActionChip {
-  companion object {
-    private const val TAG = "ClientActionChip"
+    override val title: String,
+    override val contentDescription: String,
+    override val icon: Icon?,
+    override val insight: ContextInsight,
+) : MessageChip {
+    companion object {
+        private const val TAG = "ClientActionChip"
 
-    fun InsightCollection.toClientActionChip(): ClientActionChip? {
-      val actionableInsight = insights.findActionableInsight()
-      val bundleInsight = insights.findBundleInsight()
-      if (actionableInsight != null && bundleInsight != null) {
-        Log.d(TAG, "[MessagesEmbedded] actionableInsight and bundleInsight are not null")
-        return actionableInsight.actionDetails.remoteAction?.let { remoteAction ->
-          ClientActionChip(
-            title = actionableInsight.displayDetails.title.toString(),
-            contentDescription = actionableInsight.displayDetails.contentDescription.toString(),
-            icon = remoteAction.icon,
-            attributionInsight = actionableInsight,
-            egressInsight = bundleInsight,
-          )
+        fun ClientActionInsight.toClientActionChip(insight: ContextInsight): ClientActionChip? {
+            when (val params = clientActionParams) {
+                is SharePhotoParams -> {
+                    Log.d(TAG, "[MessagesEmbedded] receive share photo client action")
+                }
+                is ShowCardsParams -> {
+                    Log.d(TAG, "[MessagesEmbedded] receive show cards client action")
+                }
+            }
+            return ClientActionChip(
+                title = insightDisplayDetails.title.toString(),
+                contentDescription = insightDisplayDetails.contentDescription.toString(),
+                icon = insightDisplayDetails.icon,
+                insight = insight,
+            )
         }
-      }
-      Log.d(TAG, "[MessagesEmbedded] actionableInsight or bundleInsight is null")
-      return null
     }
-
-    private fun List<ContextInsight>.findBundleInsight(): BundleInsight? = firstNotNullOfOrNull {
-      it as? BundleInsight
-    }
-
-    private fun List<ContextInsight>.findActionableInsight(): ActionableInsight? =
-      firstNotNullOfOrNull {
-        it as? ActionableInsight
-      }
-  }
 }

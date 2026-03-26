@@ -56,154 +56,169 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun Modifier.animatedActionBorder(
-  strokeWidth: Dp,
-  innerGlowStrokeWidth: Dp? = null,
-  innerGlowBlurRadius: Dp = MessageConstants.InnerBorderBlurRadius,
+    strokeWidth: Dp,
+    innerGlowStrokeWidth: Dp? = null,
+    innerGlowBlurRadius: Dp = MessageConstants.InnerBorderBlurRadius,
 ): Modifier {
-  val rotationAngle = remember { Animatable(MessageConstants.INITIAL_ROTATION_DEGREES) }
-  val fadeProgress = remember { Animatable(0f) } // 0f = full gradient, 1f = full solid
+    val rotationAngle = remember { Animatable(MessageConstants.INITIAL_ROTATION_DEGREES) }
+    val fadeProgress = remember { Animatable(0f) } // 0f = full gradient, 1f = full solid
 
-  val density = LocalDensity.current
-  val strokeWidthPx = with(density) { strokeWidth.toPx() }
-  val glowWidthPx = with(density) { innerGlowStrokeWidth?.toPx() ?: 0f }
-  val blurRadiusPx = with(density) { innerGlowBlurRadius.toPx() }
+    val density = LocalDensity.current
+    val strokeWidthPx = with(density) { strokeWidth.toPx() }
+    val glowWidthPx = with(density) { innerGlowStrokeWidth?.toPx() ?: 0f }
+    val blurRadiusPx = with(density) { innerGlowBlurRadius.toPx() }
 
-  val solidColor = MaterialTheme.colorScheme.outlineVariant
-  val strokeAnimStartColor: Color = boostChroma(MaterialTheme.colorScheme.tertiaryContainer)
-  val strokeAnimMiddleColor: Color = boostChroma(MaterialTheme.colorScheme.primaryFixedDim)
-  val strokeAnimEndColor: Color = boostChroma(MaterialTheme.colorScheme.primary)
+    val solidColor = MaterialTheme.colorScheme.outlineVariant
+    val strokeAnimStartColor: Color = boostChroma(MaterialTheme.colorScheme.tertiaryContainer)
+    val strokeAnimMiddleColor: Color = boostChroma(MaterialTheme.colorScheme.primaryFixedDim)
+    val strokeAnimEndColor: Color = boostChroma(MaterialTheme.colorScheme.primary)
 
-  LaunchedEffect(Unit) {
-    launch {
-      rotationAngle.animateTo(
-        targetValue = MessageConstants.INITIAL_ROTATION_DEGREES + 360f,
-        animationSpec =
-          tween(durationMillis = MessageConstants.ROTATION_DURATION_MILLIS, easing = LinearEasing),
-      )
+    LaunchedEffect(Unit) {
+        launch {
+            rotationAngle.animateTo(
+                targetValue = MessageConstants.INITIAL_ROTATION_DEGREES + 360f,
+                animationSpec =
+                    tween(
+                        durationMillis = MessageConstants.ROTATION_DURATION_MILLIS,
+                        easing = LinearEasing,
+                    ),
+            )
+        }
+
+        launch {
+            fadeProgress.animateTo(
+                targetValue = 1f,
+                animationSpec =
+                    tween(
+                        durationMillis = MessageConstants.FADE_DURATION_MILLIS,
+                        delayMillis = MessageConstants.FADE_DELAY_MILLIS,
+                        easing = LinearEasing,
+                    ),
+            )
+        }
     }
 
-    launch {
-      fadeProgress.animateTo(
-        targetValue = 1f,
-        animationSpec =
-          tween(
-            durationMillis = MessageConstants.FADE_DURATION_MILLIS,
-            delayMillis = MessageConstants.FADE_DELAY_MILLIS,
-            easing = LinearEasing,
-          ),
-      )
+    return drawBehind {
+        val currentRotationRad = Math.toRadians(rotationAngle.value.toDouble()).toFloat()
+        val gradientRadius = sqrt(size.width * size.width + size.height * size.height) / 2f
+        val center = size.center
+        val cosTheta = cos(currentRotationRad)
+        val sinTheta = sin(currentRotationRad)
+
+        val startOffset =
+            Offset(
+                x = center.x - gradientRadius * cosTheta,
+                y = center.y - gradientRadius * sinTheta,
+            )
+        val endOffset =
+            Offset(
+                x = center.x + gradientRadius * cosTheta,
+                y = center.y + gradientRadius * sinTheta,
+            )
+
+        val gradientBrush =
+            Brush.linearGradient(
+                MessageConstants.GRADIENT_START_FRACTION to strokeAnimStartColor,
+                MessageConstants.GRADIENT_MIDDLE_FRACTION to strokeAnimMiddleColor,
+                MessageConstants.GRADIENT_END_FRACTION to strokeAnimEndColor,
+                start = startOffset,
+                end = endOffset,
+                tileMode = TileMode.Clamp,
+            )
+
+        val cornerRadius = CornerRadius(MessageConstants.CornerRadius.toPx())
+        val solidOutlineFadeIn = fadeProgress.value
+        val gradientOutlineFadeOut = (1f - solidOutlineFadeIn)
+
+        if (innerGlowStrokeWidth != null && innerGlowStrokeWidth > 0.dp) {
+            drawInnerGlow(
+                glowWidthPx,
+                blurRadiusPx,
+                gradientBrush,
+                cornerRadius,
+                gradientOutlineFadeOut,
+            )
+        }
+
+        drawMainBorder(
+            strokeWidthPx,
+            gradientBrush,
+            cornerRadius,
+            gradientOutlineFadeOut,
+            solidColor,
+            solidOutlineFadeIn,
+        )
     }
-  }
-
-  return drawBehind {
-    val currentRotationRad = Math.toRadians(rotationAngle.value.toDouble()).toFloat()
-    val gradientRadius = sqrt(size.width * size.width + size.height * size.height) / 2f
-    val center = size.center
-    val cosTheta = cos(currentRotationRad)
-    val sinTheta = sin(currentRotationRad)
-
-    val startOffset =
-      Offset(x = center.x - gradientRadius * cosTheta, y = center.y - gradientRadius * sinTheta)
-    val endOffset =
-      Offset(x = center.x + gradientRadius * cosTheta, y = center.y + gradientRadius * sinTheta)
-
-    val gradientBrush =
-      Brush.linearGradient(
-        MessageConstants.GRADIENT_START_FRACTION to strokeAnimStartColor,
-        MessageConstants.GRADIENT_MIDDLE_FRACTION to strokeAnimMiddleColor,
-        MessageConstants.GRADIENT_END_FRACTION to strokeAnimEndColor,
-        start = startOffset,
-        end = endOffset,
-        tileMode = TileMode.Clamp,
-      )
-
-    val cornerRadius = CornerRadius(MessageConstants.CornerRadius.toPx())
-    val solidOutlineFadeIn = fadeProgress.value
-    val gradientOutlineFadeOut = (1f - solidOutlineFadeIn)
-
-    if (innerGlowStrokeWidth != null && innerGlowStrokeWidth > 0.dp) {
-      drawInnerGlow(glowWidthPx, blurRadiusPx, gradientBrush, cornerRadius, gradientOutlineFadeOut)
-    }
-
-    drawMainBorder(
-      strokeWidthPx,
-      gradientBrush,
-      cornerRadius,
-      gradientOutlineFadeOut,
-      solidColor,
-      solidOutlineFadeIn,
-    )
-  }
 }
 
 private fun DrawScope.drawInnerGlow(
-  glowWidthPx: Float,
-  blurRadiusPx: Float,
-  gradientBrush: Brush,
-  cornerRadius: CornerRadius,
-  gradientOutlineFadeOut: Float,
+    glowWidthPx: Float,
+    blurRadiusPx: Float,
+    gradientBrush: Brush,
+    cornerRadius: CornerRadius,
+    gradientOutlineFadeOut: Float,
 ) {
-  drawIntoCanvas { canvas ->
-    val paint = Paint()
-    paint.style = PaintingStyle.Stroke
-    paint.strokeWidth = glowWidthPx
+    drawIntoCanvas { canvas ->
+        val paint = Paint()
+        paint.style = PaintingStyle.Stroke
+        paint.strokeWidth = glowWidthPx
 
-    val frameworkPaint = paint.asFrameworkPaint()
-    frameworkPaint.maskFilter = BlurMaskFilter(blurRadiusPx, BlurMaskFilter.Blur.NORMAL)
+        val frameworkPaint = paint.asFrameworkPaint()
+        frameworkPaint.maskFilter = BlurMaskFilter(blurRadiusPx, BlurMaskFilter.Blur.NORMAL)
 
-    gradientBrush.applyTo(size, paint, alpha = 0.2f * gradientOutlineFadeOut)
+        gradientBrush.applyTo(size, paint, alpha = 0.2f * gradientOutlineFadeOut)
 
-    canvas.drawRoundRect(
-      left = 0f,
-      top = 0f,
-      right = size.width,
-      bottom = size.height,
-      radiusX = cornerRadius.x,
-      radiusY = cornerRadius.y,
-      paint = paint,
-    )
-  }
+        canvas.drawRoundRect(
+            left = 0f,
+            top = 0f,
+            right = size.width,
+            bottom = size.height,
+            radiusX = cornerRadius.x,
+            radiusY = cornerRadius.y,
+            paint = paint,
+        )
+    }
 }
 
 private fun DrawScope.drawMainBorder(
-  strokeWidthPx: Float,
-  gradientBrush: Brush,
-  cornerRadius: CornerRadius,
-  gradientOutlineFadeOut: Float,
-  solidColor: Color,
-  solidOutlineFadeIn: Float,
+    strokeWidthPx: Float,
+    gradientBrush: Brush,
+    cornerRadius: CornerRadius,
+    gradientOutlineFadeOut: Float,
+    solidColor: Color,
+    solidOutlineFadeIn: Float,
 ) {
-  val halfStroke = strokeWidthPx / 2f
-  val topLeft = Offset(halfStroke, halfStroke)
-  val borderSize = Size(size.width - strokeWidthPx, size.height - strokeWidthPx)
-  val strokeStyle = Stroke(width = strokeWidthPx)
+    val halfStroke = strokeWidthPx / 2f
+    val topLeft = Offset(halfStroke, halfStroke)
+    val borderSize = Size(size.width - strokeWidthPx, size.height - strokeWidthPx)
+    val strokeStyle = Stroke(width = strokeWidthPx)
 
-  drawRoundRect(
-    brush = gradientBrush,
-    topLeft = topLeft,
-    size = borderSize,
-    cornerRadius = cornerRadius,
-    alpha = gradientOutlineFadeOut,
-    style = strokeStyle,
-  )
+    drawRoundRect(
+        brush = gradientBrush,
+        topLeft = topLeft,
+        size = borderSize,
+        cornerRadius = cornerRadius,
+        alpha = gradientOutlineFadeOut,
+        style = strokeStyle,
+    )
 
-  drawRoundRect(
-    color = solidColor,
-    topLeft = topLeft,
-    size = borderSize,
-    cornerRadius = cornerRadius,
-    alpha = solidOutlineFadeIn,
-    style = strokeStyle,
-  )
+    drawRoundRect(
+        color = solidColor,
+        topLeft = topLeft,
+        size = borderSize,
+        cornerRadius = cornerRadius,
+        alpha = solidOutlineFadeIn,
+        style = strokeStyle,
+    )
 }
 
 private fun boostChroma(color: Color): Color {
-  val hctColor = FloatArray(3)
-  ColorUtils.colorToM3HCT(color.toArgb(), hctColor)
-  val chroma = hctColor[1]
-  return if (chroma < 5) {
-    color
-  } else {
-    Color(ColorUtils.M3HCTToColor(hctColor[0], 70f, hctColor[2]))
-  }
+    val hctColor = FloatArray(3)
+    ColorUtils.colorToM3HCT(color.toArgb(), hctColor)
+    val chroma = hctColor[1]
+    return if (chroma < 5) {
+        color
+    } else {
+        Color(ColorUtils.M3HCTToColor(hctColor[0], 70f, hctColor[2]))
+    }
 }

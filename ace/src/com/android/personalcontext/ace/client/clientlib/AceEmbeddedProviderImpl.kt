@@ -19,6 +19,8 @@ import android.content.Context
 import android.service.personalcontext.insight.ContextInsight
 import android.view.SurfaceControlViewHost.SurfacePackage
 import android.view.SurfaceView
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -26,8 +28,11 @@ import kotlinx.coroutines.CoroutineScope
  *
  * @param backgroundScope An optional [CoroutineScope] for background cleanup tasks.
  */
-class AceEmbeddedProviderImpl(private val backgroundScope: CoroutineScope? = null) :
-    AceEmbeddedProvider {
+class AceEmbeddedProviderImpl(
+    private val backgroundScope: CoroutineScope? = null,
+    private val timeout: Duration = 30.seconds,
+    private val invalidatePreviousHintOnUpdate: Boolean = false,
+) : AceEmbeddedProvider {
 
     override suspend fun connect(
         context: Context,
@@ -36,14 +41,8 @@ class AceEmbeddedProviderImpl(private val backgroundScope: CoroutineScope? = nul
         onInsight: (ContextInsight) -> Unit,
         session: suspend AceEmbeddedSessionScope.(SurfacePackage) -> Nothing,
     ): Nothing {
-        AceEmbeddedSessionImpl(backgroundScope).withConnection(
-            context,
-            inputs,
-            onSizeChange,
-            onInsight,
-        ) {
-            session(it)
-        }
+        AceEmbeddedSessionImpl(backgroundScope, timeout, invalidatePreviousHintOnUpdate)
+            .withConnection(context, inputs, onSizeChange, onInsight) { session(it) }
     }
 
     override fun SurfaceView.setEmbeddedSurfacePackage(surfacePackage: SurfacePackage) =

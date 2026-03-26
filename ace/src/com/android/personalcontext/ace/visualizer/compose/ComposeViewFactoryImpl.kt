@@ -23,13 +23,13 @@ import javax.inject.Inject
 
 class ComposeViewFactoryImpl @Inject constructor() : ComposeViewFactory {
 
-  override fun createComposeView(context: Context, init: ComposeView.() -> Unit): View {
-    Log.i(TAG, "[AceEmbeddedLifecycle] Visualizer: createComposeView()")
+    override fun createComposeView(context: Context, init: ComposeView.() -> Unit): View {
+        Log.i(TAG, "[AceEmbeddedLifecycle] Visualizer: createComposeView()")
 
-    return ComposeView(context).apply { init() }
-  }
+        return ComposeView(context).apply { init() }
+    }
 
-  companion object {
-    const val TAG = "ComposeViewFactory"
-  }
+    companion object {
+        const val TAG = "ComposeViewFactory"
+    }
 }

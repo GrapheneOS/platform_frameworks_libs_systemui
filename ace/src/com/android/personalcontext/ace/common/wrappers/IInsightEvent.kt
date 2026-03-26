@@ -23,50 +23,50 @@ import androidx.annotation.VisibleForTesting
 /** Wrapper interface for [InsightEvent]. */
 sealed interface IInsightEvent {
 
-  /**
-   * Returns the unwrapped [InsightEvent]. May return null if originally wrapped from a unit test,
-   * where constructing an instance of [InsightEvent] is not possible.
-   */
-  fun unwrap(): InsightEvent?
+    /**
+     * Returns the unwrapped [InsightEvent]. May return null if originally wrapped from a unit test,
+     * where constructing an instance of [InsightEvent] is not possible.
+     */
+    fun unwrap(): InsightEvent?
 
-  /** @see InsightEvent.getEventType */
-  val eventType: Int
+    /** @see InsightEvent.getEventType */
+    val eventType: Int
 
-  /** @see InsightEvent.getInsight */
-  val insight: IPublishedContextInsight
+    /** @see InsightEvent.getInsight */
+    val insight: IPublishedContextInsight
 
-  /** @see InsightEvent.getTimestamp */
-  val timestamp: Long
+    /** @see InsightEvent.getTimestamp */
+    val timestamp: Long
 
-  /** @see InsightEvent.getRenderToken */
-  val renderToken: IRenderToken
+    /** @see InsightEvent.getRenderToken */
+    val renderToken: IRenderToken
 }
 
 /** Creates an [IInsightEvent] from an [InsightEvent]. */
 fun InsightEvent.wrap(): IInsightEvent = InsightEventWrapper(this)
 
 private class InsightEventWrapper(private val original: InsightEvent) : IInsightEvent {
-  override fun unwrap() = original
+    override fun unwrap() = original
 
-  override val eventType: Int
-    get() = original.eventType
+    override val eventType: Int
+        get() = original.eventType
 
-  override val insight: IPublishedContextInsight
-    get() = original.insight.wrap()
+    override val insight: IPublishedContextInsight
+        get() = original.insight.wrap()
 
-  override val timestamp: Long
-    get() = original.timestamp
+    override val timestamp: Long
+        get() = original.timestamp
 
-  override val renderToken: IRenderToken
-    get() = original.renderToken.wrap()
+    override val renderToken: IRenderToken
+        get() = original.renderToken.wrap()
 }
 
 @VisibleForTesting
 class InsightEventForTesting(
-  override val eventType: Int,
-  override val insight: IPublishedContextInsight,
-  override val timestamp: Long = 0L,
-  override val renderToken: IRenderToken = RenderTokenForTesting(),
+    override val eventType: Int,
+    override val insight: IPublishedContextInsight,
+    override val timestamp: Long = 0L,
+    override val renderToken: IRenderToken = RenderTokenForTesting(),
 ) : IInsightEvent {
-  override fun unwrap() = null
+    override fun unwrap() = null
 }

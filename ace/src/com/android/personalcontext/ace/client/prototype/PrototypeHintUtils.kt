@@ -19,15 +19,25 @@ package com.android.personalcontext.ace.client.prototype
 
 import android.service.personalcontext.hint.BundleHint
 import android.service.personalcontext.hint.ContextHint
-import com.android.personalcontext.ace.client.prototype.PrototypeHintId.AACardHintId
+import com.android.personalcontext.ace.client.prototype.PrototypeHintId.ClientSignalHintId
+import com.android.personalcontext.ace.client.prototype.PrototypeHintId.ContactHintId
 import com.android.personalcontext.ace.client.prototype.PrototypeHintId.CrossDeviceIntentHintId
 import com.android.personalcontext.ace.client.prototype.PrototypeHintId.DialerClickEventHintId
+import com.android.personalcontext.ace.client.prototype.PrototypeHintId.EntityTypeHintId
 import com.android.personalcontext.ace.client.prototype.PrototypeHintId.ExampleEmbeddedHintId
+import com.android.personalcontext.ace.client.prototype.PrototypeHintId.RichCardHintId
+import com.android.personalcontext.ace.client.prototype.PrototypeHintId.RichCardLiveDataHintId
+import com.android.personalcontext.ace.client.prototype.PrototypeHintId.VisualMetadataHintId
 import com.android.personalcontext.ace.client.prototype.PrototypeHintId.WeatherHintId
-import com.android.personalcontext.ace.client.prototype.aacard.AACardHint
 import com.android.personalcontext.ace.client.prototype.call.DialerClickEventHint
+import com.android.personalcontext.ace.client.prototype.clientsignal.ClientSignalHint
+import com.android.personalcontext.ace.client.prototype.contact.ContactHint
 import com.android.personalcontext.ace.client.prototype.crossdevice.CrossDeviceIntentHint
+import com.android.personalcontext.ace.client.prototype.entitytype.EntityTypeHint
 import com.android.personalcontext.ace.client.prototype.example.ExampleEmbeddedHint
+import com.android.personalcontext.ace.client.prototype.metadata.VisualMetadataHint
+import com.android.personalcontext.ace.client.prototype.richcard.RichCardHint
+import com.android.personalcontext.ace.client.prototype.richcard.RichCardLiveDataHint
 import com.android.personalcontext.ace.client.prototype.weather.WeatherHint
 
 private const val PROTOTYPE_HINT_ID_KEY = "prototype_hint_id_key"
@@ -36,10 +46,11 @@ object PrototypeHintUtils {
 
     /** Converts the [PrototypeHint] into a [ContextHint]. */
     fun <T : PrototypeHint> T.toContextHint(): ContextHint {
-        val hint = this
-        return BundleHint.Builder().build().apply {
-            dataBundle.putInt(PROTOTYPE_HINT_ID_KEY, hint.id.uid)
-            hint.exportDataToBundle(dataBundle)
+        val prototype = this
+
+        return BundleHint.Builder().setHintTypeName(prototype.id.typeName).build().apply {
+            prototype.exportDataToBundle(dataBundle)
+            dataBundle.putInt(PROTOTYPE_HINT_ID_KEY, prototype.id.uid)
         }
     }
 
@@ -54,9 +65,14 @@ object PrototypeHintUtils {
             when (id) {
                 ExampleEmbeddedHintId -> ExampleEmbeddedHint
                 WeatherHintId -> WeatherHint
-                AACardHintId -> AACardHint
                 DialerClickEventHintId -> DialerClickEventHint
                 CrossDeviceIntentHintId -> CrossDeviceIntentHint
+                RichCardHintId -> RichCardHint
+                RichCardLiveDataHintId -> RichCardLiveDataHint
+                ContactHintId -> ContactHint
+                EntityTypeHintId -> EntityTypeHint
+                ClientSignalHintId -> ClientSignalHint
+                VisualMetadataHintId -> VisualMetadataHint
             }
 
         return creator.create(dataBundle)

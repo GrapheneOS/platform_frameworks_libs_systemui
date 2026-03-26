@@ -24,29 +24,29 @@ import androidx.annotation.VisibleForTesting
 /** Wrapper interface for [PublishedContextInsight]. */
 sealed interface IPublishedContextInsight {
 
-  /**
-   * Returns the unwrapped [PublishedContextInsight]. May return null if originally wrapped from a
-   * unit test, where constructing an instance of [PublishedContextInsight] is not possible.
-   */
-  fun unwrap(): PublishedContextInsight?
+    /**
+     * Returns the unwrapped [PublishedContextInsight]. May return null if originally wrapped from a
+     * unit test, where constructing an instance of [PublishedContextInsight] is not possible.
+     */
+    fun unwrap(): PublishedContextInsight?
 
-  /** @see PublishedContextInsight.insight */
-  val insight: ContextInsight
+    /** @see PublishedContextInsight.insight */
+    val insight: ContextInsight
 }
 
 /** Creates an [IPublishedContextInsight] from a [PublishedContextInsight]. */
 fun PublishedContextInsight.wrap(): IPublishedContextInsight = PublishedContextInsightWrapper(this)
 
 private class PublishedContextInsightWrapper(private val original: PublishedContextInsight) :
-  IPublishedContextInsight {
-  override fun unwrap() = original
+    IPublishedContextInsight {
+    override fun unwrap() = original
 
-  override val insight
-    get() = original.insight
+    override val insight
+        get() = original.insight
 }
 
 @VisibleForTesting
 class PublishedContextInsightForTesting(override val insight: ContextInsight) :
-  IPublishedContextInsight {
-  override fun unwrap() = null
+    IPublishedContextInsight {
+    override fun unwrap() = null
 }

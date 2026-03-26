@@ -18,26 +18,33 @@
 package com.android.personalcontext.ace.client.prototype.grid
 
 import android.os.Bundle
-import android.os.Parcelable
 import android.service.personalcontext.hint.PublishedContextHint
 import android.service.personalcontext.insight.ContextInsight
 import com.android.personalcontext.ace.client.prototype.PrototypeInsight
 import com.android.personalcontext.ace.client.prototype.PrototypeInsightId.InsightGridId
-import kotlinx.parcelize.Parcelize
+import com.android.personalcontext.ace.common.InsightGridItem
 
+/**
+ * Represents a grid of insights.
+ *
+ * @property items The list of [InsightGridItem]s to display in the grid.
+ * @property originHints The set of [PublishedContextHint]s that originated this insight.
+ */
 data class InsightGrid(
-    val items: List<GridItem>,
+    val items: List<InsightGridItem>,
     override val originHints: Set<PublishedContextHint>,
 ) : PrototypeInsight(InsightGridId, this) {
 
     override fun exportDataToBundle(bundle: Bundle) {
-        bundle.putParcelableArray("spans", items.map { it.span }.toTypedArray())
+        bundle.putIntArray("spans", items.map { it.span }.toIntArray())
     }
 
     override fun exportInsightsToList(): List<ContextInsight?> = items.map { it.insight }
 
     companion object : Creator {
+        /** The typical total span capacity for a phone device. */
         const val TOTAL_SPAN_CAPACITY_PHONE = 6
+        /** The typical total span capacity for a watch device. */
         const val TOTAL_SPAN_CAPACITY_WATCH = 2
 
         override fun create(
@@ -45,23 +52,13 @@ data class InsightGrid(
             insights: List<ContextInsight?>,
             originHints: Set<PublishedContextHint>,
         ): PrototypeInsight {
-            bundle.classLoader = GridItemSpan::class.java.classLoader
-            val spans = bundle.getParcelableArray("spans", GridItemSpan::class.java)!!.toList()
+            val spans = bundle.getIntArray("spans")!!.toList()
 
             return InsightGrid(
-                items = insights.zip(spans).map { (insight, span) -> GridItem(insight!!, span) },
+                items =
+                    insights.zip(spans).map { (insight, span) -> InsightGridItem(insight!!, span) },
                 originHints = originHints,
             )
         }
     }
-}
-
-data class GridItem(val insight: ContextInsight, val span: GridItemSpan)
-
-@Parcelize
-enum class GridItemSpan(val span: Int) : Parcelable {
-    SMALL(span = 2),
-    HALF(span = 3),
-    MEDIUM(span = 4),
-    LARGE(span = 6),
 }

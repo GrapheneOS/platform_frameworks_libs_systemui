@@ -28,54 +28,56 @@ import androidx.compose.ui.graphics.Color
  */
 object EmbeddedTheme {
 
-  /**
-   * Contains client-provided theme values specific to Inline Suggestions.
-   *
-   * @see android.R.attr.inlineSuggestion
-   */
-  object InlineSuggestion {
-
-    /** Retrieves the current [EmbeddedColorScheme] at the call site's position in the hierarchy. */
-    val colorScheme: EmbeddedColorScheme
-      @Composable @ReadOnlyComposable get() = LocalEmbeddedColorScheme.current
-
-    /** Retrieves the current [EmbeddedShapes] at the call site's position in the hierarchy. */
-    val shapes: EmbeddedShapes
-      @Composable @ReadOnlyComposable get() = LocalEmbeddedShapes.current
-
     /**
-     * This color scheme holds all the named color parameters for a
-     * [EmbeddedTheme.InlineSuggestion].
+     * Contains client-provided theme values specific to Inline Suggestions.
      *
-     * @property stroke the client-provided [android.R.attr.strokeColor].
-     * @property text the client-provided [android.R.attr.textColor].
-     * @property icon the client-provided [android.R.attr.iconColor].
-     * @property suggestionBackground the client-provided
-     *   [android.R.attr.suggestionBackgroundColor].
+     * @see android.R.attr.inlineSuggestion
      */
-    data class EmbeddedColorScheme(
-      val stroke: Color? = null,
-      val text: Color? = null,
-      val icon: Color? = null,
-      val suggestionBackground: Color? = null,
-    )
+    object InlineSuggestion {
 
-    /**
-     * Holds all the named shapes parameters for a [EmbeddedTheme.InlineSuggestion].
-     *
-     * @property suggestion a shape using the client-provided
-     *   [android.R.attr.suggestionCornerRadius].
-     */
-    data class EmbeddedShapes(val suggestion: CornerBasedShape? = null)
+        /**
+         * Retrieves the current [EmbeddedColorScheme] at the call site's position in the hierarchy.
+         */
+        val colorScheme: EmbeddedColorScheme
+            @Composable @ReadOnlyComposable get() = LocalEmbeddedColorScheme.current
 
-    /** Provides an [EmbeddedColorScheme] for Inline Suggestions. */
-    val LocalEmbeddedColorScheme: ProvidableCompositionLocal<EmbeddedColorScheme> =
-      compositionLocalOf {
-        error("No EmbeddedColorScheme provided")
-      }
-    /** Provides an [EmbeddedShapes] for Inline Suggestions. */
-    val LocalEmbeddedShapes: ProvidableCompositionLocal<EmbeddedShapes> = compositionLocalOf {
-      error("No EmbeddedShapes provided")
+        /** Retrieves the current [EmbeddedShapes] at the call site's position in the hierarchy. */
+        val shapes: EmbeddedShapes
+            @Composable @ReadOnlyComposable get() = LocalEmbeddedShapes.current
+
+        /**
+         * This color scheme holds all the named color parameters for a
+         * [EmbeddedTheme.InlineSuggestion].
+         *
+         * @property stroke the client-provided [android.R.attr.strokeColor].
+         * @property text the client-provided [android.R.attr.textColor].
+         * @property icon the client-provided [android.R.attr.iconColor].
+         * @property suggestionBackground the client-provided
+         *   [android.R.attr.suggestionBackgroundColor].
+         */
+        data class EmbeddedColorScheme(
+            val stroke: Color? = null,
+            val text: Color? = null,
+            val icon: Color? = null,
+            val suggestionBackground: Color? = null,
+        )
+
+        /**
+         * Holds all the named shapes parameters for a [EmbeddedTheme.InlineSuggestion].
+         *
+         * @property suggestion a shape using the client-provided
+         *   [android.R.attr.suggestionCornerRadius].
+         */
+        data class EmbeddedShapes(val suggestion: CornerBasedShape? = null)
+
+        /** Provides an [EmbeddedColorScheme] for Inline Suggestions. */
+        val LocalEmbeddedColorScheme: ProvidableCompositionLocal<EmbeddedColorScheme> =
+            compositionLocalOf {
+                error("No EmbeddedColorScheme provided")
+            }
+        /** Provides an [EmbeddedShapes] for Inline Suggestions. */
+        val LocalEmbeddedShapes: ProvidableCompositionLocal<EmbeddedShapes> = compositionLocalOf {
+            error("No EmbeddedShapes provided")
+        }
     }
-  }
 }

@@ -21,17 +21,30 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.android.personalcontext.ace.client.clientlib.AceEmbeddedProviderImpl
 import com.android.personalcontext.ace.client.clientsdk.state.AceEmbeddedSessionState
 import com.android.personalcontext.ace.client.clientsdk.state.AceEmbeddedSessionStateImpl
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Create a new [AceEmbeddedSessionState] to allow observing and controlling an embedded ACE
  * session. This must be passed into a single [AceEmbeddedSurfaceView].
+ *
+ * @param invalidatePreviousHintOnUpdate Whether this DUI session should automatically publish a
+ *   [android.service.personalcontext.hint.HintInvalidationHint] when hints are updated.
  */
 @Composable
-fun rememberSessionState(): AceEmbeddedSessionState {
+fun rememberSessionState(
+    timeout: Duration = 30.seconds,
+    invalidatePreviousHintOnUpdate: Boolean = false,
+): AceEmbeddedSessionState {
     val scope = rememberCoroutineScope()
 
     return remember {
-        val provider = AceEmbeddedProviderImpl(backgroundScope = scope)
+        val provider =
+            AceEmbeddedProviderImpl(
+                backgroundScope = scope,
+                timeout = timeout,
+                invalidatePreviousHintOnUpdate = invalidatePreviousHintOnUpdate,
+            )
         AceEmbeddedSessionStateImpl(coroutineScope = scope, provider = provider)
     }
 }

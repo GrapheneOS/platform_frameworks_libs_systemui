@@ -19,7 +19,7 @@ import android.view.View
 import javax.inject.Inject
 
 class VisualizerSessionFactoryImpl @Inject internal constructor() : VisualizerSessionFactory {
-  override fun createSession(view: View): VisualizerSession {
-    return VisualizerSession(view)
-  }
+    override fun createSession(view: View): VisualizerSession {
+        return VisualizerSession(view)
+    }
 }

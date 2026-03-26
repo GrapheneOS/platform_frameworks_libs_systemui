@@ -50,148 +50,155 @@ import com.android.personalcontext.ace.visualizer.templates.utils.EmbeddedTheme.
  */
 @Composable
 fun EmbeddedTheme(content: @Composable () -> Unit) {
-  val context = LocalContext.current
-  val info = LocalInsightSurfaceClientInfo.current
-  val density = LocalDensity.current
+    val context = LocalContext.current
+    val info = LocalInsightSurfaceClientInfo.current
+    val density = LocalDensity.current
 
-  val resolvedTheme =
-    remember(context, info.packageName, info.themeResourceId, density) {
-      resolveEmbeddedTheme(context, info.packageName, info.themeResourceId, density)
+    val resolvedTheme =
+        remember(context, info.packageName, info.themeResourceId, density) {
+            resolveEmbeddedTheme(context, info.packageName, info.themeResourceId, density)
+        }
+
+    CompositionLocalProvider(
+        InlineSuggestion.LocalEmbeddedColorScheme provides
+            resolvedTheme.inlineSuggestion.colorScheme,
+        InlineSuggestion.LocalEmbeddedShapes provides resolvedTheme.inlineSuggestion.shapes,
+    ) {
+        content()
     }
-
-  CompositionLocalProvider(
-    InlineSuggestion.LocalEmbeddedColorScheme provides resolvedTheme.inlineSuggestion.colorScheme,
-    InlineSuggestion.LocalEmbeddedShapes provides resolvedTheme.inlineSuggestion.shapes,
-  ) {
-    content()
-  }
 }
 
 private data class ResolvedTheme(
-  val inlineSuggestion: ResolvedInlineSuggestion = ResolvedInlineSuggestion()
+    val inlineSuggestion: ResolvedInlineSuggestion = ResolvedInlineSuggestion()
 )
 
 private data class ResolvedInlineSuggestion(
-  val colorScheme: InlineSuggestion.EmbeddedColorScheme = InlineSuggestion.EmbeddedColorScheme(),
-  val shapes: InlineSuggestion.EmbeddedShapes = InlineSuggestion.EmbeddedShapes(),
+    val colorScheme: InlineSuggestion.EmbeddedColorScheme = InlineSuggestion.EmbeddedColorScheme(),
+    val shapes: InlineSuggestion.EmbeddedShapes = InlineSuggestion.EmbeddedShapes(),
 )
 
 private fun resolveEmbeddedTheme(
-  context: Context,
-  packageName: String,
-  themeResourceId: Int,
-  density: Density,
+    context: Context,
+    packageName: String,
+    themeResourceId: Int,
+    density: Density,
 ): ResolvedTheme {
-  val clientContext =
-    try {
-      context.createPackageContext(packageName, 0)
-    } catch (_: Exception) {
-      null
-    }
+    val clientContext =
+        try {
+            context.createPackageContext(packageName, 0)
+        } catch (_: Exception) {
+            null
+        }
 
-  if (clientContext == null || themeResourceId == 0) return ResolvedTheme()
+    if (clientContext == null || themeResourceId == 0) return ResolvedTheme()
 
-  val embeddedViewThemeResId =
-    clientContext.resolveAttribute(themeResourceId, android.R.attr.embeddedViewTheme) {
-      getResourceIdOrThrow(0)
-    } ?: return ResolvedTheme()
+    val embeddedViewThemeResId =
+        clientContext.resolveAttribute(themeResourceId, android.R.attr.embeddedViewTheme) {
+            getResourceIdOrThrow(0)
+        } ?: return ResolvedTheme()
 
-  val inlineSuggestionResId =
-    clientContext.resolveAttribute(embeddedViewThemeResId, android.R.attr.inlineSuggestion) {
-      getResourceIdOrThrow(0)
-    } ?: return ResolvedTheme()
+    val inlineSuggestionResId =
+        clientContext.resolveAttribute(embeddedViewThemeResId, android.R.attr.inlineSuggestion) {
+            getResourceIdOrThrow(0)
+        } ?: return ResolvedTheme()
 
-  return ResolvedTheme(
-    inlineSuggestion =
-      ResolvedInlineSuggestion(
-        colorScheme = resolveColorScheme(clientContext, inlineSuggestionResId),
-        shapes = resolveShapes(clientContext, inlineSuggestionResId, density),
-      )
-  )
+    return ResolvedTheme(
+        inlineSuggestion =
+            ResolvedInlineSuggestion(
+                colorScheme = resolveColorScheme(clientContext, inlineSuggestionResId),
+                shapes = resolveShapes(clientContext, inlineSuggestionResId, density),
+            )
+    )
 }
 
 @SuppressLint("ResourceType")
 private fun resolveColorScheme(
-  context: Context,
-  styleResId: Int,
+    context: Context,
+    styleResId: Int,
 ): InlineSuggestion.EmbeddedColorScheme {
-  val attrs =
-    intArrayOf(
-        android.R.attr.strokeColor,
-        android.R.attr.textColor,
-        android.R.attr.iconColor,
-        android.R.attr.suggestionBackgroundColor,
-      )
-      .sortedArray()
+    val attrs =
+        intArrayOf(
+                android.R.attr.strokeColor,
+                android.R.attr.textColor,
+                android.R.attr.iconColor,
+                android.R.attr.suggestionBackgroundColor,
+            )
+            .sortedArray()
 
-  return context.withStyledAttributes(styleResId, attrs) { typedArray ->
-    InlineSuggestion.EmbeddedColorScheme(
-      stroke =
-        typedArray.getAttribute(attrs, android.R.attr.strokeColor) { Color(getColorOrThrow(it)) },
-      text =
-        typedArray.getAttribute(attrs, android.R.attr.textColor) { Color(getColorOrThrow(it)) },
-      icon =
-        typedArray.getAttribute(attrs, android.R.attr.iconColor) { Color(getColorOrThrow(it)) },
-      suggestionBackground =
-        typedArray.getAttribute(attrs, android.R.attr.suggestionBackgroundColor) {
-          Color(getColorOrThrow(it))
-        },
-    )
-  }
+    return context.withStyledAttributes(styleResId, attrs) { typedArray ->
+        InlineSuggestion.EmbeddedColorScheme(
+            stroke =
+                typedArray.getAttribute(attrs, android.R.attr.strokeColor) {
+                    Color(getColorOrThrow(it))
+                },
+            text =
+                typedArray.getAttribute(attrs, android.R.attr.textColor) {
+                    Color(getColorOrThrow(it))
+                },
+            icon =
+                typedArray.getAttribute(attrs, android.R.attr.iconColor) {
+                    Color(getColorOrThrow(it))
+                },
+            suggestionBackground =
+                typedArray.getAttribute(attrs, android.R.attr.suggestionBackgroundColor) {
+                    Color(getColorOrThrow(it))
+                },
+        )
+    }
 }
 
 private fun resolveShapes(
-  context: Context,
-  styleResId: Int,
-  density: Density,
+    context: Context,
+    styleResId: Int,
+    density: Density,
 ): InlineSuggestion.EmbeddedShapes {
-  val attrs = intArrayOf(android.R.attr.suggestionCornerRadius).sortedArray()
+    val attrs = intArrayOf(android.R.attr.suggestionCornerRadius).sortedArray()
 
-  return context.withStyledAttributes(styleResId, attrs) { typedArray ->
-    val radiusPx =
-      typedArray.getAttribute(attrs, android.R.attr.suggestionCornerRadius) {
-        getDimensionOrThrow(it)
-      }
-    if (radiusPx != null) {
-      InlineSuggestion.EmbeddedShapes(
-        suggestion = RoundedCornerShape(with(density) { radiusPx.toDp() })
-      )
-    } else {
-      InlineSuggestion.EmbeddedShapes()
+    return context.withStyledAttributes(styleResId, attrs) { typedArray ->
+        val radiusPx =
+            typedArray.getAttribute(attrs, android.R.attr.suggestionCornerRadius) {
+                getDimensionOrThrow(it)
+            }
+        if (radiusPx != null) {
+            InlineSuggestion.EmbeddedShapes(
+                suggestion = RoundedCornerShape(with(density) { radiusPx.toDp() })
+            )
+        } else {
+            InlineSuggestion.EmbeddedShapes()
+        }
     }
-  }
 }
 
 private inline fun <T> Context.resolveAttribute(
-  resId: Int,
-  @AttrRes attr: Int,
-  block: TypedArray.(Int) -> T,
+    resId: Int,
+    @AttrRes attr: Int,
+    block: TypedArray.(Int) -> T,
 ): T? {
-  val attrs = intArrayOf(attr)
-  return withStyledAttributes(resId, attrs) { typedArray ->
-    runCatching { typedArray.block(0) }.getOrNull()
-  }
+    val attrs = intArrayOf(attr)
+    return withStyledAttributes(resId, attrs) { typedArray ->
+        runCatching { typedArray.block(0) }.getOrNull()
+    }
 }
 
 private inline fun <T> Context.withStyledAttributes(
-  resId: Int,
-  attrs: IntArray,
-  block: (TypedArray) -> T,
+    resId: Int,
+    attrs: IntArray,
+    block: (TypedArray) -> T,
 ): T {
-  val typedArray = obtainStyledAttributes(resId, attrs)
-  try {
-    return block(typedArray)
-  } finally {
-    typedArray.recycle()
-  }
+    val typedArray = obtainStyledAttributes(resId, attrs)
+    try {
+        return block(typedArray)
+    } finally {
+        typedArray.recycle()
+    }
 }
 
 private inline fun <T> TypedArray.getAttribute(
-  attrs: IntArray,
-  @AttrRes attrId: Int,
-  getResourceOrThrow: TypedArray.(index: Int) -> T,
+    attrs: IntArray,
+    @AttrRes attrId: Int,
+    getResourceOrThrow: TypedArray.(index: Int) -> T,
 ): T? {
-  val index = attrs.indexOf(attrId)
-  if (index == -1) return null
-  return runCatching { getResourceOrThrow(index) }.getOrNull()
+    val index = attrs.indexOf(attrId)
+    if (index == -1) return null
+    return runCatching { getResourceOrThrow(index) }.getOrNull()
 }

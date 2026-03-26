@@ -17,23 +17,23 @@ package com.android.personalcontext.ace.common
 
 object PackedIntUtils {
 
-  /**
-   * Packs the [value] parameter into the upper 16 bits of the receiver (`this`). The receiver's
-   * existing lower 16 bits are preserved.
-   */
-  fun Int.packValue(value: Int): Int {
-    val maskedLower = this and 0xFFFF
-    val shiftedUpper = value shl 16
-    return shiftedUpper or maskedLower
-  }
+    /**
+     * Packs the [value] parameter into the upper 16 bits of the receiver (`this`). The receiver's
+     * existing lower 16 bits are preserved.
+     */
+    fun Int.packValue(value: Int): Int {
+        val maskedLower = this and 0xFFFF
+        val shiftedUpper = value shl 16
+        return shiftedUpper or maskedLower
+    }
 
-  /** Extracts the signed 16-bit value from the upper 16 bits of the receiver (`this`). */
-  fun Int.unpackValue(): Int {
-    return this shr 16
-  }
+    /** Extracts the signed 16-bit value from the upper 16 bits of the receiver (`this`). */
+    fun Int.unpackValue(): Int {
+        return this shr 16
+    }
 
-  /** Extracts the original Int receiver. */
-  fun Int.unpackOriginal(): Int {
-    return this.toShort().toInt()
-  }
+    /** Extracts the original Int receiver. */
+    fun Int.unpackOriginal(): Int {
+        return this.toShort().toInt()
+    }
 }

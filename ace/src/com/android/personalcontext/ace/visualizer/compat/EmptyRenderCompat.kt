@@ -19,6 +19,6 @@ import android.service.personalcontext.insight.ContextInsight
 
 interface EmptyRenderCompat {
 
-  /** Whether the [ContextInsight] is an empty render signal. */
-  fun isEmpty(insight: ContextInsight): Boolean = false
+    /** Whether the [ContextInsight] is an empty render signal. */
+    fun isEmpty(insight: ContextInsight): Boolean = false
 }

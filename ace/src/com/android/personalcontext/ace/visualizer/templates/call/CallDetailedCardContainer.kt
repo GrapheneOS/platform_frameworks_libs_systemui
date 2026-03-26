@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("FlaggedApi", "NewApi")
+
 package com.android.personalcontext.ace.visualizer.templates.call
 
 import android.app.RemoteAction
@@ -59,22 +61,29 @@ private const val TAG = "CallDetailedCardContainer"
 /** The container for a single detailed card in the Magic Cue Call widget. */
 @Composable
 internal fun CallDetailedCardContainer(card: CallVisualizerDetailedCard) {
-  Card(
-    colors =
-      CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    shape = RoundedCornerShape(RoundedCornerSizeLarge),
-  ) {
-    Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)) {
-      CardHeader(cardTitle = card.title, dataSource = card.dataSource)
-      Spacer(modifier = Modifier.height(16.dp))
-      Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        for (row in card.rows) {
-          CardRow(row)
+    Card(
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
+            ),
+        shape = RoundedCornerShape(RoundedCornerSizeLarge),
+    ) {
+        Column(
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+        ) {
+            CardHeader(cardTitle = card.title, dataSource = card.dataSource)
+            Spacer(modifier = Modifier.height(16.dp))
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                for (row in card.rows) {
+                    CardRow(row)
+                }
+            }
+            card.feedback?.let { CardFeedback(feedbackInsight = it, shouldReportEvent = true) }
         }
-      }
-      card.feedback?.let { feedback -> feedback.CardFeedback() }
     }
-  }
 }
 
 /**
@@ -83,92 +92,98 @@ internal fun CallDetailedCardContainer(card: CallVisualizerDetailedCard) {
  */
 @Composable
 private fun CardRow(row: CallVisualizerRow) {
-  Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-    when (row) {
-      is CallVisualizerRow.FullLength -> {
-        Column(modifier = Modifier.weight(1f).fillMaxHeight()) { CardRowItem(row.value.item) }
-      }
-      is CallVisualizerRow.HalfHalfSplit -> {
-        Column(modifier = Modifier.weight(1f).fillMaxHeight()) { CardRowItem(row.value.itemOne) }
-        Spacer(modifier = Modifier.width(4.dp))
-        Column(modifier = Modifier.weight(1f).fillMaxHeight()) { CardRowItem(row.value.itemTwo) }
-      }
+    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+        when (row) {
+            is CallVisualizerRow.FullLength -> {
+                Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    CardRowItem(row.value.item)
+                }
+            }
+            is CallVisualizerRow.HalfHalfSplit -> {
+                Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    CardRowItem(row.value.itemOne)
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    CardRowItem(row.value.itemTwo)
+                }
+            }
+        }
     }
-  }
 }
 
 /** Represents a single item in a row. This is the smallest unit of data in a row. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun CardRowItem(rowItem: CallVisualizerRowItem) {
-  @Composable
-  fun getTextSize(textSize: TextSize): TextStyle =
-    when (textSize) {
-      TextSize.SMALL -> MaterialTheme.typography.labelSmall
-      TextSize.MEDIUM -> MaterialTheme.typography.titleMedium
-      TextSize.LARGE -> MaterialTheme.typography.titleLargeEmphasized
-      else -> MaterialTheme.typography.labelMedium
-    }
+    @Composable
+    fun getTextSize(textSize: TextSize): TextStyle =
+        when (textSize) {
+            TextSize.SMALL -> MaterialTheme.typography.labelSmall
+            TextSize.MEDIUM -> MaterialTheme.typography.titleMedium
+            TextSize.LARGE -> MaterialTheme.typography.titleLargeEmphasized
+            else -> MaterialTheme.typography.labelMedium
+        }
 
-  Surface(
-    modifier = Modifier.fillMaxSize(),
-    shape = RoundedCornerShape(RoundedCornerSizeMedium),
-    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-  ) {
-    Column(
-      modifier =
-        Modifier.fillMaxSize()
-          .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
-          .clearAndSetSemantics { this.contentDescription = rowItem.contentDescription }
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        shape = RoundedCornerShape(RoundedCornerSizeMedium),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
-      Text(
-        text = rowItem.label.text,
-        style = getTextSize(rowItem.label.textSize),
-        color = MaterialTheme.colorScheme.onSurface,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-      )
-      Text(
-        text = rowItem.content.text,
-        style = getTextSize(rowItem.content.textSize),
-        color = MaterialTheme.colorScheme.onSurface,
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
-      )
+        Column(
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
+                    .clearAndSetSemantics { this.contentDescription = rowItem.contentDescription }
+        ) {
+            Text(
+                text = rowItem.label.text,
+                style = getTextSize(rowItem.label.textSize),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = rowItem.content.text,
+                style = getTextSize(rowItem.content.textSize),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
-  }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun CardHeader(cardTitle: String, dataSource: RemoteAction?) {
-  Row(
-    modifier = Modifier.fillMaxWidth(),
-    horizontalArrangement = Arrangement.SpaceBetween,
-    verticalAlignment = Alignment.CenterVertically,
-  ) {
-    Text(
-      modifier = Modifier.weight(1f, fill = false),
-      text = cardTitle,
-      style = MaterialTheme.typography.titleLargeEmphasized,
-      color = MaterialTheme.colorScheme.onSurface,
-    )
-    Spacer(modifier = Modifier.width(0.dp))
-    dataSource?.let { SourceNavigationButton(it) }
-  }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            modifier = Modifier.weight(1f, fill = false),
+            text = cardTitle,
+            style = MaterialTheme.typography.titleLargeEmphasized,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(modifier = Modifier.width(0.dp))
+        dataSource?.let { SourceNavigationButton(it) }
+    }
 }
 
 @Composable
 private fun SourceNavigationButton(dataSource: RemoteAction) {
-  val context = LocalContext.current
-  val buttonContentDescription = dataSource.contentDescription.toString()
+    val context = LocalContext.current
+    val buttonContentDescription = dataSource.contentDescription.toString()
 
-  IconButton(modifier = Modifier.size(IconSizeLarge), onClick = { dataSource.execute(context) }) {
-    Icon(
-      modifier = Modifier.size(IconSizeLarge),
-      painter = painterResource(R.drawable.gs_open_in_new_vd_theme_24),
-      tint = MaterialTheme.colorScheme.secondary,
-      contentDescription = buttonContentDescription,
-    )
-  }
+    IconButton(modifier = Modifier.size(IconSizeLarge), onClick = { dataSource.execute(context) }) {
+        Icon(
+            modifier = Modifier.size(IconSizeLarge),
+            painter = painterResource(R.drawable.gs_open_in_new_vd_theme_24),
+            tint = MaterialTheme.colorScheme.secondary,
+            contentDescription = buttonContentDescription,
+        )
+    }
 }

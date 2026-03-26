@@ -23,21 +23,21 @@ import androidx.annotation.VisibleForTesting
 /** Wrapper interface for [RenderToken]. */
 sealed interface IRenderToken {
 
-  /**
-   * Returns the unwrapped [RenderToken]. May return null if originally wrapped from a unit test,
-   * where constructing an instance of [RenderToken] is not possible.
-   */
-  fun unwrap(): RenderToken?
+    /**
+     * Returns the unwrapped [RenderToken]. May return null if originally wrapped from a unit test,
+     * where constructing an instance of [RenderToken] is not possible.
+     */
+    fun unwrap(): RenderToken?
 }
 
 /** Creates an [IRenderToken] from a [RenderToken]. */
 fun RenderToken.wrap(): IRenderToken = RenderTokenWrapper(this)
 
 private class RenderTokenWrapper(private val original: RenderToken) : IRenderToken {
-  override fun unwrap() = original
+    override fun unwrap() = original
 }
 
 @VisibleForTesting
 class RenderTokenForTesting : IRenderToken {
-  override fun unwrap() = null
+    override fun unwrap() = null
 }

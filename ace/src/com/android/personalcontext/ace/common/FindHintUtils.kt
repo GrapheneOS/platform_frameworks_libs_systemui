@@ -26,14 +26,14 @@ import android.service.personalcontext.insight.ContextInsight
  */
 object FindHintUtils {
 
-  /**
-   * Finds the first [android.service.personalcontext.hint.ContextHint] of type [T] within this
-   * [android.service.personalcontext.insight.ContextInsight].
-   *
-   * @param T The specific type of [android.service.personalcontext.hint.ContextHint] to find.
-   * @return The first hint of type [T], or `null` if no matching hint is found.
-   */
-  @JvmSynthetic
-  inline fun <reified T : ContextHint> ContextInsight.findContextHint(): T? =
-    originHints.firstNotNullOfOrNull { it.contextHint as? T }
+    /**
+     * Finds the first [android.service.personalcontext.hint.ContextHint] of type [T] within this
+     * [android.service.personalcontext.insight.ContextInsight].
+     *
+     * @param T The specific type of [android.service.personalcontext.hint.ContextHint] to find.
+     * @return The first hint of type [T], or `null` if no matching hint is found.
+     */
+    @JvmSynthetic
+    inline fun <reified T : ContextHint> ContextInsight.findContextHint(): T? =
+        originHints.firstNotNullOfOrNull { it.contextHint as? T }
 }

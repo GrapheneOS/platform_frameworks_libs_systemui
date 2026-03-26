@@ -24,42 +24,42 @@ import androidx.annotation.VisibleForTesting
 /** Wrapper interface for [PublishedContextHint]. */
 sealed interface IPublishedContextHint {
 
-  /**
-   * Returns the unwrapped [PublishedContextHint]. May return null if originally wrapped from a unit
-   * test, where constructing an instance of [PublishedContextHint] is not possible.
-   */
-  fun unwrap(): PublishedContextHint?
+    /**
+     * Returns the unwrapped [PublishedContextHint]. May return null if originally wrapped from a
+     * unit test, where constructing an instance of [PublishedContextHint] is not possible.
+     */
+    fun unwrap(): PublishedContextHint?
 
-  /** @see PublishedContextHint.contextHint */
-  val contextHint: ContextHint
+    /** @see PublishedContextHint.contextHint */
+    val contextHint: ContextHint
 
-  /** @see PublishedContextHint.renderTokens */
-  val renderTokens: Set<IRenderToken>
+    /** @see PublishedContextHint.renderTokens */
+    val renderTokens: Set<IRenderToken>
 }
 
 /** Creates an [IPublishedContextHint] from a [PublishedContextHint]. */
 fun PublishedContextHint.wrap(): IPublishedContextHint = PublishedContextHintWrapper(this)
 
 private class PublishedContextHintWrapper(private val original: PublishedContextHint) :
-  IPublishedContextHint {
-  override fun unwrap() = original
+    IPublishedContextHint {
+    override fun unwrap() = original
 
-  override val contextHint
-    get() = original.contextHint
+    override val contextHint
+        get() = original.contextHint
 
-  override val renderTokens
-    get() = original.renderTokens.map { it.wrap() }.toSet()
+    override val renderTokens
+        get() = original.renderTokens.map { it.wrap() }.toSet()
 }
 
 @VisibleForTesting
 class PublishedContextHintForTesting(
-  override val contextHint: ContextHint,
-  override val renderTokens: Set<IRenderToken> = emptySet(),
+    override val contextHint: ContextHint,
+    override val renderTokens: Set<IRenderToken> = emptySet(),
 ) : IPublishedContextHint {
-  override fun unwrap() = null
+    override fun unwrap() = null
 }
 
 /** Returns a collection of unwrapped [PublishedContextHint]. */
 fun Collection<IPublishedContextHint>.unwrapAll(): List<PublishedContextHint> = mapNotNull {
-  it.unwrap()
+    it.unwrap()
 }
