@@ -20,33 +20,33 @@ import androidx.compose.ui.unit.dp
 
 /** Constants for the underlay template. */
 object MessageConstants {
-  val ButtonHorizontalPadding = 12.dp
-  val ButtonVerticalPadding = 4.dp
-  val CornerRadius = 20.dp
-  val IconSize = 20.dp
-  val BorderStrokeWidth = 1.dp
-  val InnerBorderStrokeWidth = 8.dp
-  val InnerBorderBlurRadius = 2.dp
-  val Spacing = 8.dp
-  val RowStartPadding = 16.dp
-  val RowEndPadding = 16.dp
-  val RowTopPadding = 20.dp
-  val RowBottomPadding = 12.dp
-  val TextLineHeight = 20.dp
-  val BackgroundColor = Color.Black
-  val IconColor = Color.White
+    val ButtonHorizontalPadding = 12.dp
+    val ButtonVerticalPadding = 4.dp
+    val CornerRadius = 20.dp
+    val IconSize = 20.dp
+    val BorderStrokeWidth = 1.dp
+    val InnerBorderStrokeWidth = 8.dp
+    val InnerBorderBlurRadius = 2.dp
+    val Spacing = 8.dp
+    val RowStartPadding = 16.dp
+    val RowEndPadding = 16.dp
+    val RowTopPadding = 20.dp
+    val RowBottomPadding = 12.dp
+    val TextLineHeight = 20.dp
+    val BackgroundColor = Color.Black
+    val IconColor = Color.White
 
-  const val ROTATION_DURATION_MILLIS: Int = 1500
-  const val FADE_DURATION_MILLIS: Int = 500
-  const val FADE_DELAY_MILLIS: Int = 1000
-  const val INITIAL_ROTATION_DEGREES: Float = 20f // Start rotation at 20 degrees
-  const val GRADIENT_START_FRACTION = 0.2f
-  const val GRADIENT_MIDDLE_FRACTION = 0.5f
-  const val GRADIENT_END_FRACTION = 0.8f
-  const val ANIMATION_REVEAL_DURATION_MILLIS = 250
-  const val ANIMATION_REVEAL_DELAY_MILLIS = 150
+    const val ROTATION_DURATION_MILLIS: Int = 1500
+    const val FADE_DURATION_MILLIS: Int = 500
+    const val FADE_DELAY_MILLIS: Int = 1000
+    const val INITIAL_ROTATION_DEGREES: Float = 20f // Start rotation at 20 degrees
+    const val GRADIENT_START_FRACTION = 0.2f
+    const val GRADIENT_MIDDLE_FRACTION = 0.5f
+    const val GRADIENT_END_FRACTION = 0.8f
+    const val ANIMATION_REVEAL_DURATION_MILLIS = 250
+    const val ANIMATION_REVEAL_DELAY_MILLIS = 150
 
-  // TODO: b/480153908 - Remove this if it can be supported directly on the client-side.
-  const val MESSAGE_DATA_IS_STANDALONE_ROW_ENABLED_KEY =
-    "MESSAGE_DATA_IS_STANDALONE_ROW_ENABLED_KEY"
+    // TODO: b/480153908 - Remove this if it can be supported directly on the client-side.
+    const val MESSAGE_DATA_IS_STANDALONE_ROW_ENABLED_KEY =
+        "MESSAGE_DATA_IS_STANDALONE_ROW_ENABLED_KEY"
 }

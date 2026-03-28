@@ -37,53 +37,53 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
  */
 class VisualizerSession(val view: View) {
 
-  private val lifecycle: ViewLifecycle = ViewLifecycle().apply { attachToView(view) }
+    private val lifecycle: ViewLifecycle = ViewLifecycle().apply { attachToView(view) }
 
-  fun destroy() {
-    lifecycle.destroy()
-  }
+    fun destroy() {
+        lifecycle.destroy()
+    }
 }
 
 /** A class used to manage the compose lifecycle for a ComposeView. */
 private class ViewLifecycle : LifecycleOwner, SavedStateRegistryOwner, ViewModelStoreOwner {
 
-  private val savedStateRegistryController = SavedStateRegistryController.create(this)
-  private val savedInstanceState: Bundle = Bundle()
-  private val lifecycleRegistry = LifecycleRegistry(this)
+    private val savedStateRegistryController = SavedStateRegistryController.create(this)
+    private val savedInstanceState: Bundle = Bundle()
+    private val lifecycleRegistry = LifecycleRegistry(this)
 
-  override val lifecycle: Lifecycle = lifecycleRegistry
-  override val viewModelStore: ViewModelStore = ViewModelStore()
-  override val savedStateRegistry: SavedStateRegistry =
-    savedStateRegistryController.savedStateRegistry
+    override val lifecycle: Lifecycle = lifecycleRegistry
+    override val viewModelStore: ViewModelStore = ViewModelStore()
+    override val savedStateRegistry: SavedStateRegistry =
+        savedStateRegistryController.savedStateRegistry
 
-  /** Attach compose lifecycle to the given ComposeView. */
-  fun attachToView(view: View) {
-    if (lifecycleRegistry.currentState == Lifecycle.State.INITIALIZED) {
-      savedStateRegistryController.performRestore(savedInstanceState)
+    /** Attach compose lifecycle to the given ComposeView. */
+    fun attachToView(view: View) {
+        if (lifecycleRegistry.currentState == Lifecycle.State.INITIALIZED) {
+            savedStateRegistryController.performRestore(savedInstanceState)
+        }
+
+        lifecycleRegistry.currentState = Lifecycle.State.STARTED
+
+        view.rootView.setViewTreeLifecycleOwner(this)
+        view.rootView.setViewTreeSavedStateRegistryOwner(this)
+        view.rootView.setViewTreeViewModelStoreOwner(this)
+
+        lifecycleRegistry.currentState = Lifecycle.State.RESUMED
     }
 
-    lifecycleRegistry.currentState = Lifecycle.State.STARTED
+    /** Destroy the compose lifecycle for a previously attached ComposeView. */
+    fun destroy() {
+        if (lifecycleRegistry.currentState == Lifecycle.State.DESTROYED) {
+            Log.e(TAG, "ViewLifecycle already destroyed!")
+            return
+        }
 
-    view.setViewTreeLifecycleOwner(this)
-    view.setViewTreeSavedStateRegistryOwner(this)
-    view.setViewTreeViewModelStoreOwner(this)
-
-    lifecycleRegistry.currentState = Lifecycle.State.RESUMED
-  }
-
-  /** Destroy the compose lifecycle for a previously attached ComposeView. */
-  fun destroy() {
-    if (lifecycleRegistry.currentState == Lifecycle.State.DESTROYED) {
-      Log.e(TAG, "ViewLifecycle already destroyed!")
-      return
+        lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
+        savedStateRegistryController.performSave(savedInstanceState)
+        viewModelStore.clear()
     }
 
-    lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
-    savedStateRegistryController.performSave(savedInstanceState)
-    viewModelStore.clear()
-  }
-
-  private companion object {
-    const val TAG = "ViewLifecycle"
-  }
+    private companion object {
+        const val TAG = "ViewLifecycle"
+    }
 }

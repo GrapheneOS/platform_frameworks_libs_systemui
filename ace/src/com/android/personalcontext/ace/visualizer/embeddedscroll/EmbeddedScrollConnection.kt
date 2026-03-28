@@ -56,11 +56,11 @@ import kotlin.math.abs
  */
 @Composable
 fun Modifier.embeddedScroll(
-  @ScrollAxis availableAxes: Int = SCROLL_AXIS_VERTICAL or SCROLL_AXIS_HORIZONTAL,
-  onScrollEvent: (EmbeddedScrollEvent) -> Unit,
+    @ScrollAxis availableAxes: Int = SCROLL_AXIS_VERTICAL or SCROLL_AXIS_HORIZONTAL,
+    onScrollEvent: (EmbeddedScrollEvent) -> Unit,
 ): Modifier {
-  return this.nestedScroll(rememberEmbeddedScrollConnection(availableAxes, onScrollEvent))
-    .draggableScroll(availableAxes, onScrollEvent)
+    return this.nestedScroll(rememberEmbeddedScrollConnection(availableAxes, onScrollEvent))
+        .draggableScroll(availableAxes, onScrollEvent)
 }
 
 /**
@@ -69,118 +69,128 @@ fun Modifier.embeddedScroll(
  */
 @Composable
 private fun rememberEmbeddedScrollConnection(
-  @ScrollAxis availableAxes: Int,
-  onScrollEvent: (EmbeddedScrollEvent) -> Unit,
+    @ScrollAxis availableAxes: Int,
+    onScrollEvent: (EmbeddedScrollEvent) -> Unit,
 ): NestedScrollConnection {
-  return remember {
-    object : NestedScrollConnection {
+    return remember {
+        object : NestedScrollConnection {
 
-      private var lockedAxis = Undecided
-      private var reportedAxis: LockedAxis? = null
+            private var lockedAxis = Undecided
+            private var reportedAxis: LockedAxis? = null
 
-      override fun onPostScroll(
-        consumed: Offset,
-        available: Offset,
-        source: NestedScrollSource,
-      ): Offset {
-        if (lockedAxis == Undecided) {
-          lockedAxis = available.getPrimaryAxis(availableAxes)
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset {
+                if (lockedAxis == Undecided) {
+                    lockedAxis = available.getPrimaryAxis(availableAxes)
 
-          if (reportedAxis != lockedAxis) {
-            onScrollEvent(EmbeddedScrollEvent(type = SCROLL_START, axes = lockedAxis.axis))
-            reportedAxis = lockedAxis
-          }
+                    if (reportedAxis != lockedAxis) {
+                        onScrollEvent(
+                            EmbeddedScrollEvent(type = SCROLL_START, axes = lockedAxis.axis)
+                        )
+                        reportedAxis = lockedAxis
+                    }
+                }
+
+                val delta = available.clampToAxis(lockedAxis)
+                if (!delta.isEmpty()) {
+                    onScrollEvent(
+                        EmbeddedScrollEvent(type = SCROLL_DELTA, x = delta.x, y = delta.y)
+                    )
+                }
+
+                return delta
+            }
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                val velocity = available.clampToAxis(lockedAxis)
+                onScrollEvent(
+                    EmbeddedScrollEvent(type = SCROLL_STOP, x = velocity.x, y = velocity.y)
+                )
+
+                lockedAxis = Undecided
+                reportedAxis = null
+                return velocity
+            }
         }
-
-        val delta = available.clampToAxis(lockedAxis)
-        if (!delta.isEmpty()) {
-          onScrollEvent(EmbeddedScrollEvent(type = SCROLL_DELTA, x = delta.x, y = delta.y))
-        }
-
-        return delta
-      }
-
-      override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-        val velocity = available.clampToAxis(lockedAxis)
-        onScrollEvent(EmbeddedScrollEvent(type = SCROLL_STOP, x = velocity.x, y = velocity.y))
-
-        lockedAxis = Undecided
-        reportedAxis = null
-        return velocity
-      }
     }
-  }
 }
 
 /** A modifier that detects 2D drag gestures directly on the layout node. */
 @Composable
 private fun Modifier.draggableScroll(
-  @ScrollAxis availableAxes: Int,
-  onScrollEvent: (EmbeddedScrollEvent) -> Unit,
+    @ScrollAxis availableAxes: Int,
+    onScrollEvent: (EmbeddedScrollEvent) -> Unit,
 ): Modifier {
-  var lockedAxis by remember { mutableStateOf(Undecided) }
-  var reportedAxis by remember { mutableStateOf<LockedAxis?>(null) }
+    var lockedAxis by remember { mutableStateOf(Undecided) }
+    var reportedAxis by remember { mutableStateOf<LockedAxis?>(null) }
 
-  return draggable2D(
-    state =
-      rememberDraggable2DState { delta ->
-        if (lockedAxis == Undecided) {
-          lockedAxis = delta.getPrimaryAxis(availableAxes)
+    return draggable2D(
+        state =
+            rememberDraggable2DState { delta ->
+                if (lockedAxis == Undecided) {
+                    lockedAxis = delta.getPrimaryAxis(availableAxes)
 
-          if (reportedAxis != lockedAxis) {
-            onScrollEvent(EmbeddedScrollEvent(type = SCROLL_START, axes = lockedAxis.axis))
-            reportedAxis = lockedAxis
-          }
-        }
+                    if (reportedAxis != lockedAxis) {
+                        onScrollEvent(
+                            EmbeddedScrollEvent(type = SCROLL_START, axes = lockedAxis.axis)
+                        )
+                        reportedAxis = lockedAxis
+                    }
+                }
 
-        val delta = delta.clampToAxis(lockedAxis)
-        if (!delta.isEmpty()) {
-          onScrollEvent(EmbeddedScrollEvent(type = SCROLL_DELTA, x = delta.x, y = delta.y))
-        }
-      },
-    onDragStopped = { velocity ->
-      val velocity = velocity.clampToAxis(lockedAxis)
-      onScrollEvent(EmbeddedScrollEvent(type = SCROLL_STOP, x = velocity.x, y = velocity.y))
+                val delta = delta.clampToAxis(lockedAxis)
+                if (!delta.isEmpty()) {
+                    onScrollEvent(
+                        EmbeddedScrollEvent(type = SCROLL_DELTA, x = delta.x, y = delta.y)
+                    )
+                }
+            },
+        onDragStopped = { velocity ->
+            val velocity = velocity.clampToAxis(lockedAxis)
+            onScrollEvent(EmbeddedScrollEvent(type = SCROLL_STOP, x = velocity.x, y = velocity.y))
 
-      lockedAxis = Undecided
-      reportedAxis = null
-    },
-  )
+            lockedAxis = Undecided
+            reportedAxis = null
+        },
+    )
 }
 
 private enum class LockedAxis(@property:ScrollAxis val axis: Int) {
-  Undecided(SCROLL_AXIS_NONE),
-  Vertical(SCROLL_AXIS_VERTICAL),
-  Horizontal(SCROLL_AXIS_HORIZONTAL),
+    Undecided(SCROLL_AXIS_NONE),
+    Vertical(SCROLL_AXIS_VERTICAL),
+    Horizontal(SCROLL_AXIS_HORIZONTAL),
 }
 
 private fun Int.hasFlag(flag: Int): Boolean = (this and flag) != 0
 
 private fun Offset.getPrimaryAxis(@ScrollAxis availableAxes: Int): LockedAxis {
-  val canScrollHorizontally = availableAxes.hasFlag(View.SCROLL_AXIS_HORIZONTAL)
-  val canScrollVertically = availableAxes.hasFlag(View.SCROLL_AXIS_VERTICAL)
+    val canScrollHorizontally = availableAxes.hasFlag(View.SCROLL_AXIS_HORIZONTAL)
+    val canScrollVertically = availableAxes.hasFlag(View.SCROLL_AXIS_VERTICAL)
 
-  return when {
-    abs(x) > abs(y) && canScrollHorizontally -> Horizontal
-    abs(y) > abs(x) && canScrollVertically -> Vertical
-    y != 0f && canScrollVertically -> Vertical
-    x != 0f && canScrollHorizontally -> Horizontal
-    else -> Undecided
-  }
+    return when {
+        abs(x) > abs(y) && canScrollHorizontally -> Horizontal
+        abs(y) > abs(x) && canScrollVertically -> Vertical
+        y != 0f && canScrollVertically -> Vertical
+        x != 0f && canScrollHorizontally -> Horizontal
+        else -> Undecided
+    }
 }
 
 private fun Offset.clampToAxis(lockState: LockedAxis): Offset =
-  when (lockState) {
-    Horizontal -> copy(y = 0f)
-    Vertical -> copy(x = 0f)
-    Undecided -> Offset.Zero
-  }
+    when (lockState) {
+        Horizontal -> copy(y = 0f)
+        Vertical -> copy(x = 0f)
+        Undecided -> Offset.Zero
+    }
 
 private fun Velocity.clampToAxis(lockState: LockedAxis): Velocity =
-  when (lockState) {
-    Horizontal -> copy(y = 0f)
-    Vertical -> copy(x = 0f)
-    Undecided -> Velocity.Zero
-  }
+    when (lockState) {
+        Horizontal -> copy(y = 0f)
+        Vertical -> copy(x = 0f)
+        Undecided -> Velocity.Zero
+    }
 
 private fun Offset.isEmpty(): Boolean = x == 0f && y == 0f

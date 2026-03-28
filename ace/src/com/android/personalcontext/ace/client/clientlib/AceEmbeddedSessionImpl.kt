@@ -19,17 +19,19 @@ package com.android.personalcontext.ace.client.clientlib
 
 import android.content.Context
 import android.os.OutcomeReceiver
+import android.service.personalcontext.PersonalContextManager
 import android.service.personalcontext.embedded.ClientUpdateException
 import android.service.personalcontext.embedded.InsightSurfaceClient
 import android.service.personalcontext.embedded.InsightSurfaceClientUpdate
 import android.service.personalcontext.embedded.InsightSurfaceSession
 import android.service.personalcontext.embedded.InsightSurfaceSessionException
+import android.service.personalcontext.hint.HintInvalidationHint
 import android.service.personalcontext.insight.ContextInsight
 import android.util.Log
 import android.view.SurfaceControlViewHost.SurfacePackage
 import com.android.personalcontext.ace.client.prototype.PrototypeInsightUtils.isPrototypeInsight
 import com.android.personalcontext.ace.client.prototype.serversideclose.ServerSideCloseInsight
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.TimeoutException
 import kotlin.coroutines.resume
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -42,14 +44,20 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 
-internal class AceEmbeddedSessionImpl(val backgroundScope: CoroutineScope?) : AceEmbeddedSession {
+internal class AceEmbeddedSessionImpl(
+    val backgroundScope: CoroutineScope?,
+    val timeout: Duration,
+    val invalidatePreviousHintOnUpdate: Boolean,
+) : AceEmbeddedSession {
 
+    private lateinit var _context: Context
     private lateinit var _client: InsightSurfaceClient
     private lateinit var _session: InsightSurfaceSession
 
     private var cachedInputs: AceEmbeddedInputs? = null
-    private val expectingUpdateSessionDestroyed = AtomicBoolean(false)
+    private var updateComplete: CompletableDeferred<Unit>? = null
 
     suspend fun withConnection(
         context: Context,
@@ -59,6 +67,9 @@ internal class AceEmbeddedSessionImpl(val backgroundScope: CoroutineScope?) : Ac
         block: suspend AceEmbeddedSessionScope.(SurfacePackage) -> Nothing,
     ): Nothing = coroutineScope {
         Log.i(TAG, "[AceEmbeddedLifecycle] Client-lib connect($inputs)")
+
+        _context = context
+        checkIsPersonalContextEnabled()
 
         cachedInputs = inputs
 
@@ -89,9 +100,9 @@ internal class AceEmbeddedSessionImpl(val backgroundScope: CoroutineScope?) : Ac
                 object : InsightSurfaceClient.ClientCallback {
 
                     override fun onSessionCreated(session: InsightSurfaceSession) {
-                        Log.i(TAG, "[AceEmbeddedLifecycle] Client-lib register → onSessionCreated.")
+                        Log.d(TAG, "[AceEmbeddedLifecycle] Client-lib register → onSessionCreated.")
 
-                        _session = session
+                        this@AceEmbeddedSessionImpl._session = session
 
                         val surfacePackage = session.surfacePackage
                         if (surfacePackage != null) {
@@ -104,24 +115,19 @@ internal class AceEmbeddedSessionImpl(val backgroundScope: CoroutineScope?) : Ac
                     }
 
                     override fun onSessionUpdated(session: InsightSurfaceSession) {
-                        Log.i(TAG, "[AceEmbeddedLifecycle] Client-lib register → onSessionUpdated.")
+                        Log.d(TAG, "[AceEmbeddedLifecycle] Client-lib register → onSessionUpdated.")
+                        updateComplete?.complete(Unit)
                     }
 
                     override fun onSessionDestroyed(session: InsightSurfaceSession) {
-                        Log.i(
+                        Log.d(
                             TAG,
                             "[AceEmbeddedLifecycle] Client-lib register → onSessionDestroyed: $session.",
                         )
-
-                        // TODO: b/485772848 - Workaround until ACE stops destroying the session on
-                        // update()
-                        if (expectingUpdateSessionDestroyed.getAndSet(false)) {
-                            cancel("onSessionDestroyed", UpdateSessionDestroyedException(session))
-                        }
                     }
 
                     override fun onError(exception: InsightSurfaceSessionException) {
-                        Log.w(
+                        Log.d(
                             TAG,
                             "[AceEmbeddedLifecycle] Client-lib register → onError: $exception.",
                         )
@@ -130,7 +136,7 @@ internal class AceEmbeddedSessionImpl(val backgroundScope: CoroutineScope?) : Ac
                     }
 
                     override fun onSizeChanged(width: Int, height: Int) {
-                        Log.i(
+                        Log.d(
                             TAG,
                             "[AceEmbeddedLifecycle] Client-lib register → onSizeChanged(width: $width, height: $height).",
                         )
@@ -148,7 +154,9 @@ internal class AceEmbeddedSessionImpl(val backgroundScope: CoroutineScope?) : Ac
             _client.publishHints(inputs.hints)
 
             Log.d(TAG, "[AceEmbeddedLifecycle] Client-lib surfacePackageReady.await()")
-            val surfacePackage = surfacePackageReady.await()
+            val surfacePackage =
+                withTimeoutOrNull(timeout) { surfacePackageReady.await() }
+                    ?: throw TimeoutException("Timed out waiting for SurfacePackage.")
 
             Log.d(TAG, "[AceEmbeddedLifecycle] Client-lib received surfacePackage: $surfacePackage")
             AceEmbeddedSessionScopeImpl(scope = this).block(surfacePackage)
@@ -160,6 +168,8 @@ internal class AceEmbeddedSessionImpl(val backgroundScope: CoroutineScope?) : Ac
     override suspend fun update(inputs: AceEmbeddedInputs) {
         Log.i(TAG, "[AceEmbeddedLifecycle] Client-lib update($inputs)")
 
+        checkIsPersonalContextEnabled()
+
         val previousInputs = cachedInputs
 
         if (inputs == previousInputs) {
@@ -168,72 +178,127 @@ internal class AceEmbeddedSessionImpl(val backgroundScope: CoroutineScope?) : Ac
         }
 
         cachedInputs = inputs
+        updateComplete = CompletableDeferred()
 
         val hintsChanged = inputs.hints != previousInputs?.hints
         val paramsChanged =
             previousInputs == null || inputs.copy(hints = previousInputs.hints) != previousInputs
 
-        if (hintsChanged) {
-            Log.i(TAG, "[AceEmbeddedLifecycle] Client-lib client.publishHints(): ${inputs.hints}")
-            _client.publishHints(inputs.hints)
-        }
-
-        if (paramsChanged) {
-            @Suppress("CheckReturnValue")
-            val update =
-                InsightSurfaceClientUpdate.Builder()
-                    .apply {
-                        if (inputs.backgroundColor != previousInputs?.backgroundColor) {
-                            setBackgroundColor(inputs.backgroundColor)
-                        }
-                        if (inputs.width != previousInputs?.width) {
-                            setMeasureSpecWidth(inputs.width.value)
-                        }
-                        if (inputs.height != previousInputs?.height) {
-                            setMeasureSpecHeight(inputs.height.value)
-                        }
-                        if (inputs.nestedScrollAxes != previousInputs?.nestedScrollAxes) {
-                            setNestedScrollAxes(inputs.nestedScrollAxes)
-                        }
-                        if (
-                            inputs.nestedScrollAxisLocked != previousInputs?.nestedScrollAxisLocked
-                        ) {
-                            setNestedScrollAxisLocked(inputs.nestedScrollAxisLocked)
-                        }
-                        if (inputs.shouldBlur != previousInputs?.shouldBlur) {
-                            setShouldBlur(inputs.shouldBlur)
-                        }
-                        if (inputs.themeResourceId != previousInputs?.themeResourceId) {
-                            setThemeResourceId(inputs.themeResourceId)
-                        }
+        val result =
+            withTimeoutOrNull(timeout) {
+                coroutineScope {
+                    if (hintsChanged) {
+                        launch { updateHints(inputs, previousInputs) }
                     }
-                    .build()
 
-            suspendCancellableCoroutine { cont ->
-                Log.i(
-                    TAG,
-                    "[AceEmbeddedLifecycle] Client-lib session.update(): ${update.toLogString()}",
-                )
-                _session.update(
-                    update,
-                    object : OutcomeReceiver<InsightSurfaceClientUpdate, ClientUpdateException> {
-                        override fun onResult(update: InsightSurfaceClientUpdate?) {
-                            Log.i(TAG, "[AceEmbeddedLifecycle] Client-lib update → onResult.")
-
-                            expectingUpdateSessionDestroyed.set(true)
-
-                            cont.resume(Unit)
-                        }
-
-                        override fun onError(error: ClientUpdateException) {
-                            Log.w(TAG, "[AceEmbeddedLifecycle] Client-lib update → onError: $error")
-                            cont.resume(Unit)
-                        }
-                    },
-                )
+                    if (paramsChanged) {
+                        launch { updateParams(inputs, previousInputs) }
+                    }
+                }
             }
 
-            Log.i(TAG, "[AceEmbeddedLifecycle] Client-lib update() complete.")
+        if (result != null) {
+            Log.i(TAG, "[AceEmbeddedLifecycle] Client-lib update() completed successfully.")
+        } else {
+            Log.w(TAG, "[AceEmbeddedLifecycle] Client-lib update() timed out.")
+        }
+
+        updateComplete = null
+    }
+
+    private suspend fun updateHints(inputs: AceEmbeddedInputs, previousInputs: AceEmbeddedInputs?) {
+        Log.i(TAG, "[AceEmbeddedLifecycle] Client-lib updateHints()")
+
+        val invalidationHints =
+            if (invalidatePreviousHintOnUpdate && previousInputs != null) {
+                previousInputs.hints.map { HintInvalidationHint.Builder(it).build() }
+            } else {
+                emptyList()
+            }
+
+        val invalidationLogSuffix =
+            if (invalidationHints.isNotEmpty()) {
+                " + ${invalidationHints.size} x HintInvalidationHint"
+            } else {
+                ""
+            }
+
+        Log.i(
+            TAG,
+            "[AceEmbeddedLifecycle] Client-lib client.publishHints([${inputs.hints.size} items redacted$invalidationLogSuffix])",
+        )
+        _client.publishHints((inputs.hints + invalidationHints).toSet())
+
+        Log.d(TAG, "[AceEmbeddedLifecycle] Client-lib updateComplete.await()")
+        updateComplete?.await()
+    }
+
+    private suspend fun updateParams(
+        inputs: AceEmbeddedInputs,
+        previousInputs: AceEmbeddedInputs?,
+    ) {
+        Log.i(TAG, "[AceEmbeddedLifecycle] Client-lib updateParams()")
+
+        @Suppress("CheckReturnValue")
+        val update =
+            InsightSurfaceClientUpdate.Builder()
+                .apply {
+                    if (inputs.backgroundColor != previousInputs?.backgroundColor) {
+                        setBackgroundColor(inputs.backgroundColor)
+                    }
+                    if (inputs.width != previousInputs?.width) {
+                        setMeasureSpecWidth(inputs.width.value)
+                    }
+                    if (inputs.height != previousInputs?.height) {
+                        setMeasureSpecHeight(inputs.height.value)
+                    }
+                    if (inputs.nestedScrollAxes != previousInputs?.nestedScrollAxes) {
+                        setNestedScrollAxes(inputs.nestedScrollAxes)
+                    }
+                    if (inputs.nestedScrollAxisLocked != previousInputs?.nestedScrollAxisLocked) {
+                        setNestedScrollAxisLocked(inputs.nestedScrollAxisLocked)
+                    }
+                    if (inputs.shouldBlur != previousInputs?.shouldBlur) {
+                        setShouldBlur(inputs.shouldBlur)
+                    }
+                    if (inputs.themeResourceId != previousInputs?.themeResourceId) {
+                        setThemeResourceId(inputs.themeResourceId)
+                    }
+                }
+                .build()
+
+        suspendCancellableCoroutine { cont ->
+            Log.i(
+                TAG,
+                "[AceEmbeddedLifecycle] Client-lib session.update(): ${update.toLogString()}",
+            )
+            _session.update(
+                update,
+                object : OutcomeReceiver<InsightSurfaceClientUpdate, ClientUpdateException> {
+                    override fun onResult(update: InsightSurfaceClientUpdate?) {
+                        Log.i(TAG, "[AceEmbeddedLifecycle] Client-lib updateParams → onResult.")
+                        cont.resume(Unit)
+                    }
+
+                    override fun onError(error: ClientUpdateException) {
+                        Log.w(
+                            TAG,
+                            "[AceEmbeddedLifecycle] Client-lib updateParams → onError: $error",
+                        )
+                        cont.resume(Unit)
+                    }
+                },
+            )
+        }
+    }
+
+    private fun checkIsPersonalContextEnabled() {
+        val personalContextManager = _context.getSystemService(PersonalContextManager::class.java)
+        val packageName = _context.packageName
+
+        check(personalContextManager.isEnabled) { "PersonalContextManager.isEnabled check failed" }
+        check(personalContextManager.isPersonalContextModeEnabled(packageName)) {
+            "PersonalContextManager.isPersonalContextModeEnabled($packageName) check failed"
         }
     }
 

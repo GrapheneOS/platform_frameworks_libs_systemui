@@ -27,17 +27,23 @@ data class CardInsight(
     val body: ContextInsight,
     val footer: ContextInsight?,
     val actions: ContextInsight?,
+    /**
+     * Explicit identifier required when origin hints alone cannot determine the intended card type
+     * output.
+     */
+    val cardType: String? = null,
     override val originHints: Set<PublishedContextHint>,
 ) : PrototypeInsight(CardInsightId, this) {
 
     override fun exportDataToBundle(bundle: Bundle) {
-        /* No-op. */
+        bundle.putString(KEY_CARD_TYPE, cardType)
     }
 
     override fun exportInsightsToList(): List<ContextInsight?> =
         listOf(title, header, body, footer, actions)
 
     companion object : Creator {
+        private const val KEY_CARD_TYPE = "cardType"
 
         override fun create(
             bundle: Bundle,
@@ -51,6 +57,7 @@ data class CardInsight(
                 footer = insights[3],
                 actions = insights[4],
                 originHints = originHints,
+                cardType = bundle.getString(KEY_CARD_TYPE),
             )
     }
 }

@@ -18,13 +18,13 @@ package com.android.personalcontext.ace.visualizer.templates.call
 import androidx.compose.ui.unit.dp
 
 internal object CallWidgetConstants {
-  val IconButtonSizeLarge = 32.dp
-  val IconButtonSizeMedium = 24.dp
-  val IconSizeNormal = 20.dp
-  val IconSizeLarge = 24.dp
-  val IconSizeMedium = 16.dp
-  val RoundedCornerSizeLarge = 24.dp
-  val RoundedCornerSizeMedium = 16.dp
-  val RoundedCornerSizeExtraSmall = 4.dp
-  val SummaryIconAndTextSpacing = 4.dp
+    val IconButtonSizeLarge = 32.dp
+    val IconButtonSizeMedium = 24.dp
+    val IconSizeNormal = 20.dp
+    val IconSizeLarge = 24.dp
+    val IconSizeMedium = 16.dp
+    val RoundedCornerSizeLarge = 24.dp
+    val RoundedCornerSizeMedium = 16.dp
+    val RoundedCornerSizeExtraSmall = 4.dp
+    val SummaryIconAndTextSpacing = 4.dp
 }

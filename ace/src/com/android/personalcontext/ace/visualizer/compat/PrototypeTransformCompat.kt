@@ -21,15 +21,15 @@ import android.service.personalcontext.insight.InsightCollection
 
 interface PrototypeTransformCompat {
 
-  /** Transforms the [ContextHint] into a prototype instance, if possible. */
-  fun transform(hint: ContextHint): Any? = null
+    /** Transforms the [ContextHint] into a prototype instance, if possible. */
+    fun transform(hint: ContextHint): Any? = null
 
-  /** Transforms the [ContextInsight] into a prototype instance, if possible. */
-  fun transform(insight: ContextInsight): Any? = null
+    /** Transforms the [ContextInsight] into a prototype instance, if possible. */
+    fun transform(insight: ContextInsight): Any? = null
 
-  /**
-   * Transforms the [InsightCollection] into a prototype instance, if possible, and return its
-   * [ContextInsight] children.
-   */
-  fun transformChildren(insight: InsightCollection): List<ContextInsight>? = null
+    /**
+     * Transforms the [InsightCollection] into a prototype instance, if possible, and return its
+     * [ContextInsight] children.
+     */
+    fun transformChildren(insight: InsightCollection): List<ContextInsight>? = null
 }

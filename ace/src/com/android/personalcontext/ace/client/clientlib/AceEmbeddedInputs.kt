@@ -70,7 +70,7 @@ data class AceEmbeddedInputs(
     }
 }
 
-/** Builder function for the bare minimum */
+/** Builder function for the bare minmum */
 fun AceEmbeddedBasicInputs(hints: Set<ContextHint>) =
     AceEmbeddedInputs(
         hints = hints,

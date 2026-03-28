@@ -18,5 +18,5 @@ package com.android.personalcontext.ace.visualizer.session
 import android.view.View
 
 interface VisualizerSessionFactory {
-  fun createSession(view: View): VisualizerSession
+    fun createSession(view: View): VisualizerSession
 }

@@ -36,23 +36,23 @@ fun Bitmap.asTintableIcon(tintable: Boolean): TintableIcon = TintableIcon(this, 
  */
 @Composable
 fun IconOrImage(
-  icon: TintableIcon,
-  modifier: Modifier = Modifier,
-  tint: Color = LocalContentColor.current,
-  contentDescription: String? = null,
+    icon: TintableIcon,
+    modifier: Modifier = Modifier,
+    tint: Color = LocalContentColor.current,
+    contentDescription: String? = null,
 ) {
-  if (icon.tintable) {
-    Icon(
-      bitmap = icon.bitmap.asImageBitmap(),
-      tint = tint,
-      contentDescription = contentDescription,
-      modifier = modifier,
-    )
-  } else {
-    Image(
-      bitmap = icon.bitmap.asImageBitmap(),
-      contentDescription = contentDescription,
-      modifier = modifier,
-    )
-  }
+    if (icon.tintable) {
+        Icon(
+            bitmap = icon.bitmap.asImageBitmap(),
+            tint = tint,
+            contentDescription = contentDescription,
+            modifier = modifier,
+        )
+    } else {
+        Image(
+            bitmap = icon.bitmap.asImageBitmap(),
+            contentDescription = contentDescription,
+            modifier = modifier,
+        )
+    }
 }

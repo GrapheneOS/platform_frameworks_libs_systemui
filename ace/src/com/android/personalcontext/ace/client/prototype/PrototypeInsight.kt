@@ -92,16 +92,18 @@ abstract class PrototypeInsight(val id: PrototypeInsightId, val creator: Creator
  * A unique identifier for each type of [PrototypeInsight].
  *
  * @property uid A unique positive value for each entry that should not change after creation.
+ * @property typeName The class name of the prototype, may be used by OSI for comparison.
  */
-// Next ID: 10
-enum class PrototypeInsightId(@field:IntRange(from = 1) val uid: Int) {
-    ExampleEmbeddedInsightId(1),
-    EmbeddedScrollInsightId(2),
-    ClientActionInsightId(3),
-    WeatherInsightId(4),
-    EmptyRenderInsightId(5),
-    AACardInsightId(6),
-    CardInsightId(7),
-    InsightGridId(8),
-    ServerSideCloseInsightId(9),
+// Next ID: 12
+enum class PrototypeInsightId(@field:IntRange(from = 1) val uid: Int, val typeName: String) {
+    ExampleEmbeddedInsightId(1, "ExampleEmbeddedInsight"),
+    EmbeddedScrollInsightId(2, "EmbeddedScrollInsight"),
+    ClientActionInsightId(3, "ClientActionInsight"),
+    WeatherInsightId(4, "WeatherInsight"),
+    EmptyRenderInsightId(5, "EmptyRenderInsight"),
+    CardInsightId(7, "CardInsight"),
+    InsightGridId(8, "InsightGrid"),
+    ServerSideCloseInsightId(9, "ServerSideCloseInsight"),
+    RenderTokenInsightId(10, "RenderTokenInsight"),
+    ClientSignalInsightId(11, "ClientSignalInsight"),
 }

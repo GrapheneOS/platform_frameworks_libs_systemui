@@ -21,6 +21,8 @@ import androidx.compose.ui.platform.ComposeView
 
 interface ComposeViewFactory {
 
-  /** Creates a new [View] containing a [ComposeView] configured with the provided [init] block. */
-  fun createComposeView(context: Context, init: ComposeView.() -> Unit): View
+    /**
+     * Creates a new [View] containing a [ComposeView] configured with the provided [init] block.
+     */
+    fun createComposeView(context: Context, init: ComposeView.() -> Unit): View
 }

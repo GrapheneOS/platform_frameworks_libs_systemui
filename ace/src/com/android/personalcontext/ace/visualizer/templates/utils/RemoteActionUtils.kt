@@ -23,35 +23,35 @@ import com.android.window.flags.Flags.balAdditionalStartModes
 
 /** Utils for [RemoteAction]s. */
 object RemoteActionUtils {
-  private const val TAG = "RemoteActionUtils"
+    private const val TAG = "RemoteActionUtils"
 
-  /** Takes the pending intent in the [RemoteAction] and sends it to the intended [Activity]. */
-  fun RemoteAction.execute(
-    context: Context,
-    code: Int = 0,
-    fillInIntent: android.content.Intent? = null,
-    options: ActivityOptions = ActivityOptions.makeBasic(),
-  ) {
-    try {
-      actionIntent.send(
-        /* context = */ context,
-        /* code = */ code,
-        /* intent = */ fillInIntent,
-        /* onFinished = */ null,
-        /* handler = */ null,
-        /* requiredPermission = */ null,
-        /* options = */ options
-          .apply {
-            if (balAdditionalStartModes()) {
-              setPendingIntentBackgroundActivityStartMode(
-                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
-              )
-            }
-          }
-          .toBundle(),
-      )
-    } catch (t: Throwable) {
-      Log.e(TAG, "Failed to execute remote action", t)
+    /** Takes the pending intent in the [RemoteAction] and sends it to the intended [Activity]. */
+    fun RemoteAction.execute(
+        context: Context,
+        code: Int = 0,
+        fillInIntent: android.content.Intent? = null,
+        options: ActivityOptions = ActivityOptions.makeBasic(),
+    ) {
+        try {
+            actionIntent.send(
+                /* context = */ context,
+                /* code = */ code,
+                /* intent = */ fillInIntent,
+                /* onFinished = */ null,
+                /* handler = */ null,
+                /* requiredPermission = */ null,
+                /* options = */ options
+                    .apply {
+                        if (balAdditionalStartModes()) {
+                            setPendingIntentBackgroundActivityStartMode(
+                                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
+                            )
+                        }
+                    }
+                    .toBundle(),
+            )
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to execute remote action", t)
+        }
     }
-  }
 }

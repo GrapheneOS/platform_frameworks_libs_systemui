@@ -43,6 +43,7 @@ import androidx.core.view.setPadding
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.android.personalcontext.ace.client.R
+import com.android.personalcontext.ace.client.clientlib.AceEmbeddedProvider
 import com.android.personalcontext.ace.client.clientlib.AceEmbeddedProviderImpl
 import com.android.personalcontext.ace.client.clientlib.AceEmbeddedUiSize
 import com.android.personalcontext.ace.client.clientsdk.compat.observable.DistinctObservableDelegates
@@ -143,7 +144,20 @@ import kotlinx.coroutines.launch
  */
 class AceEmbeddedSurfaceViewCompat : FrameLayout, NestedScrollingChild3 {
 
-    internal val aceEmbeddedProvider = AceEmbeddedProviderImpl()
+    /**
+     * The provider used to connect to the ACE embedded session.
+     *
+     * You can customize this to provide different timeout values, background scopes, or mock
+     * implementations for testing. This property must be set before the view is attached to the
+     * window.
+     */
+    var aceEmbeddedProvider: AceEmbeddedProvider = AceEmbeddedProviderImpl()
+        set(value) {
+            check(!::sessionState.isInitialized) {
+                "aceEmbeddedProvider must be set before the view is attached to the window."
+            }
+            field = value
+        }
 
     /**
      * The ACE embedded session state of a [AceEmbeddedSurfaceViewCompat], allows for observing and

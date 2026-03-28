@@ -20,6 +20,6 @@ import com.android.personalcontext.ace.common.wrappers.IInsightSurfaceClientInfo
 
 interface EmbeddedScrollCompat {
 
-  /** Send an embedded scroll [event] to the client. */
-  fun IInsightSurfaceClientInfo.sendEmbeddedScrollEvent(event: EmbeddedScrollEvent) = Unit
+    /** Send an embedded scroll [event] to the client. */
+    fun IInsightSurfaceClientInfo.sendEmbeddedScrollEvent(event: EmbeddedScrollEvent) = Unit
 }

@@ -30,54 +30,57 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import com.android.personalcontext.ace.common.FindHintUtils.findContextHint
 import com.android.personalcontext.ace.common.wrappers.IPublishedContextInsight
+import com.android.personalcontext.ace.visualizer.compat.CardInsightCompat
 import com.android.personalcontext.ace.visualizer.templates.VisualizerTemplate
 import com.android.personalcontext.ace.visualizer.templates.call.CallInsightConverter.toCallVisualizerWidget
 import javax.inject.Inject
 
 /** A [VisualizerTemplate] that renders the Magic Cue Call UI. */
-class CallVisualizerTemplate @Inject internal constructor() : VisualizerTemplate {
+class CallVisualizerTemplate
+@Inject
+internal constructor(private val cardInsightCompat: CardInsightCompat) : VisualizerTemplate {
 
-  override fun handleInsight(
-    publishedInsight: IPublishedContextInsight
-  ): (@Composable () -> Unit)? {
-    Log.i(TAG, "[CallEmbedded] handleInsight init")
-    val insight = publishedInsight.insight
-    if (insight.findContextHint<CallHint>() == null) {
-      Log.v(TAG, "[CallEmbedded] No CallHint found")
-      return null
+    override fun handleInsight(
+        publishedInsight: IPublishedContextInsight
+    ): (@Composable () -> Unit)? {
+        Log.i(TAG, "[CallEmbedded] handleInsight init")
+        val insight = publishedInsight.insight
+        if (insight.findContextHint<CallHint>() == null) {
+            Log.v(TAG, "[CallEmbedded] No CallHint found")
+            return null
+        }
+        Log.i(TAG, "[CallEmbedded] CallHint found, converting to widget")
+        val widget: CallVisualizerWidget = insight.toCallVisualizerWidget(cardInsightCompat)
+        Log.i(TAG, "[CallEmbedded] Returning CallTemplate")
+        return { CallTemplate(widget) }
     }
-    Log.i(TAG, "[CallEmbedded] CallHint found, converting to widget")
-    val widget: CallVisualizerWidget = insight.toCallVisualizerWidget()
-    Log.i(TAG, "[CallEmbedded] Returning CallTemplate")
-    return { CallTemplate(widget) }
-  }
 
-  companion object {
-    private const val TAG = "CallVisualizerTemplate"
-  }
+    companion object {
+        private const val TAG = "CallVisualizerTemplate"
+    }
 }
 
 @Composable
 private fun CallTemplate(widget: CallVisualizerWidget) {
-  CallTheme { CallWidgetContainer(widget) }
+    CallTheme { CallWidgetContainer(widget) }
 }
 
 @Composable
 private fun CallTheme(
-  darkTheme: Boolean = isSystemInDarkTheme(),
-  dynamicColor: Boolean = true,
-  content: @Composable () -> Unit,
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = true,
+    content: @Composable () -> Unit,
 ) {
-  val colorScheme =
-    when {
-      dynamicColor -> {
-        val context = LocalContext.current
-        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-      }
+    val colorScheme =
+        when {
+            dynamicColor -> {
+                val context = LocalContext.current
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            }
 
-      darkTheme -> darkColorScheme()
-      else -> lightColorScheme()
-    }
+            darkTheme -> darkColorScheme()
+            else -> lightColorScheme()
+        }
 
-  MaterialTheme(colorScheme = colorScheme, typography = Typography()) { content() }
+    MaterialTheme(colorScheme = colorScheme, typography = Typography()) { content() }
 }

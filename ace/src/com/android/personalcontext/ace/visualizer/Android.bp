@@ -13,6 +13,7 @@ android_library {
     resource_dirs: ["res"],
     static_libs: [
         "personalcontext_ace_common",
+        "personalcontext_ace_client",
         "androidx.compose.runtime_runtime",
         "androidx.compose.material3_material3",
         "androidx.compose.ui_ui",

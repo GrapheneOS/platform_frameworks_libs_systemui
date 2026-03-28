@@ -27,110 +27,110 @@ import java.util.UUID
 /** Wrapper interface for [InsightSurfaceClientInfo]. */
 sealed interface IInsightSurfaceClientInfo {
 
-  /**
-   * Returns the unwrapped [InsightSurfaceClientInfo]. May return null if originally wrapped from a
-   * unit test, where constructing an instance of [InsightSurfaceClientInfo] is not possible.
-   */
-  fun unwrap(): InsightSurfaceClientInfo?
+    /**
+     * Returns the unwrapped [InsightSurfaceClientInfo]. May return null if originally wrapped from
+     * a unit test, where constructing an instance of [InsightSurfaceClientInfo] is not possible.
+     */
+    fun unwrap(): InsightSurfaceClientInfo?
 
-  /** @see InsightSurfaceClientInfo.id */
-  val id: UUID
+    /** @see InsightSurfaceClientInfo.id */
+    val id: UUID
 
-  /** @see InsightSurfaceClientInfo.displayId */
-  val displayId: Int
+    /** @see InsightSurfaceClientInfo.displayId */
+    val displayId: Int
 
-  /** @see InsightSurfaceClientInfo.measureSpecWidth */
-  val measureSpecWidth: Int
+    /** @see InsightSurfaceClientInfo.measureSpecWidth */
+    val measureSpecWidth: Int
 
-  /** @see InsightSurfaceClientInfo.measureSpecHeight */
-  val measureSpecHeight: Int
+    /** @see InsightSurfaceClientInfo.measureSpecHeight */
+    val measureSpecHeight: Int
 
-  /** @see InsightSurfaceClientInfo.backgroundColor */
-  val backgroundColor: Color
+    /** @see InsightSurfaceClientInfo.backgroundColor */
+    val backgroundColor: Color
 
-  /** @see InsightSurfaceClientInfo.nestedScrollAxes */
-  val nestedScrollAxes: Int
+    /** @see InsightSurfaceClientInfo.nestedScrollAxes */
+    val nestedScrollAxes: Int
 
-  /** @see InsightSurfaceClientInfo.nestedScrollAxisLocked */
-  val nestedScrollAxisLocked: Boolean
+    /** @see InsightSurfaceClientInfo.nestedScrollAxisLocked */
+    val nestedScrollAxisLocked: Boolean
 
-  /** @see InsightSurfaceClientInfo.shouldBlur */
-  fun shouldBlur(): Boolean
+    /** @see InsightSurfaceClientInfo.shouldBlur */
+    fun shouldBlur(): Boolean
 
-  /** @see InsightSurfaceClientInfo.themeResourceId */
-  val themeResourceId: Int
+    /** @see InsightSurfaceClientInfo.themeResourceId */
+    val themeResourceId: Int
 
-  /** @see InsightSurfaceClientInfo.packageName */
-  val packageName: String
+    /** @see InsightSurfaceClientInfo.packageName */
+    val packageName: String
 
-  /** @see InsightSurfaceClientInfo.configuration */
-  val configuration: Configuration
+    /** @see InsightSurfaceClientInfo.configuration */
+    val configuration: Configuration
 
-  /** @see InsightSurfaceClientInfo.onReceiveInsight */
-  fun onReceiveInsight(insight: ContextInsight)
+    /** @see InsightSurfaceClientInfo.onReceiveInsight */
+    fun onReceiveInsight(insight: ContextInsight)
 }
 
 /** Creates an [IInsightSurfaceClientInfo] from a [InsightSurfaceClientInfo]. */
 fun InsightSurfaceClientInfo.wrap(): IInsightSurfaceClientInfo =
-  InsightSurfaceClientInfoWrapper(this)
+    InsightSurfaceClientInfoWrapper(this)
 
 private class InsightSurfaceClientInfoWrapper(private val original: InsightSurfaceClientInfo) :
-  IInsightSurfaceClientInfo {
-  override fun unwrap() = original
+    IInsightSurfaceClientInfo {
+    override fun unwrap() = original
 
-  override val id: UUID
-    get() = original.id
+    override val id: UUID
+        get() = original.id
 
-  override val displayId: Int
-    get() = original.displayId
+    override val displayId: Int
+        get() = original.displayId
 
-  override val measureSpecWidth: Int
-    get() = original.measureSpecWidth
+    override val measureSpecWidth: Int
+        get() = original.measureSpecWidth
 
-  override val measureSpecHeight: Int
-    get() = original.measureSpecHeight
+    override val measureSpecHeight: Int
+        get() = original.measureSpecHeight
 
-  override val backgroundColor: Color
-    get() = original.backgroundColor
+    override val backgroundColor: Color
+        get() = original.backgroundColor
 
-  override val nestedScrollAxes: Int
-    get() = original.nestedScrollAxes
+    override val nestedScrollAxes: Int
+        get() = original.nestedScrollAxes
 
-  override val nestedScrollAxisLocked: Boolean
-    get() = original.nestedScrollAxisLocked
+    override val nestedScrollAxisLocked: Boolean
+        get() = original.nestedScrollAxisLocked
 
-  override fun shouldBlur(): Boolean = original.shouldBlur()
+    override fun shouldBlur(): Boolean = original.shouldBlur()
 
-  override val themeResourceId: Int
-    get() = original.themeResourceId
+    override val themeResourceId: Int
+        get() = original.themeResourceId
 
-  override val packageName: String
-    get() = original.packageName
+    override val packageName: String
+        get() = original.packageName
 
-  override val configuration: Configuration
-    get() = original.configuration
+    override val configuration: Configuration
+        get() = original.configuration
 
-  override fun onReceiveInsight(insight: ContextInsight) = original.onReceiveInsight(insight)
+    override fun onReceiveInsight(insight: ContextInsight) = original.onReceiveInsight(insight)
 }
 
 @VisibleForTesting
 class InsightSurfaceClientInfoForTesting(
-  override val id: UUID = UUID.randomUUID(),
-  override val displayId: Int = 0,
-  override val measureSpecWidth: Int = 0,
-  override val measureSpecHeight: Int = 0,
-  override val backgroundColor: Color = Color.valueOf(0),
-  override val nestedScrollAxes: Int = 0,
-  override val nestedScrollAxisLocked: Boolean = false,
-  private val shouldBlur: Boolean = false,
-  override val themeResourceId: Int = 0,
-  override val packageName: String = "",
-  override val configuration: Configuration = Configuration(),
-  private val onReceiveInsight: (ContextInsight) -> Unit = {},
+    override val id: UUID = UUID.randomUUID(),
+    override val displayId: Int = 0,
+    override val measureSpecWidth: Int = 0,
+    override val measureSpecHeight: Int = 0,
+    override val backgroundColor: Color = Color.valueOf(0),
+    override val nestedScrollAxes: Int = 0,
+    override val nestedScrollAxisLocked: Boolean = false,
+    private val shouldBlur: Boolean = false,
+    override val themeResourceId: Int = 0,
+    override val packageName: String = "",
+    override val configuration: Configuration = Configuration(),
+    private val onReceiveInsight: (ContextInsight) -> Unit = {},
 ) : IInsightSurfaceClientInfo {
-  override fun unwrap() = null
+    override fun unwrap() = null
 
-  override fun shouldBlur(): Boolean = shouldBlur
+    override fun shouldBlur(): Boolean = shouldBlur
 
-  override fun onReceiveInsight(insight: ContextInsight) = onReceiveInsight.invoke(insight)
+    override fun onReceiveInsight(insight: ContextInsight) = onReceiveInsight.invoke(insight)
 }
