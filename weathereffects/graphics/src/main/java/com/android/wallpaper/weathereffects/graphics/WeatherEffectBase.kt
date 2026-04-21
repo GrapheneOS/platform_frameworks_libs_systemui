@@ -140,11 +140,6 @@ abstract class WeatherEffectBase(
         if (this.foreground == foreground && this.background == background) {
             return false
         }
-        // Only when background changes, we can infer the bitmap set changes
-        if (this.background != background) {
-            this.background.recycle()
-            this.foreground.recycle()
-        }
         this.foreground = foreground ?: background
         this.background = background
 
