@@ -56,9 +56,7 @@ class NoEffect(
 
     override fun setBitmaps(foreground: Bitmap?, background: Bitmap): Boolean {
         // Only when background changes, we can infer the bitmap set changes
-        if (this.background != background) {
-            this.background.recycle()
-            this.foreground.recycle()
+        if (this.foreground == foreground && this.background == background) {
             return false
         }
         this.background = background
